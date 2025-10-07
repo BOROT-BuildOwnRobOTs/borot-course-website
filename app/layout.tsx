@@ -5,10 +5,13 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'Borot',
+  description: 'BOROT Robotics Learning Platform',
+  icons: {
+    icon: '/Lion.png',
+  },
 }
+
 
 export default function RootLayout({
   children,
