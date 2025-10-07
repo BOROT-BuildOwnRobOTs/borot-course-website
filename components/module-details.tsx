@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { BookOpen, Code, Cpu, Zap, Users, Calendar, ArrowRight } from "lucide-react"
 import { useState } from "react"
+import Image from "next/image"
 
 export function ModuleDetails() {
   const [openDialog, setOpenDialog] = useState<number | null>(null)
@@ -14,25 +15,39 @@ export function ModuleDetails() {
     {
       id: 1,
       title: "Explore & Build Basics",
-      subtitle: "สำรวจและสร้างพื้นฐาน",
+      subtitle: "สำรวจและสร้างพื้นฐาน (Smart Dispenser Project)",
       icon: BookOpen,
       duration: "5 ครั้ง × 6 ชม.",
-      online: "Online 1 ครั้ง (พื้นฐาน Math/Physics, Coding)",
-      onsite: "Onsite 4 ครั้ง (CAD, Build, Line Follower)",
+      online: "Online 1 ครั้ง (พื้นฐาน Coding และระบบ Input–Output)",
+      onsite: "Onsite 4 ครั้ง (Circuit, Sensor, Integration, Showcase)",
       color: "bg-primary",
-      topics: ["พื้นฐานคณิตศาสตร์และฟิสิกส์", "การเขียนโปรแกรมเบื้องต้น", "การออกแบบด้วย CAD", "การสร้างหุ่นยนต์ตามเส้น"],
+      image: "/images/module-1-learning.png",
+      description:
+        "เรียนรู้พื้นฐานการสร้างระบบหุ่นยนต์จากสถานการณ์จริง ผ่านโปรเจกต์ Smart Medicine Dispenser ตั้งแต่ระบบเตือนกินยาอัตโนมัติ ตรวจมือจ่ายยา การรับรู้สัญญาณชีพ การตรวจสภาพยา ไปจนถึงการรวมระบบสมบูรณ์ เพื่อให้เข้าใจวงจร Input–Process–Output–Feedback อย่างเป็นระบบ พร้อมบูรณาการความรู้คณิต ฟิสิกส์ เคมี ชีวะ วัสดุ และการเขียนโปรแกรมในงานวิศวกรรมจริง",
+      topics: [
+        "Day 1: ระบบเตือนอัตโนมัติ (Smart Reminder) — นับเวลา, ควบคุมไฟ/เสียง, การคิดแบบ Input–Process–Output",
+        "Day 2: ตรวจมือก่อนจ่ายยา (Sensor Interaction) — การเชื่อม Sensor กับ Servo, การตั้ง threshold ระยะ",
+        "Day 3: ระบบรับรู้อาการจ่ายยา (Adaptive Dosing) — อ่านค่าสัญญาณชีพ, เขียน if–else หลายระดับ",
+        "Day 4: ระบบตรวจสภาพยาและวัสดุ (Safety & Environment) — ใช้ DHT11 ตรวจอุณหภูมิ/ความชื้น, วิเคราะห์วัสดุกันชื้น",
+        "Day 5: การรวมระบบและวิเคราะห์โครงสร้าง (Integration & Optimization) — รวมโค้ดทุกระบบ, ทดสอบวัสดุ, สร้าง Smart Dispenser V4",
+      ],
       engineeringPath: {
-        title: "Foundations of General Engineering",
+        title: "Foundations of Mechatronics & System Integration",
         skills: [
-          "Apply mathematics and physics fundamentals to solve engineering problems",
-          "Develop basic programming skills (Python/Arduino)",
-          "Use CAD and 3D Printing tools for rapid prototyping",
-          "Practice Active Learning and Project-based approaches",
+          "Build basic electronic circuits using LED, Buzzer, Button, and Sensor modules",
+          "Write Arduino programs with loops, conditions, and multi-input decision logic",
+          "Integrate sensors (IR, Ultrasonic, DHT11, Pulse) with actuators (Servo Motor)",
+          "Analyze sensor data and environmental effects on system performance",
+          "Apply materials science to structural optimization and humidity control",
+          "Combine coding, electronics, and physical testing to create functional prototypes",
+          "Collaborate in small teams using engineering design and debugging processes",
         ],
         outcomes: [
-          "Build systematic thinking and problem-solving abilities",
-          "Create functional prototypes using engineering design principles",
-          "Understand the engineering design process from concept to real-world implementation",
+          "Understand the complete Input–Process–Output–Feedback cycle in robotics",
+          "Connect interdisciplinary knowledge (Physics, Chemistry, Biology, Math, Programming)",
+          "Develop systematic thinking and engineering design skills through iterative testing",
+          "Create a working prototype: Smart Medicine Dispenser V4 with safety and efficiency",
+          "Present and explain engineering logic and test results effectively",
         ],
       },
     },
@@ -45,13 +60,24 @@ export function ModuleDetails() {
       online: "Online 2 ครั้ง (Kinematics, Path Planning, Simulation)",
       onsite: "Onsite 3 ครั้ง (Sensors, Motor Control, Mobile Robot Test)",
       color: "bg-secondary",
-      topics: ["ระบบเซ็นเซอร์และการทำงาน", "การควบคุมมอเตอร์", "การวางแผนเส้นทาง", "การทดสอบหุ่นยนต์เคลื่อนที่"],
+      image: "/images/module-2-learning.png",
+      description:
+        "ศึกษาระบบควบคุมและการนำทางแบบอัตโนมัติ ผ่านตัวอย่างจริงเช่น รถยนต์ไร้คนขับ (Autonomous Car) หุ่นยนต์ส่งอาหารในร้านอาหาร และหุ่นยนต์บริการต่างๆ เพื่อให้เห็นภาพการทำงานของระบบเซ็นเซอร์ การวางแผนเส้นทาง และการตัดสินใจแบบอัตโนมัติในสถานการณ์จริง",
+      topics: [
+        "ระบบเซ็นเซอร์และการทำงาน",
+        "การควบคุมมอเตอร์",
+        "การวางแผนเส้นทาง",
+        "ระบบนำทางอัตโนมัติ (Autonomous Navigation)",
+        "หุ่นยนต์บริการและรถยนต์ไร้คนขับ",
+        "การทดสอบหุ่นยนต์เคลื่อนที่",
+      ],
       engineeringPath: {
         title: "Foundations of Electrical & Mechanical Engineering",
         skills: [
           "Understand electrical circuits, logic gates, and microcontroller programming",
           "Design and control motor systems and robotic movement",
           "Integrate sensors with navigation and control systems",
+          "Learn from real-world autonomous systems like self-driving cars and service robots",
           "Strengthen problem-solving skills through robotic control challenges",
         ],
         outcomes: [
@@ -70,19 +96,32 @@ export function ModuleDetails() {
       online: "Online 2 ครั้ง (Vision, ML Basics, Data Processing)",
       onsite: "Onsite 3 ครั้ง (Camera Setup, Object Detection, Robotic Arm Integration)",
       color: "bg-accent",
-      topics: ["ระบบการมองเห็นของเครื่อง", "พื้นฐานการเรียนรู้ของเครื่อง", "การประมวลผลข้อมูล", "การรู้จำวัตถุ"],
+      image: "/images/module-3-learning.png",
+      description:
+        "เจาะลึก AI และแขนกลที่ประยุกต์ใช้กับงานทางชีววิทยา เช่น การวิเคราะห์พืช การศึกษาสมอง และการใช้ Machine Learning ในการทำนายราคาบ้าน ราคาหุ้น หรือการวินิจฉัยโรคร้าย เพื่อให้เห็นพลังของ AI ในการแก้ปัญหาที่ซับซ้อนและส่งผลกระทบต่อชีวิตจริง",
+      topics: [
+        "ระบบการมองเห็นของเครื่อง (Computer Vision)",
+        "พื้นฐานการเรียนรู้ของเครื่อง (Machine Learning)",
+        "การประมวลผลข้อมูล",
+        "การรู้จำวัตถุและการวิเคราะห์ภาพ",
+        "AI ทางชีววิทยา (การวิเคราะห์พืช สมอง)",
+        "การทำนายด้วย AI (ราคาบ้าน หุ้น โรคร้าย)",
+        "การควบคุมแขนกลด้วย AI",
+      ],
       engineeringPath: {
         title: "Foundations of AI, Machine Learning, and Computer Vision",
         skills: [
           "Process images and data using computer vision techniques",
           "Apply basic AI/ML for classification and pattern recognition",
           "Use AI for decision-making instead of rule-based programming",
+          "Apply AI to biological analysis, plant recognition, and medical diagnostics",
+          "Build predictive models for real-world applications (housing prices, stocks, disease prediction)",
           "Connect perception to action through robotic arm control (vision-based pick-and-place)",
         ],
         outcomes: [
           "Integrate Vision + IoT systems for cloud data storage",
           "Send image data and classification results to cloud platforms",
-          "Develop intelligent automation and robotics systems",
+          "Develop intelligent automation and robotics systems with real-world impact",
         ],
       },
     },
@@ -95,18 +134,30 @@ export function ModuleDetails() {
       online: "Online 1 ครั้ง (Project Planning & Design)",
       onsite: "Onsite 4 ครั้ง (Build, Test, Showcase Presentation)",
       color: "bg-gradient-to-r from-primary to-accent",
-      topics: ["การวางแผนโปรเจกต์", "การทำงานเป็นทีม", "การสร้างหุ่นยนต์อัจฉริยะ", "การนำเสนอผลงาน"],
+      image: "/images/module-4-learning.png",
+      description:
+        "นำความรู้ทั้งหมดมาบูรณาการในโปรเจกต์จริง แก้ปัญหาในชีวิตจริงผ่าน Project-Based Learning เช่น Smart Farm ที่ช่วยเกษตรกร หรือการสร้างหุ่นยนต์จากวัสดุธรรมชาติ เพื่อพัฒนาทักษะการทำงานเป็นทีม การแก้ปัญหา และการนำเสนอผลงานอย่างมืออาชีพ",
+      topics: [
+        "การวางแผนโปรเจกต์",
+        "การทำงานเป็นทีม",
+        "โปรเจกต์แก้ปัญหาจริง (Smart Farm)",
+        "การสร้างหุ่นยนต์จากวัสดุธรรมชาติ",
+        "การบูรณาการระบบ IoT และ AI",
+        "การนำเสนอผลงานอย่างมืออาชีพ",
+      ],
       engineeringPath: {
         title: "Foundations of Systems & Industrial Engineering",
         skills: [
           "Integrate knowledge from Modules 1–3 using a Systems Thinking approach",
           "Collaborate in teams through the Engineering Design Process",
           "Analyze problems, design, and test prototypes",
+          "Solve real-world problems through project-based learning (Smart Farm, bio-inspired robotics)",
+          "Work with sustainable materials and nature-inspired design",
           "Present and communicate engineering solutions professionally",
         ],
         outcomes: [
           "Connect IoT systems to transmit robot data (status, sensors, position) to cloud dashboards",
-          "Develop complete end-to-end engineering solutions",
+          "Develop complete end-to-end engineering solutions for real-world challenges",
           "Master professional communication and project management in engineering",
         ],
       },
@@ -155,6 +206,20 @@ export function ModuleDetails() {
               </CardHeader>
 
               <CardContent className="space-y-6 pb-6">
+                <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden border-2 border-primary/10">
+                  <Image
+                    src={module.image || "/placeholder.svg"}
+                    alt={`${module.title} - ตัวอย่างการเรียน`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                </div>
+
+                <div className="p-4 bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg border border-primary/10">
+                  <p className="text-sm leading-relaxed text-foreground/90">{module.description}</p>
+                </div>
+
                 {/* Duration and Format */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">

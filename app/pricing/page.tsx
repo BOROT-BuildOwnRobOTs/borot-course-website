@@ -28,6 +28,7 @@ import {
   AlertCircle,
   GraduationCap,
   Sparkles,
+  Percent,
 } from "lucide-react"
 
 export default function PricingPage() {
@@ -43,19 +44,19 @@ export default function PricingPage() {
     {
       module: "Module 1",
       title: "Explore & Build Basics",
-      individualPrice: 15000, // keeping individual price at 15,000 per person
-      schoolPrice: 225000, // updated to 225,000 baht (7,500 per person × 30)
-      dailyPrice: 3000,
+      individualPrice: 18000,
+      schoolPrice: 225000,
+      dailyPrice: 3400,
       duration: "5 Sessions",
       color: "from-orange-500 to-orange-600",
-      discountPercent: 50, // updated to show 50% discount
+      discountPercent: 50,
     },
     {
       module: "Module 2",
       title: "Control & Navigation",
-      individualPrice: 18000,
-      schoolPrice: 255000, // 8,500 per person × 30 = 255,000
-      dailyPrice: 3600,
+      individualPrice: 20000,
+      schoolPrice: 255000,
+      dailyPrice: 3800,
       duration: "5 Sessions",
       color: "from-red-500 to-red-600",
       discountPercent: 53,
@@ -63,8 +64,8 @@ export default function PricingPage() {
     {
       module: "Module 3",
       title: "Perception & AI",
-      individualPrice: 21000,
-      schoolPrice: 285000, // 9,500 per person × 30 = 285,000
+      individualPrice: 22000,
+      schoolPrice: 285000,
       dailyPrice: 4200,
       duration: "5 Sessions",
       color: "from-red-600 to-red-700",
@@ -73,8 +74,8 @@ export default function PricingPage() {
     {
       module: "Module 4",
       title: "Integration Project",
-      individualPrice: 23000,
-      schoolPrice: 337750, // 45% discount from individual (20500 * 30 * 0.55)
+      individualPrice: 24000,
+      schoolPrice: 337750,
       dailyPrice: 4600,
       duration: "5 Sessions",
       color: "from-orange-600 to-orange-700",
@@ -84,6 +85,10 @@ export default function PricingPage() {
 
   const totalIndividualPrice = pricingData.reduce((sum, item) => sum + item.individualPrice, 0)
   const totalSchoolPrice = pricingData.reduce((sum, item) => sum + item.schoolPrice, 0)
+
+  const bundleOriginalPrice = 84000
+  const bundleDiscountPercent = 15
+  const bundleDiscountedPrice = 71400
 
   return (
     <>
@@ -778,238 +783,13 @@ export default function PricingPage() {
           </div>
 
           <div className="container mx-auto px-6">
-            <Tabs defaultValue="school" className="w-full">
-              <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
-                <TabsTrigger value="school" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  School Package
-                </TabsTrigger>
+            <Tabs defaultValue="individual" className="w-full">
+              <TabsList className="grid w-full max-w-md mx-auto grid-cols-1 mb-8">
                 <TabsTrigger value="individual" className="flex items-center gap-2">
                   <Star className="h-4 w-4" />
                   Individual Premium
                 </TabsTrigger>
               </TabsList>
-
-              <TabsContent value="school" className="space-y-8">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold mb-2">School Package</h2>
-                  <p className="text-muted-foreground">สำหรับโรงเรียนที่ต้องการจัดหลักสูตรให้นักเรียนทั้งคลาส</p>
-                </div>
-
-                <div className="max-w-6xl mx-auto">
-                  <Card className="overflow-hidden">
-                    <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
-                      <CardTitle className="text-center text-2xl">Pricing Comparison</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-4 text-left font-semibold">Module</th>
-                              <th className="px-6 py-4 text-center font-semibold">
-                                <div className="flex items-center justify-center gap-2">
-                                  <Users className="h-4 w-4" />
-                                  School Package
-                                </div>
-                                <div className="text-xs text-green-600 font-semibold">Base - คุ้มค่าที่สุด</div>
-                              </th>
-                              <th className="px-6 py-4 text-center font-semibold">
-                                <div className="flex items-center justify-center gap-2">
-                                  <Star className="h-4 w-4" />
-                                  Individual Premium
-                                </div>
-                                <div className="text-xs text-orange-600 font-semibold">Premium Track</div>
-                              </th>
-                              <th className="px-6 py-4 text-center font-semibold">
-                                <div className="text-green-600">💰 ประหยัด</div>
-                                <div className="text-xs text-green-600 font-semibold">(30 คน)</div>
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {pricingData.map((item, index) => {
-                              const individualTotal30 = item.individualPrice * 30
-                              const savings = individualTotal30 - item.schoolPrice
-
-                              return (
-                                <tr key={index} className="border-b hover:bg-gray-50/50">
-                                  <td className="px-6 py-4">
-                                    <div className="flex items-center gap-3">
-                                      <div
-                                        className={`w-8 h-8 rounded-full bg-gradient-to-r ${item.color} flex items-center justify-center text-white font-bold text-sm`}
-                                      >
-                                        {index + 1}
-                                      </div>
-                                      <div>
-                                        <div className="font-semibold">{item.module}</div>
-                                        <div className="text-sm text-muted-foreground">{item.title}</div>
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4 text-center">
-                                    <div className="text-2xl font-bold text-green-600">
-                                      {item.schoolPrice.toLocaleString()} ฿
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">ต่อคลาส (30-40 คน)</div>
-                                    <div className="text-sm font-semibold text-green-700 mt-1">
-                                      ≈ {Math.round(item.schoolPrice / 30).toLocaleString()} ฿/คน
-                                    </div>
-                                    <div className="mt-1">
-                                      <Badge className="bg-green-100 text-green-700 text-xs">
-                                        ลด {item.discountPercent}%
-                                      </Badge>
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4 text-center">
-                                    <div className="text-2xl font-bold text-orange-600">
-                                      {item.individualPrice.toLocaleString()} ฿
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">ต่อคน</div>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      30 คน = {individualTotal30.toLocaleString()} ฿
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4 text-center">
-                                    <div className="text-xl font-bold text-green-600">{savings.toLocaleString()} ฿</div>
-                                    <div className="text-sm font-semibold text-green-700">
-                                      ประหยัด {item.discountPercent}%
-                                    </div>
-                                    <div className="text-xs text-green-600 mt-1">vs Individual Premium</div>
-                                  </td>
-                                </tr>
-                              )
-                            })}
-                            <tr className="border-b-2 border-green-200 bg-green-50/50 font-bold">
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center text-white font-bold text-sm">
-                                    ∑
-                                  </div>
-                                  <div>
-                                    <div className="font-bold text-lg">รวมทั้งหมด</div>
-                                    <div className="text-sm text-green-700">All 4 Modules</div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-center">
-                                <div className="text-3xl font-bold text-green-600">
-                                  {totalSchoolPrice.toLocaleString()} ฿
-                                </div>
-                                <div className="text-sm text-green-700 font-semibold">School Package</div>
-                                <div className="text-sm font-semibold text-green-700 mt-1">
-                                  ≈ {Math.round(totalSchoolPrice / 30).toLocaleString()} ฿/คน
-                                </div>
-                                <div className="mt-1">
-                                  <Badge className="bg-green-100 text-green-700 text-sm">เฉลี่ยลด 37.5%</Badge>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-center">
-                                <div className="text-3xl font-bold text-orange-600">
-                                  {totalIndividualPrice.toLocaleString()} ฿
-                                </div>
-                                <div className="text-sm text-orange-700 font-semibold">ต่อคน</div>
-                                <div className="text-sm text-gray-600 mt-1">
-                                  30 คน = {(totalIndividualPrice * 30).toLocaleString()} ฿
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-center">
-                                <div className="text-3xl font-bold text-green-600">
-                                  {(totalIndividualPrice * 30 - totalSchoolPrice).toLocaleString()} ฿
-                                </div>
-                                <div className="text-sm font-bold text-green-700">
-                                  ประหยัด{" "}
-                                  {Math.round(
-                                    ((totalIndividualPrice * 30 - totalSchoolPrice) / (totalIndividualPrice * 30)) *
-                                      100,
-                                  )}
-                                  %
-                                </div>
-                                <div className="text-xs text-green-600 mt-1">🎉 ประหยัดมหาศาล!</div>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="max-w-4xl mx-auto space-y-6">
-                  <Card className="border-blue-200 bg-blue-50/50">
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-3">
-                        <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <h3 className="font-semibold text-blue-900">หมายเหตุสำหรับโรงเรียน</h3>
-                          <ul className="space-y-2 text-sm text-blue-800">
-                            <li className="flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                              <span>ราคาสำหรับโรงเรียนคิดเป็นก้อนตามจำนวนขั้นต่ำ 30-40 คน</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                              <span>หากนักเรียนเกิน 40 คน → คิดเพิ่มรายหัวตามเรทปกติ</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                              <span>ราคานี้รวม ทีมสอน, staff, อุปกรณ์หลัก, ระบบสอบ และค่าธรรมเนียมบัตรเครดิตแล้ว</span>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-green-200 bg-green-50/50">
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-3">
-                        <Users className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                        <div className="space-y-3">
-                          <h3 className="font-semibold text-green-900">ข้อดีของ School Package</h3>
-                          <ul className="space-y-2 text-sm text-green-800">
-                            <li className="flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <span>
-                                <strong>ประหยัดมหาศาล!</strong> หากเรียนรายบุคคล 30 คน ={" "}
-                                {(totalIndividualPrice * 30).toLocaleString()} ฿ แต่ School Package เพียง{" "}
-                                {totalSchoolPrice.toLocaleString()} ฿
-                              </span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <span>
-                                <strong>
-                                  ประหยัดได้ {(totalIndividualPrice * 30 - totalSchoolPrice).toLocaleString()} ฿
-                                </strong>{" "}
-                                เมื่อเทียบกับการเรียน Individual Premium 30 คน
-                              </span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <span>
-                                <strong>ส่วนลดเพิ่มขึ้นทุก Module!</strong> เริ่มต้น 30% และเพิ่มขึ้นเป็น 45% ใน Module สุดท้าย
-                              </span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <span>Investment เพื่อให้นักเรียนมี pathway สู่โควต้า + portfolio STEM</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <span>โรงเรียนสามารถจัดงบประมาณได้ชัดเจน ไม่ต้องเก็บเงินจากนักเรียน</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <span>หลักสูตรครบถ้วนสำหรับทั้งคลาส พร้อมการสนับสนุนจากทีมงาน</span>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
 
               <TabsContent value="individual" className="space-y-8">
                 <div className="text-center mb-8">
@@ -1056,16 +836,81 @@ export default function PricingPage() {
                   ))}
                 </div>
 
-                <div className="max-w-2xl mx-auto mb-8">
-                  <Card className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
-                    <CardContent className="p-6 text-center">
-                      <h3 className="text-lg font-semibold text-amber-900 mb-2">ราคารวมทั้ง 4 โมดูล</h3>
-                      <div className="text-3xl font-bold text-orange-600 mb-2">
-                        {totalIndividualPrice.toLocaleString()} ฿
+                <div className="max-w-3xl mx-auto mb-8">
+                  <Card className="border-4 border-green-400 bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-green-400/20 rounded-full -mr-16 -mt-16"></div>
+                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-400/20 rounded-full -ml-12 -mb-12"></div>
+
+                    <CardContent className="p-8 relative z-10">
+                      <div className="text-center mb-6">
+                        <div className="inline-flex items-center gap-3 bg-green-600 text-white px-6 py-3 rounded-full shadow-lg mb-4">
+                          <Sparkles className="h-6 w-6 animate-pulse" />
+                          <span className="text-xl font-black">ส่วนลดพิเศษ!</span>
+                          <Sparkles className="h-6 w-6 animate-pulse" />
+                        </div>
+                        <h3 className="text-3xl font-black text-green-900 mb-2">จองครบครบ 4 โมดูล</h3>
+                        <p className="text-lg text-green-800 font-semibold">รับส่วนลดทันที</p>
                       </div>
-                      <p className="text-sm text-amber-700">
-                        <strong>แนะนำ:</strong> หากเรียนครบ 4 โมดูลจะได้ประสบการณ์เรียนรู้ที่สมบูรณ์และ portfolio ที่แข็งแกร่ง
-                      </p>
+
+                      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 mb-6 border-2 border-green-300 shadow-lg">
+                        <div className="flex items-center justify-center gap-8 flex-wrap">
+                          <div className="text-center">
+                            <p className="text-sm text-gray-600 mb-2 font-medium">ราคาปกติ</p>
+                            <p className="text-3xl font-bold text-gray-400 line-through">
+                              {bundleOriginalPrice.toLocaleString()} ฿
+                            </p>
+                          </div>
+
+                          <div className="flex items-center">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                              <Percent className="h-6 w-6 text-white" />
+                            </div>
+                          </div>
+
+                          <div className="text-center">
+                            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-full mb-2 shadow-lg">
+                              <span className="text-2xl font-black">-{bundleDiscountPercent}%</span>
+                            </div>
+                            <p className="text-5xl font-black text-green-600 drop-shadow-lg">
+                              {bundleDiscountedPrice.toLocaleString()} ฿
+                            </p>
+                            <p className="text-sm text-green-700 font-semibold mt-1">ราคาพิเศษ</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl p-5 border-2 border-yellow-300 shadow-inner">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center flex-shrink-0 shadow-md">
+                            <Award className="h-5 w-5 text-yellow-900" />
+                          </div>
+                          <div>
+                            <h4 className="font-black text-yellow-900 text-lg mb-2">
+                              ประหยัดถึง {(bundleOriginalPrice - bundleDiscountedPrice).toLocaleString()} บาท!
+                            </h4>
+                            <p className="text-yellow-800 font-medium leading-relaxed">
+                              เมื่อสมัครเรียนครบทั้ง 4 โมดูล คุณจะได้รับส่วนลด{" "}
+                              <span className="font-black text-xl">{bundleDiscountPercent}%</span> ทันที
+                              พร้อมประสบการณ์การเรียนรู้ที่สมบูรณ์และ Portfolio ที่แข็งแกร่ง
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-white/60 rounded-lg p-4 border border-green-200 text-center">
+                          <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                          <p className="text-sm font-semibold text-green-900">ครบทุกทักษะ</p>
+                        </div>
+                        <div className="bg-white/60 rounded-lg p-4 border border-green-200 text-center">
+                          <Award className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                          <p className="text-sm font-semibold text-green-900">Portfolio แข็งแกร่ง</p>
+                        </div>
+                        <div className="bg-white/60 rounded-lg p-4 border border-green-200 text-center">
+                          <Star className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                          <p className="text-sm font-semibold text-green-900">สิทธิ์สอบโควต้า</p>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -1126,6 +971,7 @@ export default function PricingPage() {
                           </p>
                           <p className="text-sm text-blue-800 font-medium">
                             💡 <strong>คำแนะนำ:</strong> หากเรียนครบ 4 โมดูลจะได้ประโยชน์สูงสุดและ portfolio ที่สมบูรณ์
+                            พร้อมรับส่วนลด 15%
                           </p>
                         </div>
                       </div>
