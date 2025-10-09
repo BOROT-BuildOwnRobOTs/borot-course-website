@@ -19,9 +19,9 @@ export function Navbar() {
   ]
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between h-16">
+    <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[1240px] max-w-[calc(100%-2rem)]">
+      <div className="relative">
+        <div className="flex items-center justify-between h-[81px] px-6 bg-white rounded-[100px] shadow-[0_-4px_8px_0_rgba(0,0,0,0.03),0_28px_8px_0_rgba(0,0,0,0),0_18px_7px_0_rgba(0,0,0,0.01),0_10px_6px_0_rgba(0,0,0,0.03),0_4px_4px_0_rgba(0,0,0,0.04),0_1px_2px_0_rgba(0,0,0,0.05)]">
           <Link href="/" className="flex items-center gap-3">
             <div className="h-10">
               <Image
@@ -32,7 +32,6 @@ export function Navbar() {
                 className="h-full w-auto object-contain"
               />
             </div>
-            <span className="font-bold text-xl text-foreground">Learning Program</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -66,32 +65,33 @@ export function Navbar() {
           </Button>
         </div>
 
-        {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden py-4 border-t border-border">
-            <div className="flex flex-col gap-4">
+          <div className="md:hidden absolute top-full left-0 right-0 mt-2 bg-white rounded-3xl shadow-lg border border-border overflow-hidden">
+            <div className="flex flex-col p-4">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`font-medium transition-colors hover:text-primary ${
-                    pathname === item.href ? "text-primary" : "text-muted-foreground"
+                  className={`font-medium transition-colors hover:text-primary py-3 px-4 rounded-lg hover:bg-accent ${
+                    pathname === item.href ? "text-primary bg-accent" : "text-muted-foreground"
                   }`}
                   onClick={() => setIsOpen(false)}
                 >
                   {item.label}
                 </Link>
               ))}
-              <Link href="/login" onClick={() => setIsOpen(false)}>
-                <Button
-                  variant={pathname === "/login" || pathname === "/profile" ? "default" : "outline"}
-                  size="sm"
-                  className="gap-2 w-full"
-                >
-                  <User className="h-4 w-4" />
-                  Login
-                </Button>
-              </Link>
+              <div className="pt-2 mt-2 border-t border-border">
+                <Link href="/login" onClick={() => setIsOpen(false)}>
+                  <Button
+                    variant={pathname === "/login" || pathname === "/profile" ? "default" : "outline"}
+                    size="sm"
+                    className="gap-2 w-full"
+                  >
+                    <User className="h-4 w-4" />
+                    Login
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         )}

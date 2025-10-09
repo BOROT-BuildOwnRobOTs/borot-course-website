@@ -6,7 +6,7 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-background pt-16">
+      <main className="min-h-screen bg-background">
         <HeroSection />
         <QRCodeWidget />
       </main>
