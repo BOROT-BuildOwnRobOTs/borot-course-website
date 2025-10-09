@@ -1,5 +1,5 @@
 import { Navbar } from "@/components/navbar"
-import { ModuleDetails } from "@/components/module-details"
+import { ModuleSlideshow } from "@/components/module-slideshow"
 import { LearningPath } from "@/components/learning-path"
 
 export default function ModulesPage() {
@@ -7,10 +7,8 @@ export default function ModulesPage() {
     <>
       <Navbar />
       <main className="min-h-screen bg-background pt-16">
-        <div className="py-12">
-          <ModuleDetails />
-          <LearningPath />
-        </div>
+        <ModuleSlideshow />
+        <LearningPath />
       </main>
     </>
   )
