@@ -12,7 +12,7 @@ export default function ModuleDetailsSection() {
       title: 'Module 1',
       subtitle: 'Explore & Build Basics',
       price: '฿ 3,400',
-      duration: '5 ครั้ง × 3 ชม.',
+      duration: '5 ครั้ง × 6 ชม.',
       sessions: [
         'Online 1 ครั้ง (พื้นฐาน Math/Physics, Coding)',
         'Onsite 4 ครั้ง (CAD, Build, Line Follower)'
@@ -39,7 +39,7 @@ export default function ModuleDetailsSection() {
       title: 'Module 2',
       subtitle: 'Control & Navigation',
       price: '฿ 3,800',
-      duration: '5 ครั้ง × 3 ชม.',
+      duration: '5 ครั้ง × 6 ชม.',
       sessions: [
         'Online 1 ครั้ง (Kinematics, Path Planning)',
         'Onsite 4 ครั้ง (Sensor, Motor Control, Testing)'
@@ -68,7 +68,7 @@ export default function ModuleDetailsSection() {
       title: 'Module 3',
       subtitle: 'Perception & AI',
       price: '฿ 4,200',
-      duration: '5 ครั้ง × 3 ชม.',
+      duration: '5 ครั้ง × 6 ชม.',
       sessions: [
         'Online 2 ครั้ง (Vision, ML Basics)',
         'Onsite 3 ครั้ง (Camera Setup, Object Detection)'
@@ -111,7 +111,7 @@ export default function ModuleDetailsSection() {
       title: 'Module 4',
       subtitle: 'Integration Project',
       price: '฿ 4,600',
-      duration: '5 ครั้ง × 3 ชม.',
+      duration: '5 ครั้ง × 6 ชม.',
       sessions: [
         'Online 1 ครั้ง (Project Planning)',
         'Onsite 4 ครั้ง (Build, Test, Showcase)'
