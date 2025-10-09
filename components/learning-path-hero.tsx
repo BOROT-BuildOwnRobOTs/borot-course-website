@@ -31,7 +31,7 @@ export function LearningPathHero() {
 
   return (
     <section
-      className="w-full flex flex-col items-center gap-10 px-4 md:px-[100px] py-[72px]"
+      className="w-full flex flex-col items-center gap-6 md:gap-10 px-4 md:px-8 lg:px-[100px] py-12 md:py-[72px]"
       style={{
         background: "#F0F0F0",
         fontFamily: 'var(--font-geist-sans), "IBM Plex Sans Thai", sans-serif',
@@ -40,24 +40,22 @@ export function LearningPathHero() {
       {/* Header with Title and Button */}
       <div className="w-full max-w-[1440px] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         {/* Left Side - Title and Description */}
-        <div className="flex flex-col gap-4 max-w-[900px]">
+        <div className="flex flex-col gap-3 md:gap-4 max-w-[900px]">
           <h2 className="text-center md:text-left">
             <span
-              className="font-bold"
+              className="font-bold text-3xl md:text-4xl lg:text-5xl"
               style={{
                 color: "#101010",
-                fontSize: "48px",
-                lineHeight: "56px",
+                lineHeight: "1.2",
               }}
             >
               Learning{" "}
             </span>
             <span
-              className="font-bold"
+              className="font-bold text-3xl md:text-4xl lg:text-5xl"
               style={{
                 color: "#E5690D",
-                fontSize: "48px",
-                lineHeight: "56px",
+                lineHeight: "1.2",
               }}
             >
               Path
@@ -65,12 +63,11 @@ export function LearningPathHero() {
           </h2>
 
           <p
-            className="text-center md:text-left"
+            className="text-center md:text-left text-base md:text-lg lg:text-xl"
             style={{
               color: "#484848",
-              fontSize: "20px",
               fontWeight: 400,
-              lineHeight: "28px",
+              lineHeight: "1.4",
             }}
           >
             เรียนรู้ทีละขั้นตอนด้วย 4 โมดูลหลัก ที่ออกแบบมาเพื่อพัฒนาทักษะด้านวิศวกรรมอย่างครบถ้วน
@@ -78,18 +75,17 @@ export function LearningPathHero() {
         </div>
 
         {/* Right Side - View All Button */}
-        <Link href="/modules">
+        <Link href="/modules" className="w-full md:w-auto">
           <button
-            className="flex items-center gap-2.5 px-6 py-3 rounded-[10px] transition-all hover:opacity-90"
+            className="w-full md:w-auto flex items-center justify-center gap-2.5 px-6 py-3 rounded-[10px] transition-all hover:opacity-90"
             style={{
               background: "#E5690D",
             }}
           >
             <span
-              className="font-semibold whitespace-nowrap"
+              className="font-semibold whitespace-nowrap text-base md:text-lg"
               style={{
                 color: "#FFF",
-                fontSize: "18px",
                 lineHeight: "24px",
               }}
             >
@@ -105,87 +101,130 @@ export function LearningPathHero() {
         </Link>
       </div>
 
-      <div className="w-full max-w-[3000px] mx-auto">
-            {/* Module Icons positioned on top of the curves */}
-            <div className="relative w-full flex justify-center items-center" style={{ minHeight: "300px" }}>
+      <div className="w-full max-w-[1440px] mx-auto">
+        {/* Mobile Layout - Vertical Stack */}
+        <div className="flex flex-col gap-8 md:hidden">
+          {modules.map((module) => (
+            <div key={module.id} className="flex flex-col items-center text-center gap-4">
+              <div
+                className="rounded-full flex items-center justify-center transition-transform hover:scale-105"
+                style={{
+                  width: "140px",
+                  height: "140px",
+                  background: "linear-gradient(135deg, #EE9B5D 0%, #E5690D 100%)",
+                  boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
+                }}
+              >
+                <Image
+                  src={module.iconSrc || "/placeholder.svg"}
+                  alt={module.titleEn}
+                  width={70}
+                  height={70}
+                  className="object-contain"
+                />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold" style={{ color: "#101010", lineHeight: "1.3" }}>
+                  {module.titleEn}
+                </h3>
+                <p className="text-base" style={{ color: "#484848", lineHeight: "1.4" }}>
+                  {module.titleTh}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Layout - Curved Path with Dynamic Positioning */}
+        <div className="hidden md:block">
+          <div className="relative w-full flex justify-center items-center" style={{ minHeight: "300px" }}>
             {/* เส้นโค้งพื้นหลัง */}
             <Image
-                src="/images/learning-path-curves.png"
-                alt="Learning Path"
-                width={1200}
-                height={300}
-                className="w-full h-auto"
-                priority
+              src="/images/learning-path-curves.png"
+              alt="Learning Path"
+              width={1200}
+              height={300}
+              className="w-full h-auto max-w-[1200px]"
+              priority
             />
 
-            {/* วางโมดูลแต่ละอันทับบนเส้นโค้ง */}
+            {/* วางโมดูลแต่ละอันทับบนเส้นโค้ง - ใช้ responsive positioning */}
             {modules.map((module, index) => {
-                const positions = [
-                { left: "13%", top: "30%", align: "bottom" }, // Explore & Build Basics
-                { left: "38%", top: "-5%", align: "top" },    // Control & Navigation
-                { left: "62%", top: "30%", align: "bottom" }, // Perception & AI
-                { left: "87%", top: "-5%", align: "top" },    // Integration Project
-                ]
-                const pos = positions[index]
+              const positions = [
+                { left: "16%", top: "30%", align: "bottom" }, // Explore & Build Basics
+                { left: "39%", top: "-5%", align: "top" }, // Control & Navigation
+                { left: "61%", top: "30%", align: "bottom" }, // Perception & AI
+                { left: "84%", top: "-5%", align: "top" }, // Integration Project
+              ]
+              const pos = positions[index]
 
-                return (
+              return (
                 <div
-                    key={module.id}
-                    className="absolute"
-                    style={{
+                  key={module.id}
+                  className="absolute"
+                  style={{
                     left: pos.left,
                     top: pos.top,
                     transform: "translate(-50%, 0)",
-                    }}
+                  }}
                 >
-                    <div className="relative flex flex-col items-center text-center">
+                  <div className="relative flex flex-col items-center text-center">
                     {pos.align === "top" && (
-                        <div className="mb-6">
-                        <h3 style={{ color: "#101010", fontSize: "22px", fontWeight: 700, lineHeight: "26px", whiteSpace: "nowrap" }}>
-                            {module.titleEn}
+                      <div className="mb-4 lg:mb-6">
+                        <h3
+                          className="text-base lg:text-xl xl:text-2xl font-bold whitespace-nowrap"
+                          style={{ color: "#101010", lineHeight: "1.3" }}
+                        >
+                          {module.titleEn}
                         </h3>
-                        <p style={{ color: "#484848", fontSize: "18px", fontWeight: 400, lineHeight: "30px" }}>
-                            {module.titleTh}
+                        <p className="text-sm lg:text-base xl:text-lg" style={{ color: "#484848", lineHeight: "1.5" }}>
+                          {module.titleTh}
                         </p>
-                        </div>
+                      </div>
                     )}
 
                     <div
-                        className="rounded-full flex items-center justify-center transition-transform hover:-translate-y-2"
-                        style={{
-                        width: "180px",
-                        height: "180px",
+                      className="rounded-full flex items-center justify-center transition-transform hover:-translate-y-2"
+                      style={{
+                        width: "clamp(120px, 15vw, 180px)",
+                        height: "clamp(120px, 15vw, 180px)",
                         background: "linear-gradient(135deg, #EE9B5D 0%, #E5690D 100%)",
                         boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-                        }}
+                      }}
                     >
-                        <Image
-                        src={module.iconSrc}
+                      <Image
+                        src={module.iconSrc || "/placeholder.svg"}
                         alt={module.titleEn}
                         width={90}
                         height={90}
                         className="object-contain"
-                        />
+                        style={{
+                          width: "clamp(60px, 7.5vw, 90px)",
+                          height: "clamp(60px, 7.5vw, 90px)",
+                        }}
+                      />
                     </div>
 
                     {pos.align === "bottom" && (
-                        <div className="mt-6">
-                        <h3 style={{ color: "#101010", fontSize: "22px", fontWeight: 700, lineHeight: "26px" }}>
-                            {module.titleEn}
+                      <div className="mt-4 lg:mt-6">
+                        <h3
+                          className="text-base lg:text-xl xl:text-2xl font-bold"
+                          style={{ color: "#101010", lineHeight: "1.3" }}
+                        >
+                          {module.titleEn}
                         </h3>
-                        <p style={{ color: "#484848", fontSize: "18px", fontWeight: 400, lineHeight: "22px" }}>
-                            {module.titleTh}
+                        <p className="text-sm lg:text-base xl:text-lg" style={{ color: "#484848", lineHeight: "1.4" }}>
+                          {module.titleTh}
                         </p>
-                        </div>
+                      </div>
                     )}
-                    </div>
+                  </div>
                 </div>
-                )
+              )
             })}
-            </div>
-
-
           </div>
+        </div>
+      </div>
     </section>
   )
 }
