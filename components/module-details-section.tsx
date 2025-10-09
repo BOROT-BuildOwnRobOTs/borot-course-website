@@ -11,7 +11,7 @@ export default function ModuleDetailsSection() {
       id: 1,
       title: 'Module 1',
       subtitle: 'Explore & Build Basics',
-      price: '฿ 3,400',
+      price: '฿ 18,000',
       duration: '5 ครั้ง × 6 ชม.',
       sessions: [
         'Online 1 ครั้ง (พื้นฐาน Math/Physics, Coding)',
@@ -38,7 +38,7 @@ export default function ModuleDetailsSection() {
       id: 2,
       title: 'Module 2',
       subtitle: 'Control & Navigation',
-      price: '฿ 3,800',
+      price: '฿ 20,000',
       duration: '5 ครั้ง × 6 ชม.',
       sessions: [
         'Online 1 ครั้ง (Kinematics, Path Planning)',
@@ -67,7 +67,7 @@ export default function ModuleDetailsSection() {
       id: 3,
       title: 'Module 3',
       subtitle: 'Perception & AI',
-      price: '฿ 4,200',
+      price: '฿ 22,000',
       duration: '5 ครั้ง × 6 ชม.',
       sessions: [
         'Online 2 ครั้ง (Vision, ML Basics)',
@@ -110,7 +110,7 @@ export default function ModuleDetailsSection() {
       id: 4,
       title: 'Module 4',
       subtitle: 'Integration Project',
-      price: '฿ 4,600',
+      price: '฿ 24,000',
       duration: '5 ครั้ง × 6 ชม.',
       sessions: [
         'Online 1 ครั้ง (Project Planning)',
@@ -252,7 +252,7 @@ export default function ModuleDetailsSection() {
                 >
                   {module.price}
                 </span>
-                <span
+                {/* <span
                   style={{
                     display: 'block',
                     fontSize: '16px',
@@ -262,8 +262,8 @@ export default function ModuleDetailsSection() {
                     marginTop: '-4px'
                   }}
                 >
-                  | ครั้ง
-                </span>
+                  (เรียน 5 ครั้ง)
+                </span> */}
               </div>
             </button>
           ))}
@@ -304,7 +304,8 @@ export default function ModuleDetailsSection() {
             {/* Price, Duration & Class Size */}
            <div className="flex flex-col gap-2 pb-4 border-b" style={{ borderColor: '#E0E0E0' }}>
               <div className="text-xl font-bold" style={{ color: '#101010' }}>
-                {modules[selectedModule].price} <span className="text-sm opacity-70">| ครั้ง</span>
+                {modules[selectedModule].price} 
+                {/* <span className="text-sm opacity-70">| ครั้ง</span> */}
               </div>
               <div className="flex items-center gap-4 text-sm" style={{ color: '#484848' }}>
                 <div className="flex items-center gap-2">

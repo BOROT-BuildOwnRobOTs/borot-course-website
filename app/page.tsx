@@ -3,6 +3,7 @@ import { Navbar } from "@/components/navbar"
 import { QRCodeWidget } from "@/components/qr-code-widget"
 import { LearningPathHero } from "@/components/learning-path-hero"
 import ModuleDetailsSection from "@/components/module-details-section"
+import { PartnershipSection } from "@/components/partnership-section"
 
 export default function Home() {
   return (
@@ -12,6 +13,7 @@ export default function Home() {
         <HeroSection />
         <LearningPathHero />
         <ModuleDetailsSection />
+        <PartnershipSection />
         <QRCodeWidget />
       </main>
     </>
