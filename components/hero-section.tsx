@@ -12,11 +12,22 @@ export function HeroSection() {
 
   return (
     <>
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-background via-background to-secondary/20 pt-10">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-10">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'url(/images/hero-background.png)',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'bottom center',
+          backgroundSize: 'contain',
+          opacity: 0.8
+        }}
+      />
       {/* Decorative circles */}
-      <div className="absolute top-20 left-20 w-32 h-32 bg-primary/20 rounded-full blur-xl float-animation" />
-      <div className="absolute top-40 right-32 w-24 h-24 bg-secondary/30 rounded-full blur-lg float-animation" style={{ animationDelay: "1s" }} />
-      <div className="absolute bottom-32 left-1/4 w-20 h-20 bg-accent/25 rounded-full blur-md float-animation" style={{ animationDelay: "2s" }} />
+      {/* <div className="absolute top-20 left-20 w-32 h-32 bg-primary/20 rounded-full blur-xl float-animation" /> */}
+      {/* <div className="absolute top-40 right-32 w-24 h-24 bg-secondary/30 rounded-full blur-lg float-animation" style={{ animationDelay: "1s" }} />
+      <div className="absolute bottom-32 left-1/4 w-20 h-20 bg-accent/25 rounded-full blur-md float-animation" style={{ animationDelay: "2s" }} /> */}
 
       {/* Background Gradient Circles ฝั่งซ้าย */}
       <div 
@@ -154,14 +165,14 @@ export function HeroSection() {
               <div 
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full overflow-hidden"
                 style={{
-                  width: '414px',
-                  height: '414px',
+                  width: '500px',
+                  height: '500px',
                   border: '14px solid #E5690D',
                   boxShadow: '14.261px 42.783px 13.242px 0 rgba(0, 0, 0, 0.00), 9.168px 27.503px 11.205px 0 rgba(0, 0, 0, 0.01), 5.093px 15.28px 10.186px 0 rgba(0, 0, 0, 0.05), 2.037px 7.131px 7.131px 0 rgba(0, 0, 0, 0.09), 1.019px 2.037px 4.075px 0 rgba(0, 0, 0, 0.10)'
                 }}
               >
                 <Image
-                  src="/images/hero-main.jpg"
+                  src="/images/hero-main.png"
                   alt="Students working on robotics"
                   fill
                   className="object-cover"
@@ -172,16 +183,16 @@ export function HeroSection() {
               <div 
                 className="absolute rounded-full overflow-hidden"
                 style={{
-                  width: '120px',
-                  height: '120px',
-                  top: '45px',
-                  left: '70px',
+                  width: '150px',
+                  height: '150px',
+                  top: '-10px',
+                  left: '-50px',
                   border: '4px solid #E5690D',
                   boxShadow: '14.261px 42.783px 13.242px 0 rgba(0, 0, 0, 0.00), 9.168px 27.503px 11.205px 0 rgba(0, 0, 0, 0.01), 5.093px 15.28px 10.186px 0 rgba(0, 0, 0, 0.05), 2.037px 7.131px 7.131px 0 rgba(0, 0, 0, 0.09), 1.019px 2.037px 4.075px 0 rgba(0, 0, 0, 0.10), 0 4px 4px 0 rgba(0, 0, 0, 0.25)'
                 }}
               >
                 <Image
-                  src="/images/hero-top-left.jpg"
+                  src="/images/hero-top-left.png"
                   alt="Line following robot"
                   fill
                   className="object-cover"
@@ -192,16 +203,16 @@ export function HeroSection() {
               <div 
                 className="absolute rounded-full overflow-hidden"
                 style={{
-                  width: '120px',
-                  height: '120px',
-                  top: '160px',
-                  right: '45px',
+                  width: '150px',
+                  height: '150px',
+                  top: '90px',
+                  right: '-80px',
                   border: '4px solid #E5690D',
                   boxShadow: '14.261px 42.783px 13.242px 0 rgba(0, 0, 0, 0.00), 9.168px 27.503px 11.205px 0 rgba(0, 0, 0, 0.01), 5.093px 15.28px 10.186px 0 rgba(0, 0, 0, 0.05), 2.037px 7.131px 7.131px 0 rgba(0, 0, 0, 0.09), 1.019px 2.037px 4.075px 0 rgba(0, 0, 0, 0.10), 0 4px 4px 0 rgba(0, 0, 0, 0.25)'
                 }}
               >
                 <Image
-                  src="/images/hero-right-middle.jpg"
+                  src="/images/hero-right-middle.png"
                   alt="Students in meeting"
                   fill
                   className="object-cover"
@@ -212,16 +223,16 @@ export function HeroSection() {
               <div 
                 className="absolute rounded-full overflow-hidden"
                 style={{
-                  width: '120px',
-                  height: '120px',
-                  bottom: '90px',
-                  left: '55px',
+                  width: '150px',
+                  height: '150px',
+                  bottom: '-20px',
+                  left: '-55px',
                   border: '4px solid #E5690D',
                   boxShadow: '14.261px 42.783px 13.242px 0 rgba(0, 0, 0, 0.00), 9.168px 27.503px 11.205px 0 rgba(0, 0, 0, 0.01), 5.093px 15.28px 10.186px 0 rgba(0, 0, 0, 0.05), 2.037px 7.131px 7.131px 0 rgba(0, 0, 0, 0.09), 1.019px 2.037px 4.075px 0 rgba(0, 0, 0, 0.10), 0 4px 4px 0 rgba(0, 0, 0, 0.25)'
                 }}
               >
                 <Image
-                  src="/images/hero-bottom-left.jpg"
+                  src="/images/hero-bottom-left.png"
                   alt="Green robot"
                   fill
                   className="object-cover"
@@ -232,10 +243,10 @@ export function HeroSection() {
               <div 
                 className="absolute"
                 style={{
-                  width: '255px',
-                  height: '242px',
-                  bottom: '18px',
-                  right: '18px',
+                  width: '305px',
+                  height: '292px',
+                  bottom: '-18px',
+                  right: '-40px',
                   aspectRatio: '283.18/268.92'
                 }}
               >
