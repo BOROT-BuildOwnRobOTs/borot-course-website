@@ -1,9 +1,25 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 
 export function BorotCompanySection() {
-return (
+  const [isMobile, setIsMobile] = useState(false)
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  return (
     <section
       className="w-full flex items-center justify-center px-4 md:px-8 lg:px-[100px] py-8 md:py-12 lg:py-[72px] overflow-hidden relative"
       style={{
@@ -22,16 +38,15 @@ return (
       </div>
 
       <div className="w-full max-w-[1440px] relative z-10">
-
         {/* Card Container with Responsive Diagonal Cut */}
         <div
           className="relative"
           style={{
             background: "linear-gradient(135deg, #F4A261 0%, #E5690D 100%)",
             boxShadow: "0 20px 60px rgba(229, 105, 13, 0.3)",
-            clipPath: window.innerWidth < 768 
-              ? "none" 
-              : "polygon(0 0, 70% 0, 55% 100%, 0 100%)",
+            clipPath: isClient && !isMobile 
+              ? "polygon(0 0, 70% 0, 55% 100%, 0 100%)" 
+              : "none",
             borderRadius: "16px",
           }}
         >
