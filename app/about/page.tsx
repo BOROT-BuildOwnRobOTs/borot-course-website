@@ -3,100 +3,29 @@
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { GraduationCap, Award, BookOpen, Users, Target, Heart, Briefcase, ExternalLink } from "lucide-react"
+import { GraduationCap, Award, BookOpen, Users, Target, Heart } from "lucide-react"
 import Image from "next/image"
-import { useState } from "react"
-
-const projects = [
-  {
-    id: 1,
-    title: "ค่ายอบรมโรงเรียนสาธิตมหาวิทยาลัยเกษตรศาสตร์",
-    description:
-      "ค่ายอบรมการเขียนโปรแกรม วิทยาการหุ่นยนต์ และปัญญาประดิษฐ์ขั้นพื้นฐานให้กับน้องๆ ในระดับชั้นประถมศึกษา และมัธยมศึกษา โรงเรียนสาธิตแห่งมหาวิทยาลัยเกษตรศาสตร์จังหวัดชลบุรี",
-    image: "/images/portfolio/project-5.png",
-    partner: "โรงเรียนสาธิตแห่งมหาวิทยาลัยเกษตรศาสตร์",
-    category: "Workshop",
-  },
-  {
-    id: 2,
-    title: "ค่ายอบรมร่วมกับ Know Are",
-    description:
-      "ร่วมมือกับ Know Are จัดทำค่ายอบรมวิทยาการหุ่นยนต์และปัญญาประดิษฐ์ ให้กับน้องๆ ชั้นมัธยมปลายที่มีความสนใจศึกษาต่อทางด้านสาขาวิศวกรรมหุ่นยนต์และปัญญาประดิษฐ์",
-    image: "/images/portfolio/project-7.png",
-    partner: "Know Are",
-    category: "Training Camp",
-  },
-  {
-    id: 3,
-    title: "Play Fun Fest - วันเด็กแห่งชาติ",
-    description: "ร่วมมือกับ บพค. จัดทำเวิร์คชอปเขียนโปรแกรมหุ่นยนต์ให้กับน้องๆ ในงาน Play Fun Fest เนื่องในโอกาสวันเด็กแห่งชาติ",
-    image: "/images/portfolio/project-6.png",
-    partner: "บพค. (องค์การพิพิธภัณฑ์วิทยาศาสตร์แห่งชาติ)",
-    category: "Public Event",
-  },
-  {
-    id: 4,
-    title: "เวิร์คชอป 3D Design & Circuit",
-    description:
-      "ร่วมมือกับมหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี และสถาบันวิทยาการหุ่นยนต์ภาคสนาม จัดทำเวิร์คชอปสอนวาดชิ้นงาน 3 มิติ ต่อวงจรไฟฟ้า",
-    image: "/images/portfolio/project-1.png",
-    partner: "KMUTT & สถาบันวิทยาการหุ่นยนต์ภาคสนาม",
-    category: "Workshop",
-  },
-  {
-    id: 5,
-    title: "เวิร์คชอป Robotics Programming",
-    description:
-      "ร่วมมือกับมหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี และสถาบันวิทยาการหุ่นยนต์ภาคสนาม จัดทำเวิร์คชอปสอนวาดชิ้นงาน 3 มิติ ต่อวงจรไฟฟ้า และเขียนโปรแกรมสั่งการหุ่นยนต์",
-    image: "/images/portfolio/project-3.png",
-    partner: "KMUTT & สถาบันวิทยาการหุ่นยนต์ภาคสนาม",
-    category: "Workshop",
-  },
-  {
-    id: 6,
-    title: "เวิร์คชอปหุ่นยนต์ - ศูนย์สิริกิต",
-    description: "ร่วมมือกับมหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี และสถาบันวิทยาการหุ่นยนต์ภาคสนาม จัดทำเวิร์คชอปหุ่นยนต์สำหรับเด็กที่ศูนย์สิริกิต",
-    image: "/images/portfolio/project-4.png",
-    partner: "KMUTT & สถาบันวิทยาการหุ่นยนต์ภาคสนาม",
-    category: "Community Outreach",
-  },
-  {
-    id: 7,
-    title: "Science Fair Exhibition",
-    description:
-      "ร่วมมือกับมหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี จัดแสดงนิทรรศการและเวิร์คชอปหุ่นยนต์ในงาน Science Fair เพื่อส่งเสริมการเรียนรู้ด้าน STEM",
-    image: "/images/portfolio/project-2.png",
-    partner: "KMUTT",
-    category: "Exhibition",
-  },
-]
+import { ShowCaseSection } from "@/components/showcase-section"
 
 export default function AboutPage() {
-  const [selectedProject, setSelectedProject] = useState<(typeof projects)[0] | null>(null)
-
   return (
     <>
       <Navbar />
       <main className="min-h-screen bg-background pt-16">
         <div className="py-12">
-          <div className="container mx-auto px-6 text-center mb-12">
+          {/* <div className="container mx-auto px-6 text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-balance mb-6">
               <span className="text-foreground">เกี่ยวกับ</span> <span className="text-primary">BOROT</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto text-balance">
               บริษัทผู้นำด้านการศึกษาวิศวกรรมและเทคโนโลยีหุ่นยนต์
             </p>
-          </div>
+          </div> */}
 
-          <div className="container mx-auto px-6 space-y-12">
+          {/* Show Case Section - ย้ายมาไว้ด้านบนสุด */}
+          <ShowCaseSection />
+
+          <div className="container mx-auto px-6 space-y-12 mt-12">
             {/* Company Info */}
             <Card className="max-w-4xl mx-auto">
               <CardContent className="p-12 text-center">
@@ -147,112 +76,6 @@ export default function AboutPage() {
                       Borot มีจุดมุ่งหมายในการพัฒนาเยาวชนไทยให้มีความรู้ ความสามารถ ทางด้านหุ่นยนต์และปัญญาประดิษฐ์
                       เพื่อที่จะเป็นกำลังขับเคลื่อนและเพิ่มศักยภาพให้กับสังคม ในยุคที่เทคโนโลยีพัฒนาอย่างรวดเร็ว
                     </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="max-w-6xl mx-auto">
-              <CardContent className="p-12">
-                <div className="text-center mb-12">
-                  <div className="inline-flex items-center justify-center gap-3 mb-6">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Briefcase className="w-6 h-6 text-primary" />
-                    </div>
-                  </div>
-                  <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                    <span className="text-foreground">ผลงาน</span> <span className="text-primary">Company Profile</span>
-                  </h2>
-                  <p className="text-xl text-muted-foreground max-w-3xl mx-auto text-balance">
-                    โครงการและกิจกรรมที่เราได้ร่วมมือกับสถาบันการศึกษาและองค์กรชั้นนำ
-                  </p>
-                </div>
-
-                {/* Projects Grid */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {projects.map((project) => (
-                    <Dialog key={project.id}>
-                      <DialogTrigger asChild>
-                        <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 overflow-hidden border-2 hover:border-primary/50">
-                          <div className="relative h-48 overflow-hidden">
-                            <Image
-                              src={project.image || "/placeholder.svg"}
-                              alt={project.title}
-                              width={400}
-                              height={300}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                            />
-                            <div className="absolute top-3 right-3">
-                              <Badge className="bg-primary/90 backdrop-blur-sm">{project.category}</Badge>
-                            </div>
-                          </div>
-                          <CardContent className="p-6">
-                            <h3 className="text-lg font-bold mb-2 text-balance line-clamp-2 group-hover:text-primary transition-colors">
-                              {project.title}
-                            </h3>
-                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{project.description}</p>
-                            <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="text-xs">
-                                {project.partner}
-                              </Badge>
-                              <ExternalLink className="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle className="text-2xl text-balance pr-8">{project.title}</DialogTitle>
-                          <DialogDescription className="text-base pt-2">
-                            <Badge className="mb-4">{project.category}</Badge>
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-6">
-                          <div className="rounded-lg overflow-hidden">
-                            <Image
-                              src={project.image || "/placeholder.svg"}
-                              alt={project.title}
-                              width={800}
-                              height={600}
-                              className="w-full h-auto object-cover"
-                            />
-                          </div>
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="font-semibold text-lg mb-2">รายละเอียดโครงการ</h4>
-                              <p className="text-muted-foreground leading-relaxed">{project.description}</p>
-                            </div>
-                            <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
-                              <Users className="w-5 h-5 text-primary flex-shrink-0" />
-                              <div>
-                                <p className="text-sm font-medium">ความร่วมมือกับ</p>
-                                <p className="text-sm text-muted-foreground">{project.partner}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  ))}
-                </div>
-
-                {/* Stats Section */}
-                <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div className="text-center p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl">
-                    <div className="text-3xl font-bold text-primary mb-2">7+</div>
-                    <div className="text-sm text-muted-foreground">โครงการที่สำเร็จ</div>
-                  </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-secondary/5 to-secondary/10 rounded-xl">
-                    <div className="text-3xl font-bold text-secondary mb-2">500+</div>
-                    <div className="text-sm text-muted-foreground">นักเรียนที่เข้าร่วม</div>
-                  </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-accent/5 to-accent/10 rounded-xl">
-                    <div className="text-3xl font-bold text-accent mb-2">5+</div>
-                    <div className="text-sm text-muted-foreground">พันธมิตรทางการศึกษา</div>
-                  </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-chart-1/5 to-chart-1/10 rounded-xl">
-                    <div className="text-3xl font-bold text-chart-1 mb-2">100%</div>
-                    <div className="text-sm text-muted-foreground">ความพึงพอใจ</div>
                   </div>
                 </div>
               </CardContent>
