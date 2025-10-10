@@ -5,6 +5,7 @@ import { Clock, Users } from 'lucide-react'
 
 export default function ModuleDetailsSection() {
   const [selectedModule, setSelectedModule] = useState(0)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   const modules = [
     {
@@ -182,11 +183,203 @@ export default function ModuleDetailsSection() {
         </p>
       </div>
 
+      {/* Mobile Dropdown Version */}
+<div className="lg:hidden w-full max-w-[1440px] flex flex-col gap-4">
+  {/* Dropdown Button */}
+  <button
+    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+    className="w-full flex items-center justify-between p-4 rounded-3xl text-left"
+    style={{
+      background: '#484848',
+      color: '#FFFFFF'
+    }}
+  >
+    <div className="flex items-center gap-3">
+      <div
+        className="w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0"
+        style={{ background: '#FFFFFF' }}
+      >
+        {modules[selectedModule].iconActive}
+      </div>
+      <div className="flex flex-col">
+        <span style={{
+          fontFamily: '"IBM Plex Sans Thai", sans-serif',
+          fontSize: '20px',
+          fontWeight: 600,
+          lineHeight: '28px'
+        }}>
+          {modules[selectedModule].title}
+        </span>
+        <span style={{
+          fontFamily: '"IBM Plex Sans Thai", sans-serif',
+          fontSize: '16px',
+          fontWeight: 400,
+          lineHeight: '24px',
+          opacity: 0.9
+        }}>
+          {modules[selectedModule].subtitle}
+        </span>
+      </div>
+    </div>
+    <svg 
+      width="24" 
+      height="24" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      style={{
+        transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+        transition: 'transform 0.3s ease'
+      }}
+    >
+      <path d="M6 9L12 15L18 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  </button>
+
+  {/* Dropdown Menu */}
+  {isDropdownOpen && (
+    <div className="flex flex-col gap-2 p-2 rounded-2xl" style={{ background: '#F5F5F5' }}>
+      {modules.map((module, index) => (
+        <button
+          key={module.id}
+          onClick={() => {
+            setSelectedModule(index)
+            setIsDropdownOpen(false)
+          }}
+          className="flex items-center justify-between p-3 rounded-2xl transition-all duration-200"
+          style={{
+            background: selectedModule === index ? '#E5690D' : '#FFFFFF',
+            color: selectedModule === index ? '#FFFFFF' : '#101010'
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 flex items-center justify-center rounded-full flex-shrink-0"
+              style={{ background: selectedModule === index ? '#FFFFFF' : '#F5F5F5' }}
+            >
+              {selectedModule === index ? module.iconActive : module.iconInactive}
+            </div>
+            <div className="flex flex-col text-left">
+              <span style={{
+                fontFamily: '"IBM Plex Sans Thai", sans-serif',
+                fontSize: '18px',
+                fontWeight: 600,
+                lineHeight: '26px'
+              }}>
+                {module.title}
+              </span>
+              <span style={{
+                fontFamily: '"IBM Plex Sans Thai", sans-serif',
+                fontSize: '14px',
+                fontWeight: 400,
+                lineHeight: '20px',
+                opacity: 0.8
+              }}>
+                {module.subtitle}
+              </span>
+            </div>
+          </div>
+          <span style={{
+            fontFamily: '"IBM Plex Sans Thai", sans-serif',
+            fontSize: '18px',
+            fontWeight: 600
+          }}>
+            {module.price}
+          </span>
+        </button>
+      ))}
+    </div>
+  )}
+
+      {/* Module Details Card - Mobile */}
+      <div 
+        className="flex flex-col gap-4 p-6 rounded-3xl"
+        style={{ background: '#484848' }}
+      >
+        <div className="pb-4">
+          <h3 style={{
+            color: '#FFFFFF',
+            fontFamily: '"IBM Plex Sans Thai", sans-serif',
+            fontSize: '24px',
+            fontWeight: 600,
+            lineHeight: '34px',
+            marginBottom: '8px'
+          }}>
+            {modules[selectedModule].title}
+          </h3>
+          <p className="text-base" style={{ color: '#FFFFFF', opacity: 0.9 }}>
+            {modules[selectedModule].subtitle}
+          </p>
+        </div>
+
+        <div 
+          className="p-6 flex flex-col gap-4 rounded-2xl"
+          style={{ background: '#FFF' }}
+        >
+          <div className="flex flex-col gap-2 pb-4 border-b" style={{ borderColor: '#E0E0E0' }}>
+            <div className="text-xl font-bold" style={{ color: '#101010' }}>
+              {modules[selectedModule].price}
+            </div>
+            <div className="flex items-center gap-4 text-sm" style={{ color: '#484848' }}>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>{modules[selectedModule].duration}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                <span>30-40 คน/คลาส</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <img src="/images/fi-rr-calendar.png" alt="calendar icon" className="w-4 h-4" />
+              <h4 className="font-semibold text-lg" style={{ color: '#101010' }}>
+                รูปแบบการเรียน
+              </h4>
+            </div>
+            <div className="flex flex-col gap-2">
+              {modules[selectedModule].sessions.map((session, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: '#E5690D' }} />
+                  <span style={{ color: '#484848' }}>{session}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <img src="/images/fi-rr-e-learning.png" alt="learning icon" className="w-4 h-4" />
+              <h4 className="font-semibold text-lg" style={{ color: '#101010' }}>
+                หัวข้อที่เรียน
+              </h4>
+            </div>
+            <div className="flex flex-col gap-2">
+              {modules[selectedModule].objectives.map((objective, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: '#4A90E2' }} />
+                  <span className="text-sm" style={{ color: '#484848' }}>{objective}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            className="mt-4 px-6 py-3 rounded-lg font-semibold text-white transition-all hover:opacity-90"
+            style={{ background: '#E5690D' }}
+          >
+            ดูรายละเอียดเพิ่มเติม
+          </button>
+        </div>
+      </div>
+    </div>
+
       {/* Content Container */}
       <div 
-        className="w-full max-w-[1440px] flex flex-col lg:flex-row gap-6 p-6 rounded-3xl"
-        style={{ border: '1px solid #B9B9B9' }}
-      >
+          className="hidden lg:flex w-full max-w-[1440px] flex-row gap-6 p-6 rounded-3xl"
+          style={{ border: '1px solid #B9B9B9' }}
+        >
         {/* Left Side - Module List */}
         <div className="flex flex-col gap-4 lg:w-[600px]">
           {modules.map((module, index) => (
@@ -252,18 +445,6 @@ export default function ModuleDetailsSection() {
                 >
                   {module.price}
                 </span>
-                {/* <span
-                  style={{
-                    display: 'block',
-                    fontSize: '16px',
-                    fontWeight: 400,
-                    color: selectedModule === index ? '#FFF' : '#484848',
-                    opacity: 0.8,
-                    marginTop: '-4px'
-                  }}
-                >
-                  (เรียน 5 ครั้ง)
-                </span> */}
               </div>
             </button>
           ))}

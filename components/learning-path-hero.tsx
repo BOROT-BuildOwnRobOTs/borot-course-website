@@ -151,10 +151,10 @@ export function LearningPathHero() {
             {/* วางโมดูลแต่ละอันทับบนเส้นโค้ง - ใช้ responsive positioning */}
             {modules.map((module, index) => {
               const positions = [
-                { left: "20%", top: "30%", align: "bottom" }, // Explore & Build Basics
-                { left: "40%", top: "-5%", align: "top" }, // Control & Navigation
-                { left: "60%", top: "30%", align: "bottom" }, // Perception & AI
-                { left: "80%", top: "-5%", align: "top" }, // Integration Project
+                { left: "16%", top: "30%", align: "bottom" }, // Explore & Build Basics
+                { left: "39%", top: "-5%", align: "top" }, // Control & Navigation
+                { left: "61%", top: "30%", align: "bottom" }, // Perception & AI
+                { left: "84%", top: "-5%", align: "top" }, // Integration Project
               ]
               const pos = positions[index]
 
