@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
 
@@ -31,16 +33,100 @@ export function LearningPathHero() {
 
   return (
     <section
-      className="w-full flex flex-col items-center gap-6 md:gap-10 px-4 md:px-8 lg:px-[100px] py-12 md:py-[72px]"
+      className="w-full flex flex-col items-center gap-6 md:gap-10 px-4 md:px-8 lg:px-[100px] py-12 md:py-[72px] relative"
       style={{
         background: "#F0F0F0",
         fontFamily: 'var(--font-geist-sans), "IBM Plex Sans Thai", sans-serif',
       }}
     >
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes scaleInBounce {
+          0% {
+            opacity: 0;
+            transform: scale(0.5);
+          }
+          60% {
+            transform: scale(1.03);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+        
+        .animate-fade-in-up {
+          animation: fadeInUp 0.8s ease-out forwards;
+        }
+        
+        .animate-scale-in-bounce {
+          animation: scaleInBounce 0.6s ease-out forwards;
+        }
+        
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        
+        .hover-lift-module {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .hover-lift-module:hover {
+          transform: translateY(-12px) scale(1.08);
+          box-shadow: 0 25px 50px rgba(229, 105, 13, 0.3);
+        }
+        
+        .module-delay-1 {
+          animation-delay: 0s;
+        }
+        
+        .module-delay-2 {
+          animation-delay: 0.1s;
+        }
+        
+        .module-delay-3 {
+          animation-delay: 0.15s;
+        }
+        
+        .module-delay-4 {
+          animation-delay: 0.2s;
+        }
+        
+        .section-delay-1 {
+          animation-delay: 0s;
+        }
+        
+        .section-delay-2 {
+          animation-delay: 0.1s;
+        }
+        
+        .initial-hidden {
+          opacity: 0;
+        }
+      `}</style>
       {/* Header with Title and Button */}
       <div className="w-full max-w-[1440px] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         {/* Left Side - Title and Description */}
-        <div className="flex flex-col gap-3 md:gap-4 max-w-[900px]">
+        <div className="flex flex-col gap-3 md:gap-4 max-w-[900px] initial-hidden animate-fade-in-up section-delay-1">
           <h2 className="text-center md:text-left">
             <span
               className="font-bold text-3xl md:text-4xl lg:text-5xl"
@@ -75,9 +161,9 @@ export function LearningPathHero() {
         </div>
 
         {/* Right Side - View All Button */}
-        <Link href="/modules" className="w-full md:w-auto">
+        <Link href="/modules" className="w-full md:w-auto initial-hidden animate-fade-in-up section-delay-2">
           <button
-            className="w-full md:w-auto flex items-center justify-center gap-2.5 px-6 py-3 rounded-[10px] transition-all hover:opacity-90"
+            className="w-full md:w-auto flex items-center justify-center gap-2.5 px-6 py-3 rounded-[10px] transition-all hover:opacity-90 hover:scale-105 hover:shadow-lg"
             style={{
               background: "#E5690D",
             }}
@@ -104,10 +190,10 @@ export function LearningPathHero() {
       <div className="w-full max-w-[1440px] mx-auto">
         {/* Mobile Layout - Vertical Stack */}
         <div className="flex flex-col gap-8 md:hidden">
-          {modules.map((module) => (
+          {modules.map((module, index) => (
             <div key={module.id} className="flex flex-col items-center text-center gap-4">
               <div
-                className="rounded-full flex items-center justify-center transition-transform hover:scale-105"
+                className="rounded-full flex items-center justify-center hover-lift-module animate-float"
                 style={{
                   width: "140px",
                   height: "140px",
@@ -184,7 +270,7 @@ export function LearningPathHero() {
                     )}
 
                     <div
-                      className="rounded-full flex items-center justify-center transition-transform hover:-translate-y-2"
+                      className="rounded-full flex items-center justify-center hover-lift-module animate-float"
                       style={{
                         width: "clamp(120px, 15vw, 180px)",
                         height: "clamp(120px, 15vw, 180px)",
