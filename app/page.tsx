@@ -6,6 +6,7 @@ import ModuleDetailsSection from "@/components/module-details-section"
 import { PartnershipSection } from "@/components/partnership-section"
 import { ShowCaseSection } from "@/components/showcase-section"
 import { YouTubeSection } from "@/components/youtube-section"
+import { BorotCompanySection } from "@/components/borot-company-section"
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
         <PartnershipSection />
         <ShowCaseSection /> 
         <YouTubeSection /> 
+        <BorotCompanySection />
         <QRCodeWidget />
       </main>
     </>
