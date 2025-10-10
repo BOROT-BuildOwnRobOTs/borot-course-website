@@ -58,7 +58,7 @@ export function PartnershipSection() {
         {/* Left Side - Images with Custom Layout */}
         <div className="w-full lg:w-1/2 flex flex-col gap-4 relative">
 
-        <div
+        {/* <div
             className="absolute left-[80px] top-[20px] z-0"
             style={{
                 width: "422px",
@@ -67,8 +67,8 @@ export function PartnershipSection() {
                 borderRadius: "24px",
                 background: "linear-gradient(180deg, rgba(229, 105, 13, 0.10) 0%, rgba(255, 149, 0, 0.00) 100%)",
             }}
-        ></div>
-        <div
+        ></div> */}
+        {/* <div
             className="absolute left-[180px] top-[230px] z-0"
             style={{
                 width: "6px",
@@ -76,7 +76,7 @@ export function PartnershipSection() {
                 background: "var(--Border-primary, #E5690D)",
                 borderRadius: "3px",
             }}
-        ></div>
+        ></div> */}
           {/* Top Image - Sky (Full Width) */}
           <div className="w-full rounded-2xl z-1 overflow-hidden" style={{ height: "180px" }}>
             <Image
