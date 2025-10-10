@@ -5,6 +5,7 @@ import { LearningPathHero } from "@/components/learning-path-hero"
 import ModuleDetailsSection from "@/components/module-details-section"
 import { PartnershipSection } from "@/components/partnership-section"
 import { ShowCaseSection } from "@/components/showcase-section"
+import { YouTubeSection } from "@/components/youtube-section"
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
         <ModuleDetailsSection />
         <PartnershipSection />
         <ShowCaseSection /> 
+        <YouTubeSection /> 
         <QRCodeWidget />
       </main>
     </>
