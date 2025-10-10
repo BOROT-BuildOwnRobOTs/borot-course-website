@@ -202,8 +202,8 @@ export function ModuleSlideshow() {
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-6 space-y-3">
-          <h2 className="text-5xl md:text-6xl font-bold text-balance">
-            Discover <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-amber-500 to-red-600">Learning Modules</span>
+          <h2 className="text-5xl md:text-6xl font-bold text-balance py-2">
+            Discover <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-amber-500 to-red-600 leading-tight">Learning Modules</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto text-balance">
             4 โมดูลที่จะพาคุณก้าวสู่โลกแห่ง Robotics และ AI อย่างครบวงจร
@@ -260,7 +260,7 @@ export function ModuleSlideshow() {
                               </Badge>
                             </div>
                             
-                            <h3 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                            <h3 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent py-2 leading-tight">
                               {module.title}
                             </h3>
                             <p className="text-lg text-muted-foreground">{module.subtitle}</p>
