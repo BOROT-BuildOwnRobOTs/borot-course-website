@@ -24,11 +24,6 @@ export function HeroSection() {
           opacity: 0.8
         }}
       />
-      {/* Decorative circles */}
-      {/* <div className="absolute top-20 left-20 w-32 h-32 bg-primary/20 rounded-full blur-xl float-animation" /> */}
-      {/* <div className="absolute top-40 right-32 w-24 h-24 bg-secondary/30 rounded-full blur-lg float-animation" style={{ animationDelay: "1s" }} />
-      <div className="absolute bottom-32 left-1/4 w-20 h-20 bg-accent/25 rounded-full blur-md float-animation" style={{ animationDelay: "2s" }} /> */}
-
       {/* Background Gradient Circles ฝั่งซ้าย */}
       <div 
         className="absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
@@ -72,11 +67,12 @@ export function HeroSection() {
             <h1
               className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight uppercase"
               style={{
-                background: 'linear-gradient(180deg, #E5690D 0%, #A34B09 212.15%)',
+                background: 'linear-gradient(180deg, #FF8C00 0%, #E5690D 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
                 fontFamily: 'var(--font-geist-sans)',
+                filter: 'drop-shadow(0px 2px 4px rgba(229, 105, 13, 0.2))',
               }}
             >
               Engineering <br />
