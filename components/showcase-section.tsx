@@ -45,8 +45,7 @@ export function ShowCaseSection() {
     {
       id: 1,
       logos: [
-        "/images/show_case/showcase-logo-1.png",
-        "/images/show_case/showcase-logo-1-2.png"
+        "/images/show_case/showcase-logo-1.png"
       ],
       images: [
         "/images/show_case/showcase-1-1.png",
@@ -54,8 +53,8 @@ export function ShowCaseSection() {
         "/images/show_case/showcase-1-3.png"
       ],
       title: "ค่ายอบรมการเขียนโปรแกรม วิทยาการหุ่นยนต์ และปัญญาประดิษฐ์",
-      subtitle: "ในระดับมัน ประกมศึกษา และมัธยอมศึกษา",
-      footer: "โรงเรียนสารัตติแห่งมหาวิทยาลัยเทคโนโลยีราชสร้างมัทลุมบูรี"
+      subtitle: "โครงการอบรมเชิงปฏิบัติการสำหรับนักเรียนระดับประถมศึกษาและมัธยมศึกษา เพื่อเสริมสร้างพื้นฐานด้านการเขียนโปรแกรม หุ่นยนต์ และปัญญาประดิษฐ์",
+      footer: "โรงเรียนสาธิตแห่งมหาวิทยาลัยเกษตรศาสตร์ จังหวัดชลบุรี"
     },
     {
       id: 2,
@@ -64,72 +63,86 @@ export function ShowCaseSection() {
         "/images/show_case/showcase-2-1.png",
         "/images/show_case/showcase-2-2.png"
       ],
-      title: "โครงการพัฒนาทักษะวิศวกรรม",
-      subtitle: "สำหรับนักเรียนมัธยมศึกษา",
-      footer: "โรงเรียนตัวอย่างที่ 2"
+      title: "ค่ายอบรมวิทยาการหุ่นยนต์และปัญญาประดิษฐ์ สำหรับนักเรียนมัธยมปลาย",
+      subtitle: "ความร่วมมือระหว่าง Borot และ Know Are เพื่อพัฒนาเยาวชนที่สนใจศึกษาต่อด้านวิศวกรรมหุ่นยนต์และปัญญาประดิษฐ์ ผ่านกิจกรรมเชิงปฏิบัติที่ผสานความรู้และเทคโนโลยีเข้าด้วยกัน",
+      footer: "ร่วมจัดโดย Borot Co., Ltd. และ Know Are"
     },
     {
       id: 3,
       logos: [
-        "/images/show_case/showcase-logo-3.png",
-        "/images/show_case/showcase-logo-3-2.png",
-        "/images/show_case/showcase-logo-3-3.png"
+        "/images/show_case/showcase-logo-3.png"
       ],
       images: [
-        "/images/show_case/showcase-3-1.png"
+        "/images/show_case/showcase-3-1.png",
+        "/images/show_case/showcase-3-2.png",
+        "/images/show_case/showcase-3-3.png"
       ],
-      title: "ค่ายเทคโนโลยีหุ่นยนต์",
-      subtitle: "การเรียนรู้เชิงปฏิบัติการ",
-      footer: "โรงเรียนตัวอย่างที่ 3"
+      title: "โครงการส่งเสริมการเรียนรู้หุ่นยนต์และการเขียนโปรแกรม สำหรับเยาวชนในงาน Play Fun Fest",
+      subtitle: "ความร่วมมือระหว่าง Borot และ บพค. (PMU-B) ในการจัดกิจกรรมเวิร์กชอปเขียนโปรแกรมหุ่นยนต์สำหรับเยาวชน ภายในงาน Play Fun Fest เนื่องในโอกาสวันเด็กแห่งชาติ เพื่อส่งเสริมการเรียนรู้ด้านเทคโนโลยีและวิทยาการหุ่นยนต์",
+      footer: "จัดโดย Borot Co., Ltd. ร่วมกับ บพค. (PMU-B)"
     },
     {
       id: 4,
-      logos: ["/images/show_case/showcase-logo-4.png"],
+      logos: ["/images/show_case/showcase-logo-4.png",
+        "/images/show_case/showcase-logo-4-1.png",
+        "/images/show_case/showcase-logo-4-2.png",
+        "/images/show_case/showcase-logo-4-3.png"
+      ],
       images: [
         "/images/show_case/showcase-4-1.png",
         "/images/show_case/showcase-4-2.png",
         "/images/show_case/showcase-4-3.png"
       ],
-      title: "โครงการ STEM Education",
-      subtitle: "พัฒนานวัตกรรมด้านวิศวกรรม",
-      footer: "โรงเรียนตัวอย่างที่ 4"
+      title: "โครงการเวิร์กชอปสร้างสรรค์นวัตกรรมหุ่นยนต์และงานออกแบบ 3 มิติ",
+      subtitle: "ความร่วมมือระหว่าง Borot, มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี (KMUTT) และสถาบันวิทยาการหุ่นยนต์ภาคสนาม (FIBO) จัดกิจกรรมเวิร์กชอปให้เยาวชนได้เรียนรู้พื้นฐานการออกแบบงาน 3 มิติ และการต่อวงจรไฟฟ้าผ่านกิจกรรมลงมือทำจริง ณ CX Smart Play",
+      footer: "จัดโดย Borot Co., Ltd. ร่วมกับ KMUTT, FIBO และ KX Smart Play"
     },
     {
       id: 5,
-      logos: [
-        "/images/show_case/showcase-logo-5.png",
-        "/images/show_case/showcase-logo-5-2.png"
+      logos: ["/images/show_case/showcase-logo-4.png",
+        "/images/show_case/showcase-logo-4-1.png",
+        "/images/show_case/showcase-logo-4-2.png",
+        "/images/show_case/showcase-logo-4-3.png"
       ],
       images: [
         "/images/show_case/showcase-5-1.png",
-        "/images/show_case/showcase-5-2.png"
+        "/images/show_case/showcase-5-2.png",
+        "/images/show_case/showcase-5-3.png"
       ],
-      title: "ค่ายปัญญาประดิษฐ์เยาวชน",
-      subtitle: "เรียนรู้ AI และ Machine Learning",
-      footer: "โรงเรียนตัวอย่างที่ 5"
+        title: "โครงการเวิร์กชอปสร้างหุ่นยนต์และต่อวงจรไฟฟ้า",
+        subtitle: "ความร่วมมือระหว่าง Borot, มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี (KMUTT) และสถาบันวิทยาการหุ่นยนต์ภาคสนาม (FIBO) จัดกิจกรรมเวิร์กชอปเชิงปฏิบัติการให้นักเรียนได้เรียนรู้พื้นฐานการเขียนโปรแกรมสั่งการหุ่นยนต์ การต่อวงจรไฟฟ้า และการสร้างชิ้นงาน 3 มิติ ณ CX Smart Play",
+        footer: "จัดโดย Borot Co., Ltd. ร่วมกับ KMUTT, FIBO และ KX Smart Play"
     },
     {
       id: 6,
-      logos: ["/images/show_case/showcase-logo-6.png"],
+      logos: ["/images/show_case/showcase-logo-6.png",
+        "/images/show_case/showcase-logo-4-1.png",
+        "/images/show_case/showcase-logo-4-2.png",
+        "/images/show_case/showcase-logo-4.png"
+      ],
       images: [
         "/images/show_case/showcase-6-1.png",
-        "/images/show_case/showcase-6-2.png",
-        "/images/show_case/showcase-6-3.png"
+        "/images/show_case/showcase-6-2.png"
       ],
-      title: "โครงการ IoT for Students",
-      subtitle: "Internet of Things เบื้องต้น",
-      footer: "โรงเรียนตัวอย่างที่ 6"
+      title: "โครงการเวิร์กชอปเขียนโปรแกรม Micro:bit สำหรับเยาวชน",
+      subtitle: "ความร่วมมือระหว่าง Borot, มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี (KMUTT) และสถาบันวิทยาการหุ่นยนต์ภาคสนาม (FIBO) จัดกิจกรรมเวิร์กชอปสอนเขียนโปรแกรมเบื้องต้นด้วย Micro:bit ในรูปแบบ Block-based Coding สำหรับเด็กและเยาวชน ณ ศูนย์สิริกิติ์ ภายในงาน Thailand SciFair",
+      footer: "จัดโดย Borot Co., Ltd. ร่วมกับ KMUTT, FIBO และ Thailand SciFair"
     },
     {
       id: 7,
-      logos: ["/images/show_case/showcase-logo-7.png"],
+      logos: ["/images/show_case/showcase-logo-7.png",
+        "/images/show_case/showcase-logo-4-1.png",
+        "/images/show_case/showcase-logo-4-2.png",
+        "/images/show_case/showcase-logo-4.png"
+      ],
       images: [
         "/images/show_case/showcase-7-1.png",
-        "/images/show_case/showcase-7-2.png"
+        "/images/show_case/showcase-7-2.png",
+        "/images/show_case/showcase-7-3.png"
       ],
-      title: "ค่ายวิศวกรรมหุ่นยนต์ขั้นสูง",
-      subtitle: "พัฒนาทักษะการแก้ปัญหา",
-      footer: "โรงเรียนตัวอย่างที่ 7"
+      title: "โครงการสาธิตเทคโนโลยีหุ่นยนต์ในงานครบรอบ 25 ปี FIBO",
+      subtitle: "ความร่วมมือระหว่าง Borot และคณะวิศวกรรมหุ่นยนต์และระบบอัตโนมัติ มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี (KMUTT) ในการจัดแสดงและสาธิตเทคโนโลยีหุ่นยนต์อุตสาหกรรมแขนกล เพื่อเฉลิมฉลองครบรอบ 25 ปีของสถาบันวิทยาการหุ่นยนต์ภาคสนาม (FIBO)",
+      footer: "จัดโดย Borot Co., Ltd. ร่วมกับ FIBO และคณะวิศวกรรมหุ่นยนต์และระบบอัตโนมัติ มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี"
     }
   ]
 
