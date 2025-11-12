@@ -4,166 +4,209 @@ import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Check, Info, Sparkles } from "lucide-react"
+import { Info } from "lucide-react"
 
 export default function PricingPage() {
   const modules = [
     {
+      number: "0",
+      title: "Intelligent Systems Engineering",
+      schoolPrice: "1,500",
+      schoolSessions: "เรียนทั้งหมด 1 ครั้ง (6 ชั่วโมง)",
+      schoolRate: "เฉลี่ย 250 บาท/ชั่วโมง",
+      personalPrice: "1,500",
+      personalSessions: "เรียนทั้งหมด 1 ครั้ง (ครั้งละ 3 ชั่วโมง)",
+      personalRate: "เฉลี่ย 250 บาท/ชั่วโมง",
+    },
+    {
       number: "1",
-      title: "Explore & Build Basics",
-      price: "18,000",
-      sessions: "5 Sessions",
+      title: "Electronics, Embedded & Control",
+      schoolPrice: "6,000",
+      schoolSessions: "เรียนทั้งหมด 4 ครั้ง (ครั้งละ 6 ชั่วโมง)",
+      schoolRate: "เฉลี่ย 250 บาท/ชั่วโมง",
+      personalPrice: "14,400",
+      personalSessions: "เรียนทั้งหมด 8 ครั้ง (ครั้งละ 3 ชั่วโมง)",
+      personalRate: "เฉลี่ย 600 บาท/ชั่วโมง",
     },
     {
       number: "2",
-      title: "Control & Navigation",
-      price: "20,000",
-      sessions: "5 Sessions",
+      title: "IoT + Data + Python Programming",
+      schoolPrice: "6,600",
+      schoolSessions: "เรียนทั้งหมด 4 ครั้ง (ครั้งละ 6 ชั่วโมง)",
+      schoolRate: "เฉลี่ย 278 บาท/ชั่วโมง",
+      personalPrice: "16,560",
+      personalSessions: "เรียนทั้งหมด 8 ครั้ง (ครั้งละ 3 ชั่วโมง)",
+      personalRate: "เฉลี่ย 690 บาท/ชั่วโมง",
     },
     {
       number: "3",
-      title: "Perception & AI",
-      price: "22,000",
-      sessions: "5 Sessions",
+      title: "AI (Vision/ML for Bio-inspired Tasks + Robotic Arm I/O)",
+      schoolPrice: "7,260",
+      schoolSessions: "เรียนทั้งหมด 4 ครั้ง (ครั้งละ 6 ชั่วโมง)",
+      schoolRate: "เฉลี่ย 303 บาท/ชั่วโมง",
+      personalPrice: "19,044",
+      personalSessions: "เรียนทั้งหมด 8 ครั้ง (ครั้งละ 3 ชั่วโมง)",
+      personalRate: "เฉลี่ย 794 บาท/ชั่วโมง",
     },
     {
       number: "4",
-      title: "Integration Project",
-      price: "24,000",
-      sessions: "5 Sessions",
+      title: "Robot car+Robotic arm",
+      schoolPrice: "7,986",
+      schoolSessions: "เรียนทั้งหมด 4 ครั้ง (ครั้งละ 6 ชั่วโมง)",
+      schoolRate: "เฉลี่ย 333 บาท/ชั่วโมง",
+      personalPrice: "21,901",
+      personalSessions: "เรียนทั้งหมด 8 ครั้ง (ครั้งละ 3 ชั่วโมง)",
+      personalRate: "เฉลี่ย 913 บาท/ชั่วโมง",
     },
-  ]
-
-  const features = [
-    "7 ชั่วโมง/วัน (9:00-16:00)",
-    "รวมค่าสอบและค่าธรรมเนียม",
-    "Premium Instructor",
-    "ใบประกาศนียบัตร",
+    {
+      number: "5",
+      title: "Integration + Portfolio (Project-Based)",
+      schoolPrice: "8,785",
+      schoolSessions: "เรียนทั้งหมด 4 ครั้ง (ครั้งละ 6 ชั่วโมง)",
+      schoolRate: "เฉลี่ย 366 บาท/ชั่วโมง",
+      personalPrice: "25,186",
+      personalSessions: "เรียนทั้งหมด 8 ครั้ง (ครั้งละ 3 ชั่วโมง)",
+      personalRate: "เฉลี่ย 1049 บาท/ชั่วโมง",
+    },
   ]
 
   return (
     <>
       <Navbar />
       <main className="min-h-screen bg-background pt-16">
-        {/* Hero Section */}
-        <div className="container mx-auto px-6 py-16 max-w-6xl">
+        <div className="container mx-auto px-6 py-16 max-w-7xl">
           <div className="text-center mb-16">
             <h1 className="text-5xl md:text-6xl font-bold mb-4 tracking-tight">
               Course Pricing
             </h1>
             <p className="text-xl text-muted-foreground">
-              Individual Premium Track
+              Engineering Learning Program
             </p>
           </div>
 
-          {/* Pricing Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          {/* Package Headers */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div className="md:col-span-1" />
+            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-2 border-orange-200 dark:border-orange-800">
+              <CardHeader className="py-8 text-center">
+                <CardTitle className="text-2xl font-bold mb-2">
+                  School Package
+                </CardTitle>
+                <p className="text-sm text-muted-foreground font-medium">
+                  (จำกัดนักเรียนต่อ class 36 คน)
+                </p>
+              </CardHeader>
+            </Card>
+            <Card className="bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900 dark:to-orange-800 border-2 border-orange-300 dark:border-orange-700">
+              <CardHeader className="py-8 text-center">
+                <CardTitle className="text-2xl font-bold">
+                  Personal Package
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          </div>
+
+          {/* Module Rows */}
+          <div className="space-y-5 mb-16">
             {modules.map((module) => (
-              <Card
+              <div
                 key={module.number}
-                className="border hover:border-foreground/20 transition-all duration-300 bg-card"
+                className="grid grid-cols-1 md:grid-cols-3 gap-6"
               >
-                <CardHeader className="pb-4">
-                  <div className="text-sm text-muted-foreground mb-2">
-                    Module {module.number}
-                  </div>
-                  <CardTitle className="text-lg font-semibold mb-4">
-                    {module.title}
-                  </CardTitle>
-                  <div className="space-y-1">
-                    <div className="text-4xl font-bold">
-                      ฿{module.price}
+                {/* Module Name */}
+                <Card className="bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 border-0 shadow-lg hover:shadow-xl transition-shadow">
+                  <CardContent className="p-8 flex items-center justify-center text-center min-h-[140px]">
+                    <div className="space-y-3">
+                      <Badge variant="secondary" className="bg-white/20 text-white border-0 text-xs font-semibold px-3 py-1">
+                        Module {module.number}
+                      </Badge>
+                      <div className="text-lg font-bold text-white leading-tight">
+                        {module.title}
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {module.sessions}
+                  </CardContent>
+                </Card>
+
+                {/* School Package Price */}
+                <Card className="bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-950 dark:to-pink-900 border border-pink-200 dark:border-pink-800 hover:shadow-md transition-shadow">
+                  <CardContent className="p-8 min-h-[140px] flex items-center justify-center">
+                    <div className="text-center space-y-2">
+                      <div className="text-4xl font-bold tracking-tight">
+                        {module.schoolPrice}
+                      </div>
+                      <div className="text-sm text-muted-foreground font-medium leading-snug">
+                        {module.schoolSessions}
+                      </div>
+                      <div className="text-xs text-muted-foreground/80 pt-1">
+                        {module.schoolRate}
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-              </Card>
+                  </CardContent>
+                </Card>
+
+                {/* Personal Package Price */}
+                <Card className="bg-gradient-to-br from-pink-100 to-pink-200 dark:from-pink-900 dark:to-pink-800 border border-pink-300 dark:border-pink-700 hover:shadow-md transition-shadow">
+                  <CardContent className="p-8 min-h-[140px] flex items-center justify-center">
+                    <div className="text-center space-y-2">
+                      <div className="text-4xl font-bold tracking-tight">
+                        {module.personalPrice}
+                      </div>
+                      <div className="text-sm text-muted-foreground font-medium leading-snug">
+                        {module.personalSessions}
+                      </div>
+                      <div className="text-xs text-muted-foreground/80 pt-1">
+                        {module.personalRate}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             ))}
           </div>
 
-          {/* Bundle Offer */}
-          <Card className="border-2 border-foreground mb-16 overflow-hidden">
-            <CardContent className="p-8 md:p-12">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="flex-1 text-center md:text-left">
-                  <Badge variant="secondary" className="mb-4">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    Bundle Discount
-                  </Badge>
-                  <h2 className="text-3xl md:text-4xl font-bold mb-2">
-                    Complete 4 Modules
-                  </h2>
-                  <p className="text-muted-foreground">
-                    Save 15% when you purchase all modules together
-                  </p>
+          {/* Total Package Pricing */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            <div className="md:col-span-1" />
+            <Card className="border-2 border-orange-400 dark:border-orange-600 shadow-lg hover:shadow-xl transition-all">
+              <CardContent className="p-10 text-center">
+                <Badge className="mb-4 bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 text-sm font-semibold">
+                  Complete Package
+                </Badge>
+                <div className="text-5xl font-bold mb-3 tracking-tight">
+                  ฿36,631
                 </div>
-                <div className="text-center">
-                  <div className="text-sm text-muted-foreground mb-2 line-through">
-                    ฿84,000
-                  </div>
-                  <div className="text-5xl md:text-6xl font-bold mb-2">
-                    ฿71,400
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Save ฿12,600
-                  </div>
+                <p className="text-base text-muted-foreground font-medium">
+                  ทั้งหมด 6 Modules
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="border-2 border-orange-500 dark:border-orange-500 shadow-lg hover:shadow-xl transition-all">
+              <CardContent className="p-10 text-center">
+                <Badge className="mb-4 bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 text-sm font-semibold">
+                  Complete Package
+                </Badge>
+                <div className="text-5xl font-bold mb-3 tracking-tight">
+                  ฿97,090
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Features Grid */}
-          <div className="grid md:grid-cols-2 gap-8 mb-16">
-            <div>
-              <h3 className="text-2xl font-bold mb-6">What's Included</h3>
-              <div className="space-y-4">
-                {features.map((feature, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <Check className="w-5 h-5 mt-0.5 text-foreground" />
-                    <span className="text-muted-foreground">{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-2xl font-bold mb-6">Premium Benefits</h3>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 mt-0.5 text-foreground" />
-                  <span className="text-muted-foreground">
-                    Feedback รายบุคคล
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 mt-0.5 text-foreground" />
-                  <span className="text-muted-foreground">
-                    สิทธิ์สอบโควต้า มจธ (วิทยาเขตราชบุรี).
-                  </span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 mt-0.5 text-foreground" />
-                  <span className="text-muted-foreground">
-                    Portfolio แข็งแกร่ง
-                  </span>
-                </div>
-              </div>
-            </div>
+                <p className="text-base text-muted-foreground font-medium">
+                  ทั้งหมด 6 Modules
+                </p>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Payment Info */}
-          <Card className="border bg-muted/50">
-            <CardContent className="p-8">
-              <div className="flex items-start gap-4">
-                <Info className="w-5 h-5 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <div className="space-y-2">
-                  <h4 className="font-semibold">Payment Options</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    สามารถแบ่งจ่าย 3 งวดได้ ชำระผ่านบัตรเครดิตหรือโอนธนาคาร
-                    สำหรับผู้ที่สอบผ่านครบ 4 Module จะได้รับสิทธิ์สอบโควต้าเข้า มจธ.ราชบุรี
-                    (จำกัด 8 ที่นั่ง/ปี)
+          <Card className="border-2 bg-gradient-to-br from-muted/30 to-muted/50">
+            <CardContent className="p-10">
+              <div className="flex items-start gap-5">
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <Info className="w-6 h-6 text-primary flex-shrink-0" />
+                </div>
+                <div className="space-y-3 flex-1">
+                  <h4 className="text-xl font-bold">Payment Options</h4>
+                  <p className="text-base text-muted-foreground leading-relaxed">
+                    สามารถแบ่งจ่ายได้ ชำระผ่านบัตรเครดิตหรือโอนธนาคาร
+                    สำหรับผู้ที่สอบผ่านครบทุก Module จะได้รับสิทธิ์สอบโควต้าเข้า มจธ.ราชบุรี
                   </p>
                 </div>
               </div>
@@ -171,10 +214,13 @@ export default function PricingPage() {
           </Card>
 
           {/* CTA */}
-          <div className="text-center mt-16">
-            <Button size="lg" className="text-lg px-8">
+          <div className="text-center mt-20">
+            <Button size="lg" className="text-lg px-12 py-6 shadow-lg hover:shadow-xl transition-all">
               Get Started
             </Button>
+            <p className="text-sm text-muted-foreground mt-4">
+              เริ่มต้นเส้นทางสู่การเป็นวิศวกรด้วยหลักสูตรที่ออกแบบมาเพื่อคุณ
+            </p>
           </div>
         </div>
       </main>
