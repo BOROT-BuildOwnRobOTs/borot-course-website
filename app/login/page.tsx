@@ -1,14 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Mail, Lock, GraduationCap } from "lucide-react"
+import { Mail, Lock, GraduationCap, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -16,11 +15,36 @@ export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Mockup login - just redirect to profile
-    router.push("/profile")
+    setLoading(true)
+    setError("")
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+      const json = await res.json()
+
+      if (!json.success) {
+        setError(json.error || "เข้าสู่ระบบไม่สำเร็จ")
+        return
+      }
+
+      // เก็บข้อมูล user ลง sessionStorage
+      sessionStorage.setItem("borot_user", JSON.stringify(json.user))
+      router.push("/profile")
+    } catch {
+      setError("เกิดข้อผิดพลาด กรุณาลองใหม่")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -54,6 +78,12 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3 text-center">
+                  {error}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
@@ -62,9 +92,9 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="student@example.com"
+                  placeholder="your@email.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setError("") }}
                   required
                   className="h-11"
                 />
@@ -75,46 +105,33 @@ export default function LoginPage() {
                   <Lock className="h-4 w-4 text-muted-foreground" />
                   รหัสผ่าน
                 </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="h-11"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError("") }}
+                    required
+                    className="h-11 pr-11"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="rounded border-border" />
-                  <span className="text-muted-foreground">จดจำฉันไว้</span>
-                </label>
-                <a href="#" className="text-primary hover:underline">
-                  ลืมรหัสผ่าน?
-                </a>
-              </div>
-
-              <Button type="submit" className="w-full h-11 text-base font-semibold">
-                เข้าสู่ระบบ
+              <Button
+                type="submit"
+                className="w-full h-11 text-base font-semibold"
+                disabled={loading}
+              >
+                {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
               </Button>
-
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border"></div>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">หรือ</span>
-                </div>
-              </div>
-
-              <div className="text-center text-sm text-muted-foreground">
-                ยังไม่มีบัญชี?{" "}
-                <a href="#" className="text-primary font-semibold hover:underline">
-                  สมัครสมาชิก
-                </a>
-              </div>
             </form>
           </CardContent>
         </Card>

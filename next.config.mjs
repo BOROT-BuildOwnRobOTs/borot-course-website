@@ -9,6 +9,12 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Allow large file uploads (200 MB)
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '200mb',
+    },
+  },
 }
 
 export default nextConfig
