@@ -55,9 +55,3 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Increase Next.js body size limit for this route
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
