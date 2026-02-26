@@ -211,6 +211,9 @@ export default function ProfilePage() {
   // Expanded enrollment stamps
   const [expandedEnrollment, setExpandedEnrollment] = useState<string | null>(null)
 
+  // Status filter for parent view
+  const [parentStatusFilter, setParentStatusFilter] = useState<"active" | "completed" | "all">("active")
+
   // Slot change dialog
   const [slotDialogOpen, setSlotDialogOpen] = useState(false)
   const [slotDialogStudent, setSlotDialogStudent] = useState<StudentData | null>(null)
@@ -550,6 +553,33 @@ export default function ProfilePage() {
               {loadingSessions && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             </div>
 
+            {/* ── Status Filter ─────────────────────────────────────────── */}
+            {user.students && user.students.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground font-medium shrink-0">แสดง:</span>
+                {(
+                  [
+                    { value: "active",    label: "🕐 กำลังเรียน", activeClass: "bg-blue-500 text-white border-blue-500" },
+                    { value: "completed", label: "✅ จบแล้ว",     activeClass: "bg-green-500 text-white border-green-500" },
+                    { value: "all",       label: "ทั้งหมด",        activeClass: "bg-gray-700 text-white border-gray-700" },
+                  ] as const
+                ).map(({ value, label, activeClass }) => (
+                  <button
+                    key={value}
+                    onClick={() => setParentStatusFilter(value)}
+                    className={[
+                      "rounded-full border px-4 py-1.5 text-sm font-medium transition-all",
+                      parentStatusFilter === value
+                        ? activeClass
+                        : "border-gray-200 text-muted-foreground hover:border-gray-400 hover:text-foreground",
+                    ].join(" ")}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {!user.students || user.students.length === 0 ? (
               <Card className="border-2 border-dashed">
                 <CardContent className="py-12 text-center text-muted-foreground">
@@ -560,9 +590,17 @@ export default function ProfilePage() {
               </Card>
             ) : (
               user.students.map((student) => {
-                const total = student.enrollments?.length ?? 0
-                const done = student.enrollments?.filter((e) => e.status === "completed").length ?? 0
+                const allEnrollsForStudent = student.enrollments ?? []
+                const filteredEnrollments = parentStatusFilter === "all"
+                  ? allEnrollsForStudent
+                  : allEnrollsForStudent.filter((e) => e.status === parentStatusFilter)
+
+                const total = allEnrollsForStudent.length
+                const done = allEnrollsForStudent.filter((e) => e.status === "completed").length
                 const progress = total > 0 ? Math.round((done / total) * 100) : 0
+
+                // Hide student card entirely if no enrollments match filter
+                if (filteredEnrollments.length === 0 && parentStatusFilter !== "all") return null
 
                 return (
                   <Card key={student._id} className="border-2 hover:shadow-md transition-shadow">
@@ -580,7 +618,7 @@ export default function ProfilePage() {
                             </p>
                           </div>
                         </div>
-                        <Badge variant="secondary">{total} คอร์ส</Badge>
+                        <Badge variant="secondary">{filteredEnrollments.length} คอร์ส</Badge>
                       </div>
                       {total > 0 && (
                         <div className="mt-3">
@@ -594,10 +632,12 @@ export default function ProfilePage() {
                     </CardHeader>
 
                     <CardContent className="space-y-4">
-                      {!student.enrollments || student.enrollments.length === 0 ? (
+                      {filteredEnrollments.length === 0 ? (
                         <p className="text-sm text-muted-foreground italic">ยังไม่ได้ลงทะเบียนคอร์ส</p>
                       ) : (
-                        student.enrollments.map((enroll, enrollIdx) => {
+                        filteredEnrollments.map((enroll, enrollIdx) => {
+                          // Get real index in original array for slot/reschedule dialog
+                          const realEnrollIdx = allEnrollsForStudent.indexOf(enroll)
                           const enrollKey = `${student._id}-${enrollIdx}`
                           const isExpanded = expandedEnrollment === enrollKey
                           const stamps = enroll.startDate && enroll.slot && (enroll.courseDurationWeeks || 0) > 0
@@ -634,7 +674,7 @@ export default function ProfilePage() {
                                       </span>
                                     )}
                                     <button
-                                      onClick={() => openSlotDialog(student, enrollIdx)}
+                                      onClick={() => openSlotDialog(student, realEnrollIdx)}
                                       className="text-xs text-blue-500 hover:text-blue-700 underline"
                                     >
                                       {enroll.slot ? "เปลี่ยน slot" : "เลือก slot"}
@@ -696,7 +736,7 @@ export default function ProfilePage() {
                                                   setFeedbackSessionInfo({ topic: session?.topic || "", date: actualDate.toLocaleDateString("th-TH") })
                                                   setFeedbackDialogOpen(true)
                                                 } else if (!isCheckedIn && (isFuture || isToday)) {
-                                                  openRescheduleDialog(student, enrollIdx, stampDate)
+                                                  openRescheduleDialog(student, realEnrollIdx, stampDate)
                                                 }
                                               }}
                                               disabled={!isClickable}

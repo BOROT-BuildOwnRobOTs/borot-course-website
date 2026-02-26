@@ -89,6 +89,7 @@ export default function ParentsTab() {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedParent, setExpandedParent] = useState<string | null>(null)
+  const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState<'active' | 'completed' | 'all'>('active')
 
   // Parent dialog
   const [parentDialogOpen, setParentDialogOpen] = useState(false)
@@ -403,6 +404,31 @@ export default function ParentsTab() {
                         </Button>
                       </div>
 
+                      {/* Enrollment Status Filter */}
+                      <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                        <span className="text-xs text-gray-500 shrink-0">คอร์ส:</span>
+                        {(
+                          [
+                            { value: 'active',    label: '🕐 กำลังเรียน', activeClass: 'bg-blue-500 text-white border-blue-500' },
+                            { value: 'completed', label: '✅ จบแล้ว',     activeClass: 'bg-green-500 text-white border-green-500' },
+                            { value: 'all',       label: 'ทั้งหมด',        activeClass: 'bg-gray-600 text-white border-gray-600' },
+                          ] as const
+                        ).map(({ value, label, activeClass }) => (
+                          <button
+                            key={value}
+                            onClick={() => setEnrollmentStatusFilter(value)}
+                            className={[
+                              'rounded-full border px-3 py-0.5 text-xs font-medium transition-all',
+                              enrollmentStatusFilter === value
+                                ? activeClass
+                                : 'border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700',
+                            ].join(' ')}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+
                       {children.length === 0 ? (
                         <p className="text-xs text-gray-400 italic py-2">ยังไม่มีนักเรียน</p>
                       ) : (
@@ -434,7 +460,11 @@ export default function ParentsTab() {
                               {/* Enrollments */}
                               {s.enrollments && s.enrollments.length > 0 && (
                                 <div className="mt-2 space-y-1.5">
-                                  {s.enrollments.map((e, idx) => (
+                                  {s.enrollments
+                                  .filter(e => enrollmentStatusFilter === 'all' || e.status === enrollmentStatusFilter)
+                                  .map((e) => {
+                                    const idx = s.enrollments.indexOf(e)
+                                    return (
                                     <div key={idx} className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5">
                                       {/* Course info */}
                                       <div className="flex-1 min-w-0">
@@ -483,7 +513,7 @@ export default function ParentsTab() {
                                         <X className="w-3 h-3" />
                                       </button>
                                     </div>
-                                  ))}
+                                  )})}
                                 </div>
                               )}
                             </div>

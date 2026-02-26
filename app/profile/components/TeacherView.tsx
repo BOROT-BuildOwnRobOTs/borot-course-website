@@ -47,6 +47,7 @@ export default function TeacherView({ user }: TeacherViewProps) {
   const [loadingStudents, setLoadingStudents] = useState(false)
   const [loadingSessions, setLoadingSessions] = useState(false)
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<"active" | "completed" | "all">("active")
 
   // Fetch students with enrollments for this teacher
   useEffect(() => {
@@ -121,19 +122,25 @@ export default function TeacherView({ user }: TeacherViewProps) {
   // ── Filter students by selected slot ──────────────────────────────────────
   const selectedSlot = selectedSlotId ? ALL_SLOTS.find((s) => s.id === selectedSlotId) : null
 
-  const filteredStudents = selectedSlot
-    ? teacherStudentsWithEnrollments
-        .map((student) => ({
-          ...student,
-          enrollments: student.enrollments.filter(
-            (e) =>
-              e.slot &&
-              e.slot.day === selectedSlot.day &&
-              e.slot.time === selectedSlot.time
-          ),
-        }))
-        .filter((s) => s.enrollments.length > 0)
-    : teacherStudentsWithEnrollments
+  const filteredStudents = teacherStudentsWithEnrollments
+    .map((student) => {
+      let enrollments = student.enrollments
+      // Filter by slot
+      if (selectedSlot) {
+        enrollments = enrollments.filter(
+          (e) =>
+            e.slot &&
+            e.slot.day === selectedSlot.day &&
+            e.slot.time === selectedSlot.time
+        )
+      }
+      // Filter by status
+      if (statusFilter !== "all") {
+        enrollments = enrollments.filter((e) => e.status === statusFilter)
+      }
+      return { ...student, enrollments }
+    })
+    .filter((s) => s.enrollments.length > 0)
 
   // ── Group slots by day for layout ─────────────────────────────────────────
   const saturdaySlots = ALL_SLOTS.filter((s) => s.day === "saturday")
@@ -155,6 +162,31 @@ export default function TeacherView({ user }: TeacherViewProps) {
             {teacherStudentsWithEnrollments.reduce((sum, s) => sum + s.enrollments.filter((e) => e.status === "active").length, 0)} คน
           </strong>
         </span>
+      </div>
+
+      {/* ── Status Filter ─────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground font-medium shrink-0">แสดง:</span>
+        {(
+          [
+            { value: "active",    label: "🕐 กำลังเรียน", activeClass: "bg-blue-500 text-white border-blue-500" },
+            { value: "completed", label: "✅ จบแล้ว",     activeClass: "bg-green-500 text-white border-green-500" },
+            { value: "all",       label: "ทั้งหมด",        activeClass: "bg-gray-700 text-white border-gray-700" },
+          ] as const
+        ).map(({ value, label, activeClass }) => (
+          <button
+            key={value}
+            onClick={() => setStatusFilter(value)}
+            className={[
+              "rounded-full border px-4 py-1.5 text-sm font-medium transition-all",
+              statusFilter === value
+                ? activeClass
+                : "border-gray-200 text-muted-foreground hover:border-gray-400 hover:text-foreground",
+            ].join(" ")}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* ── Slot Filter Panel (compact) ───────────────────────────────────────── */}
@@ -237,7 +269,15 @@ export default function TeacherView({ user }: TeacherViewProps) {
           <Card className="border-2 border-dashed">
             <CardContent className="py-12 text-center text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p>{selectedSlot ? "ไม่มีนักเรียนในคลาสนี้" : "ยังไม่มีนักเรียน"}</p>
+              <p>
+                {statusFilter === "active"
+                  ? "ไม่มีนักเรียนที่กำลังเรียนอยู่"
+                  : statusFilter === "completed"
+                  ? "ไม่มีนักเรียนที่เรียนจบแล้ว"
+                  : selectedSlot
+                  ? "ไม่มีนักเรียนในคลาสนี้"
+                  : "ยังไม่มีนักเรียน"}
+              </p>
             </CardContent>
           </Card>
         ) : (
