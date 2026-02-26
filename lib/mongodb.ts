@@ -30,10 +30,19 @@ async function connectDB() {
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
     })
   }
 
-  cached.conn = await cached.promise
+  try {
+    cached.conn = await cached.promise
+  } catch (e) {
+    // Reset promise so the next request can retry instead of re-throwing the cached rejection
+    cached.promise = null
+    throw e
+  }
+
   return cached.conn
 }
 
