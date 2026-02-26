@@ -14,6 +14,7 @@ import { SLOTS } from "@/lib/slots"
 
 interface TeacherViewProps {
   user: UserData
+  onSessionCountLoaded?: (count: number) => void
 }
 
 // All possible slot combos
@@ -41,7 +42,7 @@ const DAY_STYLES: Record<string, { card: string; activeCard: string; badge: stri
   },
 }
 
-export default function TeacherView({ user }: TeacherViewProps) {
+export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewProps) {
   const [students, setStudents] = useState<TeacherStudentData[]>([])
   const [sessions, setSessions] = useState<SessionData[]>([])
   const [loadingStudents, setLoadingStudents] = useState(false)
@@ -63,9 +64,40 @@ export default function TeacherView({ user }: TeacherViewProps) {
     setLoadingSessions(true)
     fetch(`/api/teacher/sessions?teacherId=${user._id}`)
       .then((r) => r.json())
-      .then((j) => { if (j.success) setSessions(j.data) })
+      .then((j) => {
+        if (j.success) setSessions(j.data)
+      })
       .finally(() => setLoadingSessions(false))
-  }, [user._id])
+  }, [user._id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Compute tier score: sum of courseDurationWeeks for all COMPLETED enrollments
+  // of students this teacher has taught (each week = 1 session = 1 point)
+  useEffect(() => {
+    if (loadingStudents || loadingSessions) return
+
+    const teacherCourseIdsSet = new Set(sessions.map((s) => String(s.course)))
+    const sessionStudentIdsSet = new Set(
+      sessions.flatMap((s) => s.attendance.map((a) => String(a.student)))
+    )
+
+    const completedSessionCount = students
+      .filter((student) => {
+        const hasMatchingEnrollment = student.enrollments.some(
+          (e) => String(e.teacher) === String(user._id) || teacherCourseIdsSet.has(String(e.course))
+        )
+        return hasMatchingEnrollment || sessionStudentIdsSet.has(String(student._id))
+      })
+      .flatMap((student) => {
+        const matching = student.enrollments.filter(
+          (e) => String(e.teacher) === String(user._id) || teacherCourseIdsSet.has(String(e.course))
+        )
+        return matching.length > 0 ? matching : student.enrollments
+      })
+      .filter((e) => e.status === "completed")
+      .reduce((sum, e) => sum + (e.courseDurationWeeks ?? 0), 0)
+
+    onSessionCountLoaded?.(completedSessionCount)
+  }, [students, sessions, loadingStudents, loadingSessions, user._id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSessionsUpdate = (updater: (prev: SessionData[]) => SessionData[]) => {
     setSessions(updater)
@@ -112,6 +144,7 @@ export default function TeacherView({ user }: TeacherViewProps) {
   for (const student of teacherStudentsWithEnrollments) {
     for (const enrollment of student.enrollments) {
       if (!enrollment.slot) continue
+      if (enrollment.status !== "active") continue   // นับเฉพาะกำลังเรียน
       const match = ALL_SLOTS.find(
         (s) => s.day === enrollment.slot!.day && s.time === enrollment.slot!.time
       )
@@ -133,10 +166,13 @@ export default function TeacherView({ user }: TeacherViewProps) {
             e.slot.day === selectedSlot.day &&
             e.slot.time === selectedSlot.time
         )
-      }
-      // Filter by status
-      if (statusFilter !== "all") {
-        enrollments = enrollments.filter((e) => e.status === statusFilter)
+        // เมื่อดูตามคลาส → แสดงเฉพาะที่กำลังเรียน (active) เท่านั้น
+        enrollments = enrollments.filter((e) => e.status === "active")
+      } else {
+        // Filter by status (ใช้เมื่อไม่ได้เลือก slot)
+        if (statusFilter !== "all") {
+          enrollments = enrollments.filter((e) => e.status === statusFilter)
+        }
       }
       return { ...student, enrollments }
     })

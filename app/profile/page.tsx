@@ -19,6 +19,7 @@ import {
 import Link from "next/link"
 import { SLOTS, MAX_PER_SLOT, getNextSlotDateStr, generateStampDates, isSameDay } from "@/lib/slots"
 import TeacherView from "./components/TeacherView"
+import { getTierInfo, TEACHER_TIERS } from "./components/TeacherTierBadge"
 
 // ── Video compression helper ──────────────────────────────────────────────────
 async function compressVideoFile(
@@ -203,6 +204,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const [user, setUser] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [tierSessionCount, setTierSessionCount] = useState(0)
 
   // Sessions for parent view
   const [sessions, setSessions] = useState<SessionData[]>([])
@@ -463,10 +465,53 @@ export default function ProfilePage() {
         <div className="mb-10">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-6">
             <div className="flex items-start gap-5">
-              {/* Avatar */}
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white text-3xl font-bold shadow-lg shrink-0">
-                {user.name.charAt(0)}
-              </div>
+              {/* Avatar — teacher gets tier ring, others get plain circle */}
+              {user.role === "teacher" ? (() => {
+                const { tier: tInfo, percent: tPct } = getTierInfo(tierSessionCount)
+                const ringColors = ["#94a3b8", "#6366f1", "#8b5cf6", "#f59e0b"]
+                const ringColor = ringColors[tInfo.id - 1]
+                const circ = 2 * Math.PI * 42
+                return (
+                  <div className="relative shrink-0 flex flex-col items-center gap-1.5">
+                    <div className="relative" style={{ width: 92, height: 92 }}>
+                      {/* Circular progress ring */}
+                      <svg width="92" height="92" viewBox="0 0 92 92"
+                        className="absolute inset-0"
+                        style={{ transform: "rotate(-90deg)" }}
+                      >
+                        {/* Track */}
+                        <circle cx="46" cy="46" r="42" fill="none" stroke="#e2e8f0" strokeWidth="4.5" />
+                        {/* Progress */}
+                        <circle
+                          cx="46" cy="46" r="42"
+                          fill="none"
+                          stroke={ringColor}
+                          strokeWidth="4.5"
+                          strokeLinecap="round"
+                          strokeDasharray={`${circ}`}
+                          strokeDashoffset={`${circ * (1 - tPct / 100)}`}
+                          style={{ transition: "stroke-dashoffset 0.8s ease" }}
+                        />
+                      </svg>
+                      {/* Avatar inside ring */}
+                      <div className="absolute inset-[7px] rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                        {user.name.charAt(0)}
+                      </div>
+                    </div>
+                    {/* Tier label pill below avatar */}
+                    <span
+                      className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border"
+                      style={{ color: ringColor, borderColor: ringColor + "50", backgroundColor: ringColor + "18" }}
+                    >
+                      {tInfo.label}
+                    </span>
+                  </div>
+                )
+              })() : (
+                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white text-3xl font-bold shadow-lg shrink-0">
+                  {user.name.charAt(0)}
+                </div>
+              )}
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h1 className="text-3xl font-bold">{user.name}</h1>
@@ -540,7 +585,9 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Teacher view ───────────────────────────────────────────────── */}
-        {user.role === "teacher" && <TeacherView user={user} />}
+        {user.role === "teacher" && (
+          <TeacherView user={user} onSessionCountLoaded={setTierSessionCount} />
+        )}
 
         {/* ── Parent view ────────────────────────────────────────────────── */}
         {user.role === "parent" && (
