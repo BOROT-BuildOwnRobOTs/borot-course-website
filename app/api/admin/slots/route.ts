@@ -5,7 +5,7 @@ import { SLOTS, MAX_PER_SLOT } from '@/lib/slots'
 
 // GET /api/admin/slots
 // Returns seat count per slot across ALL courses (shared classroom capacity)
-// Optional ?courseId=xxx is accepted but ignored — slots are a global shared resource
+// Also returns list of students (nickname, name, courseName) per slot for display
 export async function GET(req: NextRequest) {
   try {
     await connectDB()
@@ -23,7 +23,13 @@ export async function GET(req: NextRequest) {
     // Use a Set per slot to avoid double-counting a student who has
     // multiple enrollments in the same time slot (e.g. 2 courses)
     const slotStudentSets: Record<string, Set<string>> = {}
-    SLOTS.forEach((s) => { slotStudentSets[`${s.day}|${s.time}`] = new Set() })
+    // Also track each (student, course) enrollment per slot for display
+    const slotStudentList: Record<string, { id: string; name: string; nickname: string; courseName: string; courseLevel: string }[]> = {}
+
+    SLOTS.forEach((s) => {
+      slotStudentSets[`${s.day}|${s.time}`] = new Set()
+      slotStudentList[`${s.day}|${s.time}`] = []
+    })
 
     for (const student of students as any[]) {
       const studentId = (student._id as any).toString()
@@ -33,12 +39,20 @@ export async function GET(req: NextRequest) {
         const key = `${enrollment.slot.day}|${enrollment.slot.time}`
         if (slotStudentSets[key] !== undefined) {
           slotStudentSets[key].add(studentId)
+          slotStudentList[key].push({
+            id: studentId,
+            name: student.name || '',
+            nickname: student.nickname || '',
+            courseName: enrollment.courseName || '',
+            courseLevel: enrollment.courseLevel || '',
+          })
         }
       }
     }
 
     const result = SLOTS.map((s) => {
-      const count = slotStudentSets[`${s.day}|${s.time}`]?.size ?? 0
+      const key = `${s.day}|${s.time}`
+      const count = slotStudentSets[key]?.size ?? 0
       return {
         id: s.id,
         day: s.day,
@@ -47,6 +61,7 @@ export async function GET(req: NextRequest) {
         count,
         max: MAX_PER_SLOT,
         available: count < MAX_PER_SLOT,
+        students: slotStudentList[key] || [],
       }
     })
 

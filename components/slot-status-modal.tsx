@@ -1,7 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { X, Users, Clock, Calendar, RefreshCw, Loader2 } from "lucide-react"
+import { X, Users, Clock, Calendar, RefreshCw, Loader2, ChevronDown, ChevronUp, BookOpen } from "lucide-react"
+
+interface StudentEntry {
+  id: string
+  name: string
+  nickname: string
+  courseName: string
+  courseLevel: string
+}
 
 interface SlotData {
   id: string
@@ -11,6 +19,7 @@ interface SlotData {
   count: number
   max: number
   available: boolean
+  students: StudentEntry[]
 }
 
 interface SlotStatusModalProps {
@@ -18,11 +27,23 @@ interface SlotStatusModalProps {
   onClose: () => void
 }
 
+/** Truncate course name to maxLen characters */
+function truncateCourse(name: string, maxLen = 22): string {
+  if (!name) return "—"
+  return name.length > maxLen ? name.slice(0, maxLen) + "…" : name
+}
+
+/** Display label for a student: prefer nickname, fallback to first name */
+function getDisplayName(entry: StudentEntry): string {
+  return entry.nickname ? entry.nickname : entry.name.split(" ")[0]
+}
+
 export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const [slots, setSlots] = useState<SlotData[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set())
 
   const fetchSlots = async () => {
     setLoading(true)
@@ -44,7 +65,10 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   }
 
   useEffect(() => {
-    if (isOpen) fetchSlots()
+    if (isOpen) {
+      fetchSlots()
+      setExpandedSlots(new Set())
+    }
   }, [isOpen])
 
   if (!isOpen) return null
@@ -54,6 +78,15 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
 
   const totalStudents = slots.reduce((sum, s) => sum + s.count, 0)
   const totalCapacity = slots.reduce((sum, s) => sum + s.max, 0)
+
+  const toggleSlot = (slotId: string) => {
+    setExpandedSlots((prev) => {
+      const next = new Set(prev)
+      if (next.has(slotId)) next.delete(slotId)
+      else next.add(slotId)
+      return next
+    })
+  }
 
   const getStatusColor = (count: number, max: number) => {
     const ratio = count / max
@@ -65,35 +98,88 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const SlotCard = ({ slot }: { slot: SlotData }) => {
     const status = getStatusColor(slot.count, slot.max)
     const pct = Math.min((slot.count / slot.max) * 100, 100)
+    const isExpanded = expandedSlots.has(slot.id)
+    const hasStudents = slot.students && slot.students.length > 0
 
     return (
-      <div className={`rounded-xl p-4 border border-gray-100 ${status.bg} transition-all`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-gray-500" />
-            <span className="font-semibold text-gray-800 text-sm">{slot.time} น.</span>
+      <div className={`rounded-xl border border-gray-100 ${status.bg} transition-all overflow-hidden`}>
+        {/* Main slot info */}
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-gray-500" />
+              <span className="font-semibold text-gray-800 text-sm">{slot.time} น.</span>
+            </div>
+            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${status.badgeBg}`}>
+              {status.badge}
+            </span>
           </div>
-          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${status.badgeBg}`}>
-            {status.badge}
-          </span>
+
+          {/* Progress Bar */}
+          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2 overflow-hidden">
+            <div
+              className={`h-2.5 rounded-full transition-all duration-700 ease-out ${status.bar}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-gray-400" />
+              <span className={`text-sm font-bold ${status.text}`}>{slot.count}</span>
+              <span className="text-xs text-gray-400">/ {slot.max} คน</span>
+            </div>
+            <span className="text-xs text-gray-400">ที่ว่าง {slot.max - slot.count} ที่</span>
+          </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2 overflow-hidden">
-          <div
-            className={`h-2.5 rounded-full transition-all duration-700 ease-out ${status.bar}`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
+        {/* Toggle button — only show if there are students */}
+        {hasStudents && (
+          <button
+            onClick={() => toggleSlot(slot.id)}
+            className={`w-full flex items-center justify-between px-4 py-2 text-xs font-medium transition-colors border-t border-gray-200/60
+              ${isExpanded ? "bg-white/70 text-gray-600" : "bg-white/40 text-gray-500 hover:bg-white/60"}`}
+          >
+            <span className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" />
+              ดูรายชื่อนักเรียน ({slot.students.length} รายการ)
+            </span>
+            {isExpanded ? (
+              <ChevronUp className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5" />
+            )}
+          </button>
+        )}
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <Users className="w-4 h-4 text-gray-400" />
-            <span className={`text-sm font-bold ${status.text}`}>{slot.count}</span>
-            <span className="text-xs text-gray-400">/ {slot.max} คน</span>
+        {/* Expanded student list */}
+        {isExpanded && hasStudents && (
+          <div className="bg-white/80 border-t border-gray-100 divide-y divide-gray-100/80">
+            {slot.students.map((student, idx) => (
+              <div key={`${student.id}-${idx}`} className="flex items-center gap-2 px-4 py-2">
+                {/* Nickname badge (bordered tag) */}
+                <span className="text-xs font-semibold text-orange-600 border border-orange-300 bg-orange-50 rounded-md px-2 py-0.5 shrink-0 max-w-[96px] truncate" title={`น้อง${getDisplayName(student)}`}>
+                  น้อง{getDisplayName(student)}
+                </span>
+                {/* Course name pill */}
+                <span
+                  className="flex items-center gap-1 text-[10px] text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-2 py-0.5 min-w-0 truncate"
+                  title={student.courseName}
+                >
+                  <BookOpen className="w-2.5 h-2.5 shrink-0" />
+                  <span className="truncate">{truncateCourse(student.courseName)}</span>
+                </span>
+                {/* Level badge — always show, fallback to "—" */}
+                <span
+                  className="text-[10px] font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-full px-2 py-0.5 shrink-0 max-w-[110px] truncate"
+                  title={student.courseLevel || "ไม่ระบุ Level"}
+                >
+                  {student.courseLevel || "ไม่ระบุ Level"}
+                </span>
+              </div>
+            ))}
           </div>
-          <span className="text-xs text-gray-400">ที่ว่าง {slot.max - slot.count} ที่</span>
-        </div>
+        )}
       </div>
     )
   }
