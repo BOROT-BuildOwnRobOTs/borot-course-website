@@ -31,6 +31,7 @@ export interface AttendanceEntry {
   rating?: number
   videoUrl?: string
   imageUrls?: string[]
+  skillScores?: Record<string, number>
 }
 
 export interface SessionData {

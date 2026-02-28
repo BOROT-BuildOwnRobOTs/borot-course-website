@@ -7,7 +7,7 @@ import Session from '@/models/Session'
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     await connectDB()
-    const { studentId, feedback, rating, videoUrl, imageUrls } = await req.json()
+    const { studentId, feedback, rating, videoUrl, imageUrls, skillScores } = await req.json()
 
     if (!studentId) {
       return NextResponse.json({ success: false, error: 'studentId is required' }, { status: 400 })
@@ -28,6 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (rating !== undefined) attendanceEntry.rating = rating
     if (videoUrl !== undefined) attendanceEntry.videoUrl = videoUrl
     if (imageUrls !== undefined) attendanceEntry.imageUrls = imageUrls
+    if (skillScores !== undefined) attendanceEntry.skillScores = skillScores
 
     await session.save()
     return NextResponse.json({ success: true, data: session })

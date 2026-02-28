@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Star, MessageSquare, Loader2, Upload, ImageIcon, X, FileVideo, Trash2,
-  UserCheck, UserX,
+  UserCheck, UserX, TrendingUp, ChevronDown,
 } from "lucide-react"
 import type { AttendanceEntry, SessionData } from "../types"
 
@@ -19,6 +19,22 @@ async function uploadFile(file: File): Promise<string> {
   if (!j.success) throw new Error(j.error || "Upload failed")
   return j.url
 }
+
+// ── Learning Progress Skills ───────────────────────────────────────────────
+const SKILLS = [
+  { key: "Logical Thinking",  emoji: "🧠", label: "Logical Thinking" },
+  { key: "Creativity",        emoji: "💡", label: "Creativity" },
+  { key: "Engineering Skill", emoji: "🔧", label: "Engineering Skill" },
+  { key: "Teamwork",          emoji: "🤝", label: "Teamwork" },
+  { key: "Problem Solving",   emoji: "🧩", label: "Problem Solving" },
+  { key: "Persistence",       emoji: "🔥", label: "Persistence" },
+]
+
+const SKILL_LEVELS = [
+  { level: 1, label: "ต้องพัฒนา", active: "bg-orange-100 text-orange-600 border-orange-300" },
+  { level: 2, label: "ดี",         active: "bg-blue-100 text-blue-600 border-blue-300"   },
+  { level: 3, label: "ดีมาก",      active: "bg-green-100 text-green-600 border-green-300" },
+]
 
 interface TeacherStampDialogProps {
   open: boolean
@@ -34,7 +50,7 @@ interface TeacherStampDialogProps {
   studentName: string
   onCheckinToggle: (sessionId: string, studentId: string, checkedIn: boolean) => Promise<void>
   onCheckinRetroactive: (courseId: string, courseName: string, studentId: string, scheduledAt: string, checkedIn: boolean) => Promise<SessionData | null>
-  onFeedbackSaved: (sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[]) => Promise<void>
+  onFeedbackSaved: (sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[], skillScores: Record<string, number>) => Promise<void>
 }
 
 export default function TeacherStampDialog({
@@ -65,7 +81,12 @@ export default function TeacherStampDialog({
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
 
+  // Learning Progress
+  const [showSkillSection, setShowSkillSection] = useState(false)
+  const [skillScores, setSkillScores] = useState<Record<string, number>>({})
+
   const isCheckedIn = attendee?.checkedIn === true
+  const activeSkillCount = Object.values(skillScores).filter((v) => v > 0).length
 
   // Reset form when dialog opens
   const handleOpenChange = (o: boolean) => {
@@ -74,6 +95,10 @@ export default function TeacherStampDialog({
       setFeedback(attendee.feedback ?? "")
       setImages(attendee.imageUrls ?? [])
       setVideoUrl(attendee.videoUrl ?? "")
+      setSkillScores(attendee.skillScores ?? {})
+    }
+    if (!o) {
+      setShowSkillSection(false)
     }
     if (!savingFeedback && !uploadingImage && !uploadingVideo) {
       onOpenChange(o)
@@ -128,11 +153,15 @@ export default function TeacherStampDialog({
     if (!session) return
     setSavingFeedback(true)
     try {
-      await onFeedbackSaved(session._id, studentId, feedback, rating, videoUrl, images)
+      await onFeedbackSaved(session._id, studentId, feedback, rating, videoUrl, images, skillScores)
       onOpenChange(false)
     } finally {
       setSavingFeedback(false)
     }
+  }
+
+  const toggleSkillScore = (key: string, level: number) => {
+    setSkillScores((prev) => ({ ...prev, [key]: prev[key] === level ? 0 : level }))
   }
 
   return (
@@ -213,6 +242,62 @@ export default function TeacherStampDialog({
                 placeholder="เช่น วันนี้นักเรียนทำได้ดีมาก เข้าใจเรื่อง loop ค่อนข้างเร็ว..."
                 className="mt-1.5 min-h-[100px] resize-none"
               />
+            </div>
+
+            {/* ── Learning Progress (Optional, collapsible) ─────────────────────── */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowSkillSection(!showSkillSection)}
+                className="flex w-full items-center gap-2 rounded-xl border border-purple-200 bg-purple-50/60 px-3 py-2.5 text-sm font-medium text-purple-700 hover:bg-purple-100/60 transition-colors"
+              >
+                <TrendingUp className="h-4 w-4 shrink-0" />
+                <span>📈 Learning Progress</span>
+                <span className="ml-1 rounded-full border border-purple-200 bg-white/70 px-2 py-0.5 text-[10px] font-normal text-purple-500 leading-none">
+                  ไม่บังคับ
+                </span>
+                {activeSkillCount > 0 && (
+                  <span className="rounded-full bg-purple-500 text-white px-2 py-0.5 text-[10px] font-semibold leading-none">
+                    {activeSkillCount} ทักษะ
+                  </span>
+                )}
+                <ChevronDown
+                  className={`h-4 w-4 ml-auto shrink-0 transition-transform duration-200 ${showSkillSection ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {showSkillSection && (
+                <div className="mt-2 rounded-xl border border-purple-100 bg-purple-50/30 p-4 space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    ประเมินทักษะที่นักเรียนแสดงออกในคลาสนี้ · ข้อมูลนี้จะนำไปแสดงใน Learning Progress Dashboard
+                  </p>
+                  {SKILLS.map(({ key, emoji, label }) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="w-5 text-center text-base shrink-0">{emoji}</span>
+                      <span className="text-xs font-medium flex-1 min-w-0 truncate">{label}</span>
+                      <div className="flex gap-1 shrink-0">
+                        {SKILL_LEVELS.map(({ level, label: lvlLabel, active }) => {
+                          const isSelected = (skillScores[key] ?? 0) === level
+                          return (
+                            <button
+                              key={level}
+                              type="button"
+                              onClick={() => toggleSkillScore(key, level)}
+                              className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all ${
+                                isSelected
+                                  ? active + " shadow-sm"
+                                  : "border-gray-200 text-gray-400 hover:border-purple-300 hover:text-purple-600 bg-white"
+                              }`}
+                            >
+                              {lvlLabel}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Image upload */}

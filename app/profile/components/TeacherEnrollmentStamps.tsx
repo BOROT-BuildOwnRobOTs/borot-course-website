@@ -137,12 +137,12 @@ export default function TeacherEnrollmentStamps({
   }
 
   const handleFeedbackSaved = async (
-    sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[]
+    sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[], skillScores: Record<string, number>
   ) => {
     const res = await fetch(`/api/admin/sessions/${sessionId}/feedback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ studentId, feedback, rating: rating || undefined, videoUrl, imageUrls }),
+      body: JSON.stringify({ studentId, feedback, rating: rating || undefined, videoUrl, imageUrls, skillScores }),
     })
     const j = await res.json()
     if (j.success) {
@@ -151,7 +151,7 @@ export default function TeacherEnrollmentStamps({
           s._id !== sessionId ? s : {
             ...s,
             attendance: s.attendance.map((a) =>
-              a.student !== studentId ? a : { ...a, feedback, rating: rating || undefined, videoUrl, imageUrls }
+              a.student !== studentId ? a : { ...a, feedback, rating: rating || undefined, videoUrl, imageUrls, skillScores }
             ),
           }
         )

@@ -9,6 +9,7 @@ export interface IAttendance {
   rating?: number
   videoUrl?: string
   imageUrls?: string[]
+  skillScores?: Map<string, number>
 }
 
 export interface ISession extends Document {
@@ -34,6 +35,7 @@ const AttendanceSchema = new Schema<IAttendance>({
   rating: { type: Number, min: 1, max: 5 },
   videoUrl: { type: String, default: '' },
   imageUrls: { type: [String], default: [] },
+  skillScores: { type: Map, of: Number, default: () => ({}) },
 })
 
 const SessionSchema = new Schema<ISession>(
