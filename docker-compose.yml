@@ -10,6 +10,9 @@ services:
     environment:
       - NODE_ENV=development
       - NEXT_TELEMETRY_DISABLED=1
+    # Load all secrets from .env file so Cloudinary / MongoDB creds are available
+    env_file:
+      - .env
     volumes:
       # mount source code for hot reload
       - .:/app
