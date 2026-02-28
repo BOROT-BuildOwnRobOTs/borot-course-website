@@ -131,7 +131,8 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
       )
       return {
         ...student,
-        enrollments: matchingEnrollments.length > 0 ? matchingEnrollments : student.enrollments,
+        // Only show enrollments that belong to this teacher — never fallback to all enrollments
+        enrollments: matchingEnrollments,
       }
     })
     .filter((s) => s.enrollments.length > 0 || sessionStudentIds.has(String(s._id)))
