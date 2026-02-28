@@ -18,6 +18,7 @@ import RescheduleDialog from "./RescheduleDialog"
 import FeedbackDialog from "./FeedbackDialog"
 import LearningProgressDashboard from "./LearningProgressDashboard"
 import StudentPortfolio from "./StudentPortfolio"
+import AIRecommendation from "./AIRecommendation"
 
 // STATUS_ICONS defined locally (needs JSX)
 const STATUS_ICONS: Record<string, React.ReactNode> = {
@@ -40,7 +41,7 @@ interface Props {
   loadingSessions: boolean
 }
 
-type ParentTab = "students" | "dashboard" | "portfolio"
+type ParentTab = "students" | "dashboard" | "portfolio" | "ai"
 
 export default function ParentView({ user, setUser, sessions, loadingSessions }: Props) {
   const [activeTab, setActiveTab] = useState<ParentTab>("students")
@@ -178,6 +179,21 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
             Coming Soon
           </span>
         </button>
+        <button
+          onClick={() => setActiveTab("ai")}
+          className={[
+            "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-semibold transition-all border-b-2",
+            activeTab === "ai"
+              ? "border-primary text-primary bg-primary/5"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
+          ].join(" ")}
+        >
+          <span className="text-base leading-none">🤖</span>
+          AI Recommendation
+          <span className="text-[10px] bg-amber-100 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full font-semibold">
+            Coming Soon
+          </span>
+        </button>
       </div>
 
       {/* Dashboard tab */}
@@ -188,6 +204,11 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
       {/* Portfolio tab */}
       {activeTab === "portfolio" && (
         <StudentPortfolio studentName={user.students?.[0]?.name} />
+      )}
+
+      {/* AI Recommendation tab */}
+      {activeTab === "ai" && (
+        <AIRecommendation studentName={user.students?.[0]?.name} />
       )}
 
       {/* Students tab – hidden when dashboard is active */}
