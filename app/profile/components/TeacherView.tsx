@@ -49,6 +49,14 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
   const [loadingSessions, setLoadingSessions] = useState(false)
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<"active" | "completed" | "all">("active")
+  const [systemStats, setSystemStats] = useState<{ totalAll: number; totalActive: number } | null>(null)
+
+  // Fetch system-wide student stats (same for all teachers)
+  useEffect(() => {
+    fetch("/api/teacher/stats")
+      .then((r) => r.json())
+      .then((j) => { if (j.success) setSystemStats(j.data) })
+  }, [])
 
   // Fetch students with enrollments for this teacher
   useEffect(() => {
@@ -83,13 +91,17 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
     const completedSessionCount = students
       .filter((student) => {
         const hasMatchingEnrollment = student.enrollments.some(
-          (e) => String(e.teacher) === String(user._id) || teacherCourseIdsSet.has(String(e.course))
+          (e) =>
+            String(e.teacher) === String(user._id) ||
+            (teacherCourseIdsSet.has(String(e.course)) && (!e.teacher || e.teacher === ""))
         )
         return hasMatchingEnrollment || sessionStudentIdsSet.has(String(student._id))
       })
       .flatMap((student) => {
         const matching = student.enrollments.filter(
-          (e) => String(e.teacher) === String(user._id) || teacherCourseIdsSet.has(String(e.course))
+          (e) =>
+            String(e.teacher) === String(user._id) ||
+            (teacherCourseIdsSet.has(String(e.course)) && (!e.teacher || e.teacher === ""))
         )
         return matching.length > 0 ? matching : student.enrollments
       })
@@ -126,8 +138,11 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
     .map((student) => {
       const matchingEnrollments = student.enrollments.filter(
         (e) =>
+          // ✅ direct: enrollment ระบุชื่อครูตรงๆ
           String(e.teacher) === String(user._id) ||
-          teacherCourseIds.has(String(e.course))
+          // ✅ fallback เฉพาะกรณีที่ enrollment ยังไม่มี teacher กำกับ
+          //    (ข้อมูลเก่าที่ยังไม่ได้ assign ครู) + course ตรงกับที่ครูสอน
+          (teacherCourseIds.has(String(e.course)) && (!e.teacher || e.teacher === ""))
       )
       return {
         ...student,
@@ -185,18 +200,22 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
 
   return (
     <div className="space-y-6">
-      {/* Summary — minimal inline */}
+      {/* Summary — system-wide total + teacher-specific active */}
       <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground">
         <span className="flex items-center gap-1">
           <Users className="h-3.5 w-3.5" />
           นักเรียนทั้งหมด
-          <strong className="text-foreground ml-0.5">{teacherStudentsWithEnrollments.length} คน</strong>
+          <strong className="text-foreground ml-0.5">
+            {systemStats ? `${systemStats.totalAll} คน` : "…"}
+          </strong>
         </span>
         <span className="text-border">·</span>
         <span className="flex items-center gap-1">
-          กำลังเรียน
-          <strong className="text-blue-600 ml-0.5">
-            {teacherStudentsWithEnrollments.reduce((sum, s) => sum + s.enrollments.filter((e) => e.status === "active").length, 0)} คน
+          นักเรียนของฉัน (กำลังเรียน)
+          <strong className="text-orange-600 ml-0.5">
+            {teacherStudentsWithEnrollments.filter((s) =>
+              s.enrollments.some((e) => e.status === "active")
+            ).length} คน
           </strong>
         </span>
       </div>

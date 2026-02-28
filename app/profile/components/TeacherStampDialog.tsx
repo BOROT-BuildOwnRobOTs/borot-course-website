@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -67,14 +67,20 @@ export default function TeacherStampDialog({
 
   const isCheckedIn = attendee?.checkedIn === true
 
-  // Reset form when dialog opens
-  const handleOpenChange = (o: boolean) => {
-    if (o && attendee) {
-      setRating(attendee.rating ?? 0)
-      setFeedback(attendee.feedback ?? "")
-      setImages(attendee.imageUrls ?? [])
-      setVideoUrl(attendee.videoUrl ?? "")
+  // Pre-populate form with existing feedback whenever dialog opens or attendee changes.
+  // We use useEffect instead of onOpenChange because Radix UI's Dialog does NOT call
+  // onOpenChange when the parent opens the dialog via the `open` prop programmatically.
+  useEffect(() => {
+    if (open) {
+      setRating(attendee?.rating ?? 0)
+      setFeedback(attendee?.feedback ?? "")
+      setImages(attendee?.imageUrls ?? [])
+      setVideoUrl(attendee?.videoUrl ?? "")
     }
+  }, [open, attendee])
+
+  // Only handle closing (guard against closing while uploading/saving)
+  const handleOpenChange = (o: boolean) => {
     if (!savingFeedback && !uploadingImage && !uploadingVideo) {
       onOpenChange(o)
     }

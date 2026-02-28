@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import path from 'path'
-import fs from 'fs'
+import { v2 as cloudinary } from 'cloudinary'
+
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 // POST /api/upload
 // Body: FormData with field "file"
-// Returns: { success: true, url: "/uploads/filename.ext" }
+// Returns: { success: true, url: "https://res.cloudinary.com/..." }
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
@@ -35,23 +40,27 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Ensure public/uploads directory exists
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads')
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true })
-    }
+    const isVideo = file.type.startsWith('video/')
+    const resourceType = isVideo ? 'video' : 'image'
 
-    // Generate unique filename keeping original extension
-    const originalExt = path.extname(file.name).toLowerCase() || '.bin'
-    const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}${originalExt}`
-    const filePath = path.join(uploadsDir, safeName)
+    // Upload to Cloudinary using upload_stream
+    const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: resourceType,
+          folder: 'borot-feedback',
+        },
+        (error, result) => {
+          if (error) return reject(error)
+          resolve(result as { secure_url: string })
+        }
+      )
+      stream.end(buffer)
+    })
 
-    fs.writeFileSync(filePath, buffer)
-
-    return NextResponse.json({ success: true, url: `/uploads/${safeName}` })
+    return NextResponse.json({ success: true, url: uploadResult.secure_url })
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json({ success: false, error: 'Failed to upload file' }, { status: 500 })
   }
 }
-
