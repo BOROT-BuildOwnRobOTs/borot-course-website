@@ -16,6 +16,8 @@ import { STATUS_LABELS, STATUS_COLORS } from "../types"
 import SlotDialog from "./SlotDialog"
 import RescheduleDialog from "./RescheduleDialog"
 import FeedbackDialog from "./FeedbackDialog"
+import LearningProgressDashboard from "./LearningProgressDashboard"
+import StudentPortfolio from "./StudentPortfolio"
 
 // STATUS_ICONS defined locally (needs JSX)
 const STATUS_ICONS: Record<string, React.ReactNode> = {
@@ -38,7 +40,10 @@ interface Props {
   loadingSessions: boolean
 }
 
+type ParentTab = "students" | "dashboard" | "portfolio"
+
 export default function ParentView({ user, setUser, sessions, loadingSessions }: Props) {
+  const [activeTab, setActiveTab] = useState<ParentTab>("students")
   const [expandedEnrollment, setExpandedEnrollment] = useState<string | null>(null)
   const [parentStatusFilter, setParentStatusFilter] = useState<"active" | "completed" | "all">("active")
 
@@ -126,6 +131,67 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
 
   return (
     <div className="space-y-5">
+      {/* Tab switcher */}
+      <div className="flex items-center gap-2 border-b pb-3">
+        <button
+          onClick={() => setActiveTab("students")}
+          className={[
+            "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-semibold transition-all border-b-2",
+            activeTab === "students"
+              ? "border-primary text-primary bg-primary/5"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
+          ].join(" ")}
+        >
+          <Users className="h-4 w-4" />
+          ข้อมูลนักเรียน
+          {loadingSessions && activeTab === "students" && (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("dashboard")}
+          className={[
+            "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-semibold transition-all border-b-2",
+            activeTab === "dashboard"
+              ? "border-primary text-primary bg-primary/5"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
+          ].join(" ")}
+        >
+          <span className="text-base leading-none">📊</span>
+          Learning Progress
+          <span className="text-[10px] bg-amber-100 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full font-semibold">
+            Coming Soon
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab("portfolio")}
+          className={[
+            "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-semibold transition-all border-b-2",
+            activeTab === "portfolio"
+              ? "border-primary text-primary bg-primary/5"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
+          ].join(" ")}
+        >
+          <span className="text-base leading-none">📁</span>
+          Student Portfolio
+          <span className="text-[10px] bg-amber-100 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full font-semibold">
+            Coming Soon
+          </span>
+        </button>
+      </div>
+
+      {/* Dashboard tab */}
+      {activeTab === "dashboard" && (
+        <LearningProgressDashboard students={user.students ?? []} />
+      )}
+
+      {/* Portfolio tab */}
+      {activeTab === "portfolio" && (
+        <StudentPortfolio studentName={user.students?.[0]?.name} />
+      )}
+
+      {/* Students tab – hidden when dashboard is active */}
+      {activeTab === "students" && (<>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -394,6 +460,8 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
           )
         })
       )}
+
+      </>)}
 
       {/* Dialogs */}
       <SlotDialog
