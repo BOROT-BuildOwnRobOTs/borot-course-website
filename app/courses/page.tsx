@@ -233,7 +233,7 @@ function InfoCard() {
   return (
     <div
       className="rounded-2xl border border-[#E5E7EB] bg-white overflow-hidden"
-      style={{ width: 600, boxShadow: "0 2px 12px 0 #00000009" }}
+      style={{ width: 580, boxShadow: "0 2px 12px 0 #00000009" }}
     >
       {/* Tab strip */}
       <div className="flex border-b border-[#F3F4F6] bg-[#FAFAFA]">
@@ -290,7 +290,7 @@ function InfoCard() {
         {/* ── Add-ons ── */}
         {tab === "addons" && (
           <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl border border-[#FED7AA] bg-[#FFF7F0] px-3 py-2.5 flex flex-col gap-1.5">
+            <div className="rounded-xl border border-[#FED7AA] bg-[#FFF7F0] px-3 py-2.5 flex flex-col gap-1.0">
               <span className="text-lg">🇬🇧</span>
               <div>
                 <p className="text-[11px] font-bold text-[#111827] whitespace-nowrap">English Instruction</p>
@@ -299,7 +299,7 @@ function InfoCard() {
               <p className="text-[11px] font-bold text-[#E5690D] mt-auto">+3,499 THB</p>
               <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full self-start whitespace-nowrap" style={{ color: "#E5690D", background: "#FED7AA55" }}>Track 1</span>
             </div>
-            <div className="rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-3 py-2.5 flex flex-col gap-1.5">
+            <div className="rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-3 py-2.5 flex flex-col gap-1.0">
               <span className="text-lg">👤</span>
               <div>
                 <p className="text-[11px] font-bold text-[#111827] whitespace-nowrap">Private Class</p>
@@ -311,7 +311,7 @@ function InfoCard() {
                 <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full whitespace-nowrap" style={{ color: "#6366F1", background: "#EEF2FF" }}>Track 3</span>
               </div>
             </div>
-            <div className="rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-3 py-2.5 flex flex-col gap-1.5">
+            <div className="rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-3 py-2.5 flex flex-col gap-1.0">
               <span className="text-lg">🇬🇧</span>
               <div>
                 <p className="text-[11px] font-bold text-[#111827] whitespace-nowrap">English Instruction</p>
@@ -410,9 +410,6 @@ function CourseDetailPanel({ node }: { node: Node }) {
             className="w-full h-full object-cover absolute inset-0"
             onError={(e) => { e.currentTarget.style.display = "none" }}
           />
-          <div className="relative z-10 text-center px-6">
-            <span style={{ fontSize: 56 }}>{node.emoji}</span>
-          </div>
           <div className="absolute bottom-3 left-4">
             <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ color: "#fff", background: t.color }}>
               {node.badge} · {node.age}
@@ -538,10 +535,7 @@ export default function CoursesPage() {
         <div className="px-6 container mx-auto max-w-7xl pb-20">
 
           {/* Track tab headers */}
-          <div
-            className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6 z-20 bg-transparent"
-            style={{ position: "sticky", top: 80 }}
-          >
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
             {columns.map((col) => {
               const isSelected = activeCol === col.col
               return (
@@ -604,7 +598,7 @@ export default function CoursesPage() {
 
               {/* RIGHT: Detail panel */}
               {activeNode && (
-                <div className="flex-1 min-w-0" style={{ position: "sticky", top: 200, maxHeight: "calc(100vh - 210px)", overflowY: "auto" }}>
+                <div className="flex-1 min-w-0" style={{ position: "sticky", top: 100, maxHeight: "calc(100vh - 110px)", overflowY: "auto" }}>
                   <CourseDetailPanel node={activeNode} />
                 </div>
               )}
