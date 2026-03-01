@@ -206,18 +206,6 @@ export function HeroSection() {
           
           {/* Left Content */}
           <div className="flex flex-col items-start gap-4 w-full max-w-[608px]">
-            
-            {/* Logo */}
-            <div className="w-full initial-hidden animate-fade-in-left delay-100">
-              <Image
-                src="/images/borot-kmutt-logo.png"
-                alt="BOROT x KMUTT Partnership"
-                width={387}
-                height={149}
-                className="w-full max-w-[280px] h-auto"
-                style={{ aspectRatio: '387/149' }}
-              />
-            </div>
 
             {/* Main heading */}
             <h1
@@ -231,15 +219,15 @@ export function HeroSection() {
                 filter: 'drop-shadow(0px 2px 4px rgba(229, 105, 13, 0.2))',
               }}
             >
-              Engineering <br />
-              Learning Program
+              STEM & Design <br />
+              Program Details
             </h1>
 
 
             {/* Subtitle */}
             <p className="text-sm md:text-base lg:text-lg font-medium leading-relaxed initial-hidden animate-fade-in-up delay-300"
               style={{ color: '#484848', fontFamily: 'var(--font-geist-sans)' }}>
-              ปลดล็อกศักยภาพด้านวิศวกรรมของคุณด้วยหลักสูตร 4 โมดูล ที่ปูพื้นฐานอย่างเป็นระบบ พัฒนาทักษะผ่านทั้งทฤษฎี และการลงมือทำจริง พร้อมโปรเจกต์ที่จับต้องได้ เหมาะสำหรับนักเรียนมัธยมที่เตรียมตัว สู่รั้วมหาวิทยาลัยในสายวิศวกรรม
+              Explore the world of STEM through hands-on creation. Our program teaches students how to use technology and engineering principles to build projects that are both functional and visually appealing. Learn to design, code, and fabricate with a focus on professional aesthetics and creative problem-solving.
             </p>
 
             {/* Learning Path Badge */}
