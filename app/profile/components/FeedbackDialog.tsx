@@ -119,26 +119,33 @@ export default function FeedbackDialog({ open, onClose, entry, sessionInfo }: Pr
         </DialogContent>
       </Dialog>
 
-      {/* Lightbox */}
-      {lightboxImg && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
-          onClick={() => setLightboxImg(null)}
+      {/* Image Lightbox — uses a nested Radix Dialog so it properly stacks
+          above the parent modal dialog on mobile.  A plain div or createPortal
+          gets blocked by the parent dialog's `inert` attribute that Radix sets
+          on all sibling elements, making close buttons non-interactive. */}
+      <Dialog open={!!lightboxImg} onOpenChange={(o) => { if (!o) setLightboxImg(null) }}>
+        <DialogContent
+          className="bg-transparent border-none shadow-none p-0 max-w-[95vw] gap-0 [&>button]:hidden"
+          showCloseButton={false}
+          aria-describedby={undefined}
         >
-          <img
-            src={lightboxImg}
-            alt=""
-            className="max-w-full max-h-full rounded-lg shadow-2xl object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <button
-            onClick={() => setLightboxImg(null)}
-            className="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-      )}
+          <div className="relative flex items-center justify-center">
+            <img
+              src={lightboxImg || ""}
+              alt="Preview"
+              className="max-w-[95vw] max-h-[85vh] object-contain rounded-lg"
+            />
+            <button
+              type="button"
+              onClick={() => setLightboxImg(null)}
+              className="absolute top-2 right-2 w-10 h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition-colors shadow-lg"
+              aria-label="ปิดรูปภาพ"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
