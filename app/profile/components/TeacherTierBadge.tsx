@@ -15,7 +15,7 @@ export const TEACHER_TIERS = [
     id: 1,
     min: 0,
     label: "Rookie Bot",
-    labelTH: "ผู้ฝึกหัด",
+    labelTH: "Rookie",
     Icon: Sparkles,
     iconBg: "bg-slate-500",
     nameplateGradient: "from-slate-200 via-slate-100 to-slate-200",
@@ -29,7 +29,7 @@ export const TEACHER_TIERS = [
     id: 2,
     min: 81,
     label: "Circuit Spark",
-    labelTH: "นักสร้างวงจร",
+    labelTH: "Circuit Builder",
     Icon: Zap,
     iconBg: "bg-gradient-to-br from-blue-500 to-indigo-600",
     nameplateGradient: "from-blue-100 via-indigo-50 to-blue-100",
@@ -43,7 +43,7 @@ export const TEACHER_TIERS = [
     id: 3,
     min: 201,
     label: "Code Engineer",
-    labelTH: "วิศวกรโค้ด",
+    labelTH: "Code Engineer",
     Icon: Cpu,
     iconBg: "bg-gradient-to-br from-violet-500 to-purple-700",
     nameplateGradient: "from-violet-100 via-purple-50 to-violet-100",
@@ -57,7 +57,7 @@ export const TEACHER_TIERS = [
     id: 4,
     min: 500,
     label: "Legendary Mentor",
-    labelTH: "ปรมาจารย์",
+    labelTH: "Legendary Mentor",
     Icon: Crown,
     iconBg: "bg-gradient-to-br from-amber-400 to-orange-600",
     nameplateGradient: "from-amber-100 via-yellow-50 to-amber-100",
@@ -102,7 +102,6 @@ export default function TeacherTierBadge({ sessionCount, className }: TeacherTie
   const badge = (
     <div
       className={cn(
-        // Nameplate frame: slim horizontal strip with gradient bg + decorative border
         "inline-flex items-center gap-0 rounded-lg border-2 overflow-hidden shadow-sm cursor-help",
         tier.border,
         tier.glow && `shadow-md ${tier.glow}`,
@@ -125,7 +124,7 @@ export default function TeacherTierBadge({ sessionCount, className }: TeacherTie
             {tier.label}
           </p>
           <p className="text-[9px] text-muted-foreground leading-none mt-0.5">
-            {isMax ? "ระดับสูงสุด" : `อีก ${Math.max(0, (nextTier?.min ?? 0) - sessionCount)} ครั้งถึง Tier ${(tier.id + 1)}`}
+            {isMax ? "Max tier reached" : `${Math.max(0, (nextTier?.min ?? 0) - sessionCount)} more sessions to Tier ${(tier.id + 1)}`}
           </p>
         </div>
 
@@ -173,30 +172,30 @@ export default function TeacherTierBadge({ sessionCount, className }: TeacherTie
           <div className="bg-popover px-3 py-2.5 space-y-2.5">
             {/* Session count */}
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">ครั้งที่สอนจบแล้ว</span>
-              <span className="font-black tabular-nums text-foreground">{sessionCount} ครั้ง</span>
+              <span className="text-muted-foreground">Sessions completed</span>
+              <span className="font-black tabular-nums text-foreground">{sessionCount} sessions</span>
             </div>
 
             {!isMax && nextTier ? (
               <>
                 {/* Next tier target */}
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">เป้าหมาย {nextTier.label}</span>
-                  <span className="font-bold tabular-nums text-foreground">{nextTier.min} ครั้ง</span>
+                  <span className="text-muted-foreground">Target: {nextTier.label}</span>
+                  <span className="font-bold tabular-nums text-foreground">{nextTier.min} sessions</span>
                 </div>
 
                 {/* Remaining */}
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">ยังขาดอยู่</span>
+                  <span className="text-muted-foreground">Still needed</span>
                   <span className="font-bold tabular-nums text-orange-500">
-                    {Math.max(0, nextTier.min - sessionCount)} ครั้ง
+                    {Math.max(0, nextTier.min - sessionCount)} sessions
                   </span>
                 </div>
 
                 {/* Progress bar with % */}
                 <div className="space-y-1 pt-0.5">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-muted-foreground">ความคืบหน้า</span>
+                    <span className="text-muted-foreground">Progress</span>
                     <span className={cn("font-black tabular-nums", tier.text)}>{percent}%</span>
                   </div>
                   <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -213,8 +212,8 @@ export default function TeacherTierBadge({ sessionCount, className }: TeacherTie
               </>
             ) : (
               <div className="text-center py-1">
-                <p className="text-xs font-bold text-amber-600">🏆 ถึงระดับสูงสุดแล้ว!</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">ยอดเยี่ยมมากครับ</p>
+                <p className="text-xs font-bold text-amber-600">🏆 Max tier reached!</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Outstanding achievement!</p>
               </div>
             )}
           </div>

@@ -73,12 +73,12 @@ export default function SlotDialog({ open, onClose, student, enrollIdx, userRole
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>เลือก Slot เวลาเรียน</DialogTitle>
+          <DialogTitle>Select Class Slot</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <Label>เลือก Slot</Label>
+              <Label>Select Slot</Label>
               {loadingSlots && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -109,32 +109,32 @@ export default function SlotDialog({ open, onClose, student, enrollIdx, userRole
                     <div className="font-semibold">{slot.dayLabel}</div>
                     <div className="text-[10px] mt-0.5 opacity-80">{slot.time}</div>
                     <div className={`text-[10px] mt-1 font-medium ${isSelected ? "text-white/80" : isFull ? "text-red-400" : "text-green-600"}`}>
-                      {slot.count}/{slot.max} ที่นั่ง
+                      {slot.count}/{slot.max} seats
                     </div>
-                    {isFull && <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">เต็ม</span>}
+                    {isFull && <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>}
                   </button>
                 )
               })}
             </div>
           </div>
           <div>
-            <Label>วันเริ่มเรียนครั้งแรก</Label>
+            <Label>First Class Date</Label>
             {userRole === "admin" || userRole === "teacher" ? (
               <Input type="date" value={newStartDate} onChange={(e) => setNewStartDate(e.target.value)} className="mt-1" />
             ) : (
               <div className="mt-1 px-3 py-2 rounded-md border bg-muted/40 text-sm text-muted-foreground">
                 {newStartDate
-                  ? new Date(newStartDate).toLocaleDateString("th-TH", { day: "numeric", month: "long", year: "numeric" })
-                  : "ยังไม่ได้กำหนด"}
-                <p className="text-xs mt-0.5 text-muted-foreground/70">* แก้ไขได้โดยแอดมิน/ครูเท่านั้น</p>
+                  ? new Date(newStartDate).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })
+                  : "Not set yet"}
+                <p className="text-xs mt-0.5 text-muted-foreground/70">* Can only be edited by admin or teacher</p>
               </div>
             )}
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>ยกเลิก</Button>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={savingSlot || !newSlotDay} className="bg-purple-500 hover:bg-purple-600 text-white">
-            {savingSlot ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />กำลังบันทึก...</> : "บันทึก Slot"}
+            {savingSlot ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Save Slot"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -32,7 +32,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
       sessionStorage.setItem('admin_auth', '1')
       onLogin()
     } else {
-      setError('Username หรือ Password ไม่ถูกต้อง')
+      setError('Incorrect username or password')
       setShaking(true)
       setTimeout(() => setShaking(false), 500)
     }
@@ -63,7 +63,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
         >
           <div className="flex items-center gap-2 mb-6">
             <Shield className="w-5 h-5 text-orange-500" />
-            <h2 className="font-semibold text-gray-700">เข้าสู่ระบบ</h2>
+            <h2 className="font-semibold text-gray-700">Sign In</h2>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -76,7 +76,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
                 type="text"
                 value={username}
                 onChange={(e) => { setUsername(e.target.value); setError('') }}
-                placeholder="กรอก username"
+                placeholder="Enter username"
                 autoComplete="username"
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm transition-all"
               />
@@ -92,7 +92,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError('') }}
-                  placeholder="กรอก password"
+                  placeholder="Enter password"
                   autoComplete="current-password"
                   className="w-full px-4 py-2.5 pr-10 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm transition-all"
                 />
@@ -118,7 +118,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
               type="submit"
               className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold py-2.5 rounded-lg transition-colors mt-2"
             >
-              เข้าสู่ระบบ
+              Sign In
             </button>
           </form>
         </div>
@@ -143,13 +143,13 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [stats, setStats] = useState<Stats>({ parents: 0, students: 0, teachers: 0, courses: 0, sessions: 0 })
 
-  // ตรวจสอบ session ตอน mount
+  // Check session on mount
   useEffect(() => {
     const auth = sessionStorage.getItem('admin_auth')
     setIsAuthenticated(auth === '1')
   }, [])
 
-  // โหลด stats เมื่อ login แล้ว
+  // Load stats after login
   useEffect(() => {
     if (!isAuthenticated) return
     const fetchStats = async () => {
@@ -179,19 +179,19 @@ export default function AdminPage() {
     setIsAuthenticated(false)
   }
 
-  // ยังไม่รู้ state (กำลัง hydrate)
+  // Still hydrating
   if (isAuthenticated === null) return null
 
-  // ยังไม่ได้ login
+  // Not logged in
   if (!isAuthenticated) {
     return <LoginScreen onLogin={() => setIsAuthenticated(true)} />
   }
 
   const statCards = [
-    { label: 'ผู้ปกครอง', value: stats.parents, icon: Users, color: 'bg-orange-50 text-orange-500' },
-    { label: 'นักเรียน', value: stats.students, icon: Users, color: 'bg-blue-50 text-blue-500' },
-    { label: 'ครู', value: stats.teachers, icon: GraduationCap, color: 'bg-green-50 text-green-500' },
-    { label: 'คอร์ส', value: stats.courses, icon: BookOpen, color: 'bg-purple-50 text-purple-500' },
+    { label: 'Parents', value: stats.parents, icon: Users, color: 'bg-orange-50 text-orange-500' },
+    { label: 'Students', value: stats.students, icon: Users, color: 'bg-blue-50 text-blue-500' },
+    { label: 'Teachers', value: stats.teachers, icon: GraduationCap, color: 'bg-green-50 text-green-500' },
+    { label: 'Courses', value: stats.courses, icon: BookOpen, color: 'bg-purple-50 text-purple-500' },
     { label: 'Sessions', value: stats.sessions, icon: CalendarDays, color: 'bg-pink-50 text-pink-500' },
   ]
 
@@ -217,14 +217,14 @@ export default function AdminPage() {
               href="/"
               className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
             >
-              ← กลับหน้าหลัก
+              ← Back to Home
             </a>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 transition-colors border border-red-100 hover:border-red-300 rounded-lg px-3 py-1.5"
             >
               <LogOut className="w-3.5 h-3.5" />
-              ออกจากระบบ
+              Sign Out
             </button>
           </div>
         </div>
@@ -256,21 +256,21 @@ export default function AdminPage() {
               className="data-[state=active]:bg-orange-500 data-[state=active]:text-white rounded-md px-4 py-2 text-sm font-medium text-gray-600 transition-all"
             >
               <Users className="w-4 h-4 mr-1.5" />
-              ผู้ปกครอง & นักเรียน
+              Parents & Students
             </TabsTrigger>
             <TabsTrigger
               value="teachers"
               className="data-[state=active]:bg-orange-500 data-[state=active]:text-white rounded-md px-4 py-2 text-sm font-medium text-gray-600 transition-all"
             >
               <GraduationCap className="w-4 h-4 mr-1.5" />
-              ครู
+              Teachers
             </TabsTrigger>
             <TabsTrigger
               value="courses"
               className="data-[state=active]:bg-orange-500 data-[state=active]:text-white rounded-md px-4 py-2 text-sm font-medium text-gray-600 transition-all"
             >
               <BookOpen className="w-4 h-4 mr-1.5" />
-              คอร์ส
+              Courses
             </TabsTrigger>
             <TabsTrigger
               value="sessions"

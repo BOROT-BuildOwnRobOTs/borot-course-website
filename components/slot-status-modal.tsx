@@ -55,10 +55,10 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
         setSlots(json.data)
         setLastUpdated(new Date())
       } else {
-        setError("ไม่สามารถโหลดข้อมูลได้")
+        setError("Unable to load data")
       }
     } catch {
-      setError("เกิดข้อผิดพลาดในการเชื่อมต่อ")
+      setError("Connection error")
     } finally {
       setLoading(false)
     }
@@ -90,9 +90,9 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
 
   const getStatusColor = (count: number, max: number) => {
     const ratio = count / max
-    if (ratio >= 1) return { bg: "bg-red-100", text: "text-red-600", bar: "bg-red-500", badge: "เต็มแล้ว", badgeBg: "bg-red-100 text-red-600" }
-    if (ratio >= 0.75) return { bg: "bg-orange-50", text: "text-orange-600", bar: "bg-orange-500", badge: "ใกล้เต็ม", badgeBg: "bg-orange-100 text-orange-600" }
-    return { bg: "bg-green-50", text: "text-green-600", bar: "bg-green-500", badge: "ยังมีที่ว่าง", badgeBg: "bg-green-100 text-green-600" }
+    if (ratio >= 1) return { bg: "bg-red-100", text: "text-red-600", bar: "bg-red-500", badge: "Full", badgeBg: "bg-red-100 text-red-600" }
+    if (ratio >= 0.75) return { bg: "bg-orange-50", text: "text-orange-600", bar: "bg-orange-500", badge: "Almost Full", badgeBg: "bg-orange-100 text-orange-600" }
+    return { bg: "bg-green-50", text: "text-green-600", bar: "bg-green-500", badge: "Available", badgeBg: "bg-green-100 text-green-600" }
   }
 
   const SlotCard = ({ slot }: { slot: SlotData }) => {
@@ -108,7 +108,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-gray-500" />
-              <span className="font-semibold text-gray-800 text-sm">{slot.time} น.</span>
+              <span className="font-semibold text-gray-800 text-sm">{slot.time}</span>
             </div>
             <span className={`text-xs font-semibold px-2 py-1 rounded-full ${status.badgeBg}`}>
               {status.badge}
@@ -127,9 +127,9 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
             <div className="flex items-center gap-1.5">
               <Users className="w-4 h-4 text-gray-400" />
               <span className={`text-sm font-bold ${status.text}`}>{slot.count}</span>
-              <span className="text-xs text-gray-400">/ {slot.max} คน</span>
+              <span className="text-xs text-gray-400">/ {slot.max} students</span>
             </div>
-            <span className="text-xs text-gray-400">ที่ว่าง {slot.max - slot.count} ที่</span>
+            <span className="text-xs text-gray-400">{slot.max - slot.count} seats available</span>
           </div>
         </div>
 
@@ -142,7 +142,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           >
             <span className="flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5" />
-              ดูรายชื่อนักเรียน ({slot.students.length} รายการ)
+              View students ({slot.students.length})
             </span>
             {isExpanded ? (
               <ChevronUp className="w-3.5 h-3.5" />
@@ -158,8 +158,8 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
             {slot.students.map((student, idx) => (
               <div key={`${student.id}-${idx}`} className="flex items-center gap-2 px-4 py-2">
                 {/* Nickname badge (bordered tag) */}
-                <span className="text-xs font-semibold text-orange-600 border border-orange-300 bg-orange-50 rounded-md px-2 py-0.5 shrink-0 max-w-[96px] truncate" title={`น้อง${getDisplayName(student)}`}>
-                  น้อง{getDisplayName(student)}
+                <span className="text-xs font-semibold text-orange-600 border border-orange-300 bg-orange-50 rounded-md px-2 py-0.5 shrink-0 max-w-[96px] truncate" title={getDisplayName(student)}>
+                  {getDisplayName(student)}
                 </span>
                 {/* Course name pill */}
                 <span
@@ -172,9 +172,9 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                 {/* Level badge — always show, fallback to "—" */}
                 <span
                   className="text-[10px] font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-full px-2 py-0.5 shrink-0 max-w-[110px] truncate"
-                  title={student.courseLevel || "ไม่ระบุ Level"}
+                  title={student.courseLevel || "No level specified"}
                 >
-                  {student.courseLevel || "ไม่ระบุ Level"}
+                  {student.courseLevel || "No level specified"}
                 </span>
               </div>
             ))}
@@ -221,10 +221,10 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">🎓</span>
                 <h2 className="text-white font-bold text-xl leading-tight">
-                  สถานะผู้เรียนปัจจุบัน
+                  Current Enrollment Status
                 </h2>
               </div>
-              <p className="text-orange-100 text-sm">จำนวนที่นั่งในแต่ละรอบเรียน</p>
+              <p className="text-orange-100 text-sm">Seats available per class slot</p>
             </div>
             <button
               onClick={onClose}
@@ -238,17 +238,17 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           {!loading && slots.length > 0 && (
             <div className="mt-4 bg-white/15 rounded-xl p-3 flex items-center justify-between">
               <div className="text-center flex-1">
-                <p className="text-white/80 text-xs">ผู้เรียนทั้งหมด</p>
+                <p className="text-white/80 text-xs">Total Students</p>
                 <p className="text-white font-bold text-xl">{totalStudents}</p>
               </div>
               <div className="w-px h-8 bg-white/30" />
               <div className="text-center flex-1">
-                <p className="text-white/80 text-xs">ความจุรวม</p>
+                <p className="text-white/80 text-xs">Total Capacity</p>
                 <p className="text-white font-bold text-xl">{totalCapacity}</p>
               </div>
               <div className="w-px h-8 bg-white/30" />
               <div className="text-center flex-1">
-                <p className="text-white/80 text-xs">ที่ว่างรวม</p>
+                <p className="text-white/80 text-xs">Seats Available</p>
                 <p className="text-white font-bold text-xl">{totalCapacity - totalStudents}</p>
               </div>
             </div>
@@ -260,7 +260,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
               <Loader2 className="w-8 h-8 animate-spin mb-3 text-orange-400" />
-              <p className="text-sm">กำลังโหลดข้อมูล...</p>
+              <p className="text-sm">Loading...</p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-10 text-red-400">
@@ -269,14 +269,14 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                 onClick={fetchSlots}
                 className="text-xs text-orange-500 hover:text-orange-700 underline"
               >
-                ลองใหม่อีกครั้ง
+                Try again
               </button>
             </div>
           ) : (
             <div className="space-y-6">
-              <DaySection label="วันเสาร์" icon="📅" slotList={saturdaySlots} />
+              <DaySection label="Saturday" icon="📅" slotList={saturdaySlots} />
               <div className="border-t border-gray-100" />
-              <DaySection label="วันอาทิตย์" icon="📅" slotList={sundaySlots} />
+              <DaySection label="Sunday" icon="📅" slotList={sundaySlots} />
             </div>
           )}
         </div>
@@ -286,7 +286,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
             <Calendar className="w-3.5 h-3.5" />
             {lastUpdated ? (
-              <span>อัปเดต {lastUpdated.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })} น.</span>
+              <span>Updated {lastUpdated.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>
             ) : (
               <span>—</span>
             )}
@@ -297,7 +297,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
             className="flex items-center gap-1.5 text-xs text-orange-500 hover:text-orange-700 font-medium disabled:opacity-50 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-            รีเฟรช
+            Refresh
           </button>
         </div>
       </div>

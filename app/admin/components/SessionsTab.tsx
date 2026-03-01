@@ -94,7 +94,7 @@ export default function SessionsTab() {
 
   const handleAddSession = async () => {
     if (!form.courseId || !form.teacherId || !form.scheduledAt || !form.topic) {
-      setFormError('กรุณากรอกข้อมูลให้ครบ')
+      setFormError('Please fill in all required fields')
       return
     }
     setSaving(true)
@@ -120,7 +120,7 @@ export default function SessionsTab() {
         body: JSON.stringify(body),
       })
       const json = await res.json()
-      if (!json.success) { setFormError(json.error || 'เกิดข้อผิดพลาด'); return }
+      if (!json.success) { setFormError(json.error || 'An error occurred'); return }
       setAddDialogOpen(false)
       fetchAll()
     } finally {
@@ -129,7 +129,7 @@ export default function SessionsTab() {
   }
 
   const handleDeleteSession = async (id: string) => {
-    if (!confirm('ลบ session นี้?')) return
+    if (!confirm('Delete this session?')) return
     await fetch(`/api/admin/sessions/${id}`, { method: 'DELETE' })
     fetchAll()
   }
@@ -175,13 +175,13 @@ export default function SessionsTab() {
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr)
-    return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' })
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' })
   }
 
   const getSlotLabel = (slot?: { day: string; time: string }) => {
     if (!slot) return null
     const found = SLOTS.find(s => s.day === slot.day && s.time === slot.time)
-    return found ? `${found.dayLabel} ${found.time} น.` : `${slot.day} ${slot.time}`
+    return found ? `${found.dayLabel} ${found.time}` : `${slot.day} ${slot.time}`
   }
 
   // When slot day changes, auto-set a matching scheduledAt date
@@ -221,16 +221,16 @@ export default function SessionsTab() {
           }}
           className="bg-orange-500 hover:bg-orange-600 text-white"
         >
-          <Plus className="w-4 h-4 mr-2" /> สร้าง Session
+          <Plus className="w-4 h-4 mr-2" /> Create Session
         </Button>
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-gray-400">กำลังโหลด...</div>
+        <div className="text-center py-8 text-gray-400">Loading...</div>
       ) : sessions.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <CalendarDays className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p>ยังไม่มี session</p>
+          <p>No sessions yet</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -260,11 +260,11 @@ export default function SessionsTab() {
                         <span className="flex items-center gap-1 text-xs text-gray-500">
                           <Clock className="w-3 h-3" />{formatDate(s.scheduledAt)}
                         </span>
-                        <span className="text-xs text-gray-500">ครู: {s.teacherName}</span>
+                        <span className="text-xs text-gray-500">Teacher: {s.teacherName}</span>
                         <span className="flex items-center gap-1 text-xs">
                           <Users className="w-3 h-3 text-gray-400" />
                           <span className={checkedInCount > 0 ? 'text-green-600 font-medium' : 'text-gray-400'}>
-                            {checkedInCount}/{totalCount} เช็คอิน
+                            {checkedInCount}/{totalCount} checked in
                           </span>
                         </span>
                       </div>
@@ -287,10 +287,10 @@ export default function SessionsTab() {
                     )}
 
                     {s.attendance.length === 0 ? (
-                      <p className="text-sm text-gray-400 italic">ไม่มีนักเรียนในคอร์สนี้</p>
+                      <p className="text-sm text-gray-400 italic">No students in this course</p>
                     ) : (
                       <div className="space-y-2">
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">รายชื่อนักเรียน</p>
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Student List</p>
                         {s.attendance.map((a) => (
                           <div
                             key={a.student}
@@ -307,7 +307,7 @@ export default function SessionsTab() {
 
                             {a.checkedIn && a.checkedInAt && (
                               <span className="text-xs text-green-600">
-                                {new Date(a.checkedInAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(a.checkedInAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             )}
 
@@ -320,7 +320,7 @@ export default function SessionsTab() {
                             )}
 
                             {a.videoUrl && (
-                              <span title="มีวิดีโอ">
+                              <span title="Has video">
                                 <Video className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                               </span>
                             )}
@@ -361,16 +361,16 @@ export default function SessionsTab() {
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>สร้าง Class Session ใหม่</DialogTitle>
+            <DialogTitle>Create New Class Session</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {formError && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded">{formError}</p>}
 
             <div>
-              <Label>คอร์ส *</Label>
+              <Label>Course *</Label>
               <Select value={form.courseId} onValueChange={(v) => setForm({ ...form, courseId: v })}>
                 <SelectTrigger className="h-auto min-h-10">
-                  <SelectValue placeholder="เลือกคอร์ส...">
+                  <SelectValue placeholder="Select a course...">
                     {form.courseId && (() => {
                       const selected = courses.find(c => c._id === form.courseId)
                       return selected ? (
@@ -396,10 +396,10 @@ export default function SessionsTab() {
             </div>
 
             <div>
-              <Label>ครู *</Label>
+              <Label>Teacher *</Label>
               <Select value={form.teacherId} onValueChange={(v) => setForm({ ...form, teacherId: v })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="เลือกครู..." />
+                  <SelectValue placeholder="Select a teacher..." />
                 </SelectTrigger>
                 <SelectContent>
                   {teachers.map(t => (
@@ -411,7 +411,7 @@ export default function SessionsTab() {
 
             {/* Slot selection */}
             <div>
-              <Label>Slot (ไม่บังคับ)</Label>
+              <Label>Slot (optional)</Label>
               <div className="grid grid-cols-2 gap-2 mt-1.5">
                 <div className="grid grid-cols-3 col-span-2 gap-2">
                   {SLOTS.map(slot => (
@@ -442,7 +442,7 @@ export default function SessionsTab() {
             </div>
 
             <div>
-              <Label>วันเวลาเรียน *</Label>
+              <Label>Date & Time *</Label>
               <Input
                 type="datetime-local"
                 value={form.scheduledAt}
@@ -451,28 +451,28 @@ export default function SessionsTab() {
             </div>
 
             <div>
-              <Label>หัวข้อ / Topic *</Label>
+              <Label>Topic *</Label>
               <Input
                 value={form.topic}
                 onChange={(e) => setForm({ ...form, topic: e.target.value })}
-                placeholder="เช่น Introduction to Sensors"
+                placeholder="e.g. Introduction to Sensors"
               />
             </div>
 
             <div>
-              <Label>หมายเหตุ</Label>
+              <Label>Notes</Label>
               <Textarea
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 rows={2}
-                placeholder="หมายเหตุ..."
+                placeholder="Notes..."
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>ยกเลิก</Button>
+            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAddSession} disabled={saving} className="bg-orange-500 hover:bg-orange-600 text-white">
-              {saving ? 'กำลังบันทึก...' : 'สร้าง Session'}
+              {saving ? 'Saving...' : 'Create Session'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -486,7 +486,7 @@ export default function SessionsTab() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>คะแนน (1-5 ดาว)</Label>
+              <Label>Rating (1–5 stars)</Label>
               <div className="flex gap-1 mt-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <button key={i} onClick={() => setFeedbackRating(i + 1)}>
@@ -499,19 +499,19 @@ export default function SessionsTab() {
                 ))}
                 {feedbackRating > 0 && (
                   <button onClick={() => setFeedbackRating(0)} className="ml-2 text-xs text-gray-400 hover:text-red-400">
-                    ล้าง
+                    Clear
                   </button>
                 )}
               </div>
             </div>
 
             <div>
-              <Label>ความคิดเห็น / Feedback</Label>
+              <Label>Comments / Feedback</Label>
               <Textarea
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
                 rows={4}
-                placeholder="เขียน feedback การเรียนของนักเรียนในครั้งนี้..."
+                placeholder="Write feedback for this student's session..."
                 className="mt-1"
               />
             </div>
@@ -519,7 +519,7 @@ export default function SessionsTab() {
             <div>
               <Label className="flex items-center gap-1.5">
                 <Video className="w-4 h-4 text-blue-500" />
-                ลิงก์วิดีโอ (YouTube / Google Drive ฯลฯ)
+                Video Link (YouTube / Google Drive etc.)
               </Label>
               <Input
                 value={feedbackVideo}
@@ -530,9 +530,9 @@ export default function SessionsTab() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setFeedbackDialogOpen(false)}>ยกเลิก</Button>
+            <Button variant="outline" onClick={() => setFeedbackDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveFeedback} disabled={savingFeedback} className="bg-orange-500 hover:bg-orange-600 text-white">
-              {savingFeedback ? 'กำลังบันทึก...' : 'บันทึก Feedback'}
+              {savingFeedback ? 'Saving...' : 'Save Feedback'}
             </Button>
           </DialogFooter>
         </DialogContent>

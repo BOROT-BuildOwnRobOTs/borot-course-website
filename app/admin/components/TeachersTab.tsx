@@ -54,7 +54,7 @@ export default function TeachersTab() {
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.email.trim()) return
-    if (!editTeacher && !form.password.trim()) { setError('กรุณาใส่ password'); return }
+    if (!editTeacher && !form.password.trim()) { setError('Please enter a password'); return }
     setSaving(true)
     setError('')
     try {
@@ -65,7 +65,7 @@ export default function TeachersTab() {
         : form
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const json = await res.json()
-      if (!json.success) { setError(json.error || 'เกิดข้อผิดพลาด'); return }
+      if (!json.success) { setError(json.error || 'An error occurred'); return }
       setDialogOpen(false)
       fetchTeachers()
     } finally {
@@ -74,7 +74,7 @@ export default function TeachersTab() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('ลบครูคนนี้?')) return
+    if (!confirm('Delete this teacher?')) return
     await fetch(`/api/admin/teachers/${id}`, { method: 'DELETE' })
     fetchTeachers()
   }
@@ -82,18 +82,18 @@ export default function TeachersTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">ครูทั้งหมด ({teachers.length})</h2>
+        <h2 className="text-xl font-semibold text-gray-800">All Teachers ({teachers.length})</h2>
         <Button onClick={openAdd} className="bg-orange-500 hover:bg-orange-600 text-white">
-          <Plus className="w-4 h-4 mr-2" /> เพิ่มครู
+          <Plus className="w-4 h-4 mr-2" /> Add Teacher
         </Button>
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-gray-400">กำลังโหลด...</div>
+        <div className="text-center py-8 text-gray-400">Loading...</div>
       ) : teachers.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <GraduationCap className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p>ยังไม่มีครู</p>
+          <p>No teachers yet</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -144,20 +144,20 @@ export default function TeachersTab() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editTeacher ? 'แก้ไขข้อมูลครู' : 'เพิ่มครูใหม่'}</DialogTitle>
+            <DialogTitle>{editTeacher ? 'Edit Teacher' : 'Add New Teacher'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {error && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded">{error}</p>}
             <div>
-              <Label>ชื่อ-นามสกุล *</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="ชื่อครู" />
+              <Label>Full Name *</Label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Teacher name" />
             </div>
             <div>
               <Label>Email *</Label>
               <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="teacher@example.com" />
             </div>
             <div>
-              <Label>{editTeacher ? 'Password (เว้นว่างถ้าไม่เปลี่ยน)' : 'Password *'}</Label>
+              <Label>{editTeacher ? 'Password (leave blank to keep unchanged)' : 'Password *'}</Label>
               <div className="relative">
                 <Input
                   type={showPassword ? 'text' : 'password'}
@@ -176,18 +176,18 @@ export default function TeachersTab() {
               </div>
             </div>
             <div>
-              <Label>เบอร์โทร</Label>
+              <Label>Phone</Label>
               <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="0812345678" />
             </div>
             <div>
-              <Label>ความเชี่ยวชาญ</Label>
-              <Input value={form.specialization} onChange={(e) => setForm({ ...form, specialization: e.target.value })} placeholder="เช่น Robotics, Coding" />
+              <Label>Specialization</Label>
+              <Input value={form.specialization} onChange={(e) => setForm({ ...form, specialization: e.target.value })} placeholder="e.g. Robotics, Coding" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>ยกเลิก</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={saving} className="bg-orange-500 hover:bg-orange-600 text-white">
-              {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+              {saving ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>

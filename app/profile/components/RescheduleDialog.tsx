@@ -92,17 +92,17 @@ export default function RescheduleDialog({ open, onClose, student, enrollIdx, or
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>เปลี่ยนวันเรียน</DialogTitle>
+          <DialogTitle>Reschedule Session</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {origDate && (
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-700">
-              วันเดิม: {origDate.toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+              Original date: {origDate.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </div>
           )}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <Label>เลือก Slot ใหม่</Label>
+              <Label>Select New Slot</Label>
               {loadingReschedSlots && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -132,11 +132,11 @@ export default function RescheduleDialog({ open, onClose, student, enrollIdx, or
                         isSelected ? "text-white/80" : isFull ? "text-red-500" : slot.count >= 5 ? "text-orange-500" : "text-green-600"
                       }`}>
                         <Users className="h-2.5 w-2.5" />
-                        <span>{slot.count}/{slot.max} คน</span>
+                        <span>{slot.count}/{slot.max}</span>
                       </div>
                     )}
                     {isFull && reschedSlotAvailability.length > 0 && (
-                      <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">เต็ม</span>
+                      <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>
                     )}
                   </button>
                 )
@@ -144,22 +144,22 @@ export default function RescheduleDialog({ open, onClose, student, enrollIdx, or
             </div>
           </div>
           <div>
-            <Label>วันที่ใหม่</Label>
+            <Label>New Date</Label>
             <Input type="date" value={reschedNewDate} onChange={(e) => setReschedNewDate(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label>เหตุผล (ไม่บังคับ)</Label>
-            <Input value={reschedReason} onChange={(e) => setReschedReason(e.target.value)} placeholder="เช่น ป่วย / ติดธุระ" className="mt-1" />
+            <Label>Reason (optional)</Label>
+            <Input value={reschedReason} onChange={(e) => setReschedReason(e.target.value)} placeholder="e.g. Sick / Unavailable" className="mt-1" />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>ยกเลิก</Button>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
             onClick={handleSave}
             disabled={savingResched || !reschedNewSlotDay || !reschedNewDate}
             className="bg-orange-500 hover:bg-orange-600 text-white"
           >
-            {savingResched ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />กำลังบันทึก...</> : "ยืนยันเปลี่ยนวัน"}
+            {savingResched ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Confirm Reschedule"}
           </Button>
         </DialogFooter>
       </DialogContent>

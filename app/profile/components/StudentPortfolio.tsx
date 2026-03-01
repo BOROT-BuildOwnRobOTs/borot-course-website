@@ -17,9 +17,9 @@ import {
 // ── Mock portfolio items ────────────────────────────────────────────────────
 const MOCK_PROJECTS = [
   {
-    title: "หุ่นยนต์หลีกเลี่ยงสิ่งกีดขวาง",
+    title: "Obstacle-Avoiding Robot",
     module: "Module 1",
-    date: "ต.ค. 2567",
+    date: "Oct 2024",
     thumbnail: null,
     hasVideo: true,
     hasImage: true,
@@ -27,9 +27,9 @@ const MOCK_PROJECTS = [
     tags: ["Robotics", "Sensors", "Arduino"],
   },
   {
-    title: "โปรแกรม Line Follower",
+    title: "Line Follower Program",
     module: "Module 2",
-    date: "พ.ย. 2567",
+    date: "Nov 2024",
     thumbnail: null,
     hasVideo: false,
     hasImage: true,
@@ -37,9 +37,9 @@ const MOCK_PROJECTS = [
     tags: ["Programming", "Control"],
   },
   {
-    title: "ระบบ Smart Home จำลอง",
+    title: "Smart Home Simulation",
     module: "Module 3",
-    date: "ธ.ค. 2567",
+    date: "Dec 2024",
     thumbnail: null,
     hasVideo: true,
     hasImage: true,
@@ -51,26 +51,26 @@ const MOCK_PROJECTS = [
 const PORTFOLIO_FEATURES = [
   {
     icon: <Image className="h-5 w-5 text-blue-500" />,
-    label: "รูปภาพโปรเจกต์",
-    desc: "รวบรวมรูปจากทุก session อัตโนมัติ",
+    label: "Project Photos",
+    desc: "Automatically collected from all sessions",
     color: "bg-blue-50 border-blue-200",
   },
   {
     icon: <Video className="h-5 w-5 text-red-500" />,
-    label: "วิดีโอผลงาน",
-    desc: "ไฮไลต์วิดีโอการสาธิตผลงาน",
+    label: "Project Videos",
+    desc: "Highlight videos of demo presentations",
     color: "bg-red-50 border-red-200",
   },
   {
     icon: <Box className="h-5 w-5 text-purple-500" />,
-    label: "ไฟล์ 3D Model",
-    desc: "แบบ 3D ที่ออกแบบและพิมพ์จริง",
+    label: "3D Model Files",
+    desc: "3D designs created and actually printed",
     color: "bg-purple-50 border-purple-200",
   },
   {
     icon: <FolderOpen className="h-5 w-5 text-orange-500" />,
-    label: "โปรเจกต์ทั้งหมด",
-    desc: "สรุปผลงานทุกโมดูลครบถ้วน",
+    label: "All Projects",
+    desc: "Complete summary of work across all modules",
     color: "bg-orange-50 border-orange-200",
   },
 ]
@@ -113,21 +113,21 @@ export default function StudentPortfolio({ studentName }: Props) {
             {studentName ? `${studentName}'s Portfolio` : "Student Portfolio"}
           </h3>
           <p className="text-sm text-white/80 leading-relaxed max-w-md">
-            ระบบจะดึงรูป วิดีโอ ไฟล์ 3D และโปรเจกต์ทั้งหมดมา generate เป็น
+            The system will pull all photos, videos, 3D files, and projects to auto-generate a
             <span className="text-yellow-200 font-semibold"> "Digital Engineering Portfolio"</span>
-            {" "}ที่ผู้ปกครองสามารถ download เป็น PDF ได้
+            {" "}that parents can download as a PDF.
           </p>
           <div className="flex gap-2 flex-wrap pt-1">
-            <span className="text-xs bg-white/20 px-3 py-1 rounded-full">📚 สมัครโรงเรียน</span>
-            <span className="text-xs bg-white/20 px-3 py-1 rounded-full">🏆 เข้าแข่งขัน</span>
-            <span className="text-xs bg-white/20 px-3 py-1 rounded-full">💼 แสดงผลงาน</span>
+            <span className="text-xs bg-white/20 px-3 py-1 rounded-full">📚 School Applications</span>
+            <span className="text-xs bg-white/20 px-3 py-1 rounded-full">🏆 Competitions</span>
+            <span className="text-xs bg-white/20 px-3 py-1 rounded-full">💼 Showcase Work</span>
           </div>
         </div>
       </div>
 
       {/* What will be included */}
       <div>
-        <p className="text-sm font-semibold text-muted-foreground mb-3">📂 ระบบจะรวบรวมอัตโนมัติ</p>
+        <p className="text-sm font-semibold text-muted-foreground mb-3">📂 Automatically collected</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {PORTFOLIO_FEATURES.map((f) => (
             <Card key={f.label} className={`border ${f.color}`}>
@@ -147,7 +147,7 @@ export default function StudentPortfolio({ studentName }: Props) {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
-            🗂️ ตัวอย่างโปรเจกต์
+            🗂️ Sample Projects
             <span className="text-xs font-normal text-muted-foreground">(Coming Soon)</span>
           </CardTitle>
         </CardHeader>
@@ -180,17 +180,17 @@ export default function StudentPortfolio({ studentName }: Props) {
               {/* Media indicators */}
               <div className="flex gap-1.5 shrink-0">
                 {p.hasImage && (
-                  <span title="มีรูปภาพ" className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span title="Has photos" className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
                     <Image className="h-3 w-3 text-blue-500" />
                   </span>
                 )}
                 {p.hasVideo && (
-                  <span title="มีวิดีโอ" className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
+                  <span title="Has video" className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
                     <Video className="h-3 w-3 text-red-500" />
                   </span>
                 )}
                 {p.has3D && (
-                  <span title="มีไฟล์ 3D" className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
+                  <span title="Has 3D file" className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
                     <Box className="h-3 w-3 text-purple-500" />
                   </span>
                 )}
@@ -216,7 +216,7 @@ export default function StudentPortfolio({ studentName }: Props) {
           <div>
             <p className="text-sm font-bold text-amber-800">Download PDF Portfolio</p>
             <p className="text-xs text-amber-700 mt-0.5">
-              ผู้ปกครองสามารถ download Portfolio เป็น PDF ได้ — ฟีเจอร์นี้กำลังจะมาเร็วๆ นี้
+              Parents will be able to download the Portfolio as PDF — this feature is coming soon.
             </p>
           </div>
           <button
@@ -233,19 +233,19 @@ export default function StudentPortfolio({ studentName }: Props) {
       {/* Checklist */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">✅ Portfolio จะมีอะไรบ้าง</CardTitle>
+          <CardTitle className="text-base">✅ What's included in the Portfolio</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {[
-              "หน้าปกพร้อมชื่อนักเรียนและโรงเรียน",
-              "สรุปทักษะ Skill Radar Chart",
-              "รายการโปรเจกต์ทุกโมดูล",
-              "รูปภาพและวิดีโอผลงาน",
-              "ไฟล์ 3D Design ที่เคยสร้าง",
-              "คำแนะนำและ feedback จากครู",
-              "ใบรับรองการผ่านหลักสูตร",
-              "QR Code เชื่อมโยง Digital Portfolio",
+              "Cover page with student name and school",
+              "Skill summary Radar Chart",
+              "Project list for all modules",
+              "Photos and videos of work",
+              "3D design files created",
+              "Teacher recommendations and feedback",
+              "Course completion certificate",
+              "QR Code linking to Digital Portfolio",
             ].map((item) => (
               <div key={item} className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
@@ -258,7 +258,7 @@ export default function StudentPortfolio({ studentName }: Props) {
 
       {/* Footer */}
       <p className="text-center text-xs text-muted-foreground pb-2">
-        🚀 Student Portfolio กำลังจะมาเร็วๆ นี้ (Coming Soon)
+        🚀 Student Portfolio is coming soon (Coming Soon)
       </p>
     </div>
   )

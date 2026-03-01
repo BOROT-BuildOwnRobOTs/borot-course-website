@@ -79,7 +79,6 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
   }, [user._id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Compute tier score: sum of courseDurationWeeks for all COMPLETED enrollments
-  // of students this teacher has taught (each week = 1 session = 1 point)
   useEffect(() => {
     if (loadingStudents || loadingSessions) return
 
@@ -147,15 +146,11 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
     .map((student) => {
       const matchingEnrollments = student.enrollments.filter(
         (e) =>
-          // ✅ direct: enrollment ระบุชื่อครูตรงๆ
           String(e.teacher) === String(user._id) ||
-          // ✅ fallback เฉพาะกรณีที่ enrollment ยังไม่มี teacher กำกับ
-          //    (ข้อมูลเก่าที่ยังไม่ได้ assign ครู) + course ตรงกับที่ครูสอน
           (teacherCourseIds.has(String(e.course)) && (!e.teacher || e.teacher === ""))
       )
       return {
         ...student,
-        // Only show enrollments that belong to this teacher — never fallback to all enrollments
         enrollments: matchingEnrollments,
       }
     })
@@ -169,7 +164,7 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
   for (const student of teacherStudentsWithEnrollments) {
     for (const enrollment of student.enrollments) {
       if (!enrollment.slot) continue
-      if (enrollment.status !== "active") continue   // นับเฉพาะกำลังเรียน
+      if (enrollment.status !== "active") continue
       const match = ALL_SLOTS.find(
         (s) => s.day === enrollment.slot!.day && s.time === enrollment.slot!.time
       )
@@ -183,7 +178,6 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
   const filteredStudents = teacherStudentsWithEnrollments
     .map((student) => {
       let enrollments = student.enrollments
-      // Filter by slot
       if (selectedSlot) {
         enrollments = enrollments.filter(
           (e) =>
@@ -191,10 +185,8 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
             e.slot.day === selectedSlot.day &&
             e.slot.time === selectedSlot.time
         )
-        // เมื่อดูตามคลาส → แสดงเฉพาะที่กำลังเรียน (active) เท่านั้น
         enrollments = enrollments.filter((e) => e.status === "active")
       } else {
-        // Filter by status (ใช้เมื่อไม่ได้เลือก slot)
         if (statusFilter !== "all") {
           enrollments = enrollments.filter((e) => e.status === statusFilter)
         }
@@ -213,30 +205,30 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
       <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground">
         <span className="flex items-center gap-1">
           <Users className="h-3.5 w-3.5" />
-          นักเรียนทั้งหมด
+          Total students
           <strong className="text-foreground ml-0.5">
-            {systemStats ? `${systemStats.totalAll} คน` : "…"}
+            {systemStats ? `${systemStats.totalAll}` : "…"}
           </strong>
         </span>
         <span className="text-border">·</span>
         <span className="flex items-center gap-1">
-          นักเรียนของฉัน (กำลังเรียน)
+          My students (active)
           <strong className="text-orange-600 ml-0.5">
             {teacherStudentsWithEnrollments.filter((s) =>
               s.enrollments.some((e) => e.status === "active")
-            ).length} คน
+            ).length}
           </strong>
         </span>
       </div>
 
       {/* ── Status Filter ─────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground font-medium shrink-0">แสดง:</span>
+        <span className="text-sm text-muted-foreground font-medium shrink-0">Show:</span>
         {(
           [
-            { value: "active",    label: "🕐 กำลังเรียน", activeClass: "bg-blue-500 text-white border-blue-500" },
-            { value: "completed", label: "✅ จบแล้ว",     activeClass: "bg-green-500 text-white border-green-500" },
-            { value: "all",       label: "ทั้งหมด",        activeClass: "bg-gray-700 text-white border-gray-700" },
+            { value: "active",    label: "🕐 In Progress", activeClass: "bg-blue-500 text-white border-blue-500" },
+            { value: "completed", label: "✅ Completed",   activeClass: "bg-green-500 text-white border-green-500" },
+            { value: "all",       label: "All",            activeClass: "bg-gray-700 text-white border-gray-700" },
           ] as const
         ).map(({ value, label, activeClass }) => (
           <button
@@ -258,27 +250,27 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
       <div>
         <div className="flex items-center gap-2 mb-2">
           <CalendarDays className="h-4 w-4 text-orange-500" />
-          <span className="text-sm font-semibold text-muted-foreground">ดูตามคลาส</span>
+          <span className="text-sm font-semibold text-muted-foreground">View by class</span>
           {selectedSlotId && (
             <button
               onClick={() => setSelectedSlotId(null)}
               className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
               <FilterX className="h-3 w-3" />
-              ล้าง
+              Clear
             </button>
           )}
         </div>
 
         <div className="space-y-1.5">
           {[
-            { label: "เสาร์", slots: saturdaySlots, day: "saturday" },
-            { label: "อาทิตย์", slots: sundaySlots, day: "sunday" },
+            { label: "Saturday", slots: saturdaySlots, day: "saturday" },
+            { label: "Sunday",   slots: sundaySlots,   day: "sunday" },
           ].map(({ label, slots, day }) => {
             const styles = DAY_STYLES[day]
             return (
               <div key={day} className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-muted-foreground w-12 shrink-0">{label}</span>
+                <span className="text-xs text-muted-foreground w-16 shrink-0">{label}</span>
                 {slots.map((slot) => {
                   const count = slotStudentMap.get(slot.id)?.size ?? 0
                   const isActive = selectedSlotId === slot.id
@@ -292,7 +284,7 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
                       ].join(" ")}
                     >
                       <Clock className="h-3 w-3 opacity-60" />
-                      {slot.time} น.
+                      {slot.time}
                       <span className={[
                         "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
                         isActive ? "bg-white/60" : "bg-white/80 text-foreground",
@@ -309,8 +301,8 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
 
         {selectedSlot && (
           <p className="mt-2 text-xs text-muted-foreground">
-            แสดงเฉพาะ <strong className="text-foreground">{selectedSlot.dayLabel} {selectedSlot.time} น.</strong>
-            {" "}— <strong className="text-foreground">{filteredStudents.length} คน</strong>
+            Showing <strong className="text-foreground">{selectedSlot.dayLabel} {selectedSlot.time}</strong>
+            {" "}— <strong className="text-foreground">{filteredStudents.length} students</strong>
           </p>
         )}
       </div>
@@ -320,12 +312,12 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
         <div className="flex items-center gap-3 mb-4">
           <Users className="h-6 w-6 text-orange-500" />
           <h2 className="text-2xl font-bold">
-            {selectedSlot ? `นักเรียนในคลาสนี้` : "นักเรียนของฉัน"}
+            {selectedSlot ? `Students in this class` : "My Students"}
           </h2>
           {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           {!loading && (
             <Badge variant="secondary" className="ml-auto">
-              {filteredStudents.length} คน
+              {filteredStudents.length} students
             </Badge>
           )}
         </div>
@@ -336,12 +328,12 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
               <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
               <p>
                 {statusFilter === "active"
-                  ? "ไม่มีนักเรียนที่กำลังเรียนอยู่"
+                  ? "No students currently in progress"
                   : statusFilter === "completed"
-                  ? "ไม่มีนักเรียนที่เรียนจบแล้ว"
+                  ? "No students have completed yet"
                   : selectedSlot
-                  ? "ไม่มีนักเรียนในคลาสนี้"
-                  : "ยังไม่มีนักเรียน"}
+                  ? "No students in this class"
+                  : "No students yet"}
               </p>
             </CardContent>
           </Card>
@@ -364,20 +356,20 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
                           <p className="font-bold text-lg leading-tight">{student.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {student.nickname && `(${student.nickname})`}
-                            {student.age && ` อายุ ${student.age} ปี`}
+                            {student.age && ` Age ${student.age}`}
                           </p>
                         </div>
                       </div>
-                      <Badge variant="secondary">{total} คอร์ส</Badge>
+                      <Badge variant="secondary">{total} courses</Badge>
                     </div>
                     {total > 0 && (
                       <div className="mt-3">
                         <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
                           <div className="flex items-center gap-1">
                             <Trophy className="h-3.5 w-3.5" />
-                            <span>ความคืบหน้าโดยรวม</span>
+                            <span>Overall Progress</span>
                           </div>
-                          <span className="font-semibold">{done}/{total} คอร์ส ({progress}%)</span>
+                          <span className="font-semibold">{done}/{total} courses ({progress}%)</span>
                         </div>
                         <Progress value={progress} className="h-2" />
                       </div>

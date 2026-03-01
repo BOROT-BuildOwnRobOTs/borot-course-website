@@ -9,64 +9,64 @@ import { Bot, Send, Sparkles, User, Loader2 } from "lucide-react"
 // key = normalized question text, value = answer lines
 const LOCKED_ANSWERS: Record<string, string[]> = {
   "ควรต่อ level 2 หรือ robotics": [
-    "จากข้อมูล 12 sessions ที่ผ่านมา แนะนำให้ต่อ **Robotics Level 2** ก่อนเลยครับ 🤖",
-    "เหตุผล: น้องมี Logical Thinking และ Problem Solving ที่แข็งแกร่ง เหมาะกับการต่อยอด programming-based",
-    "3D Printing เหมาะกว่าในภายหลัง เมื่อ Engineering Skill พัฒนาขึ้นแล้ว",
+    "Based on 12 past sessions, I recommend continuing with **Robotics Level 2** first! 🤖",
+    "Reason: The student has strong Logical Thinking and Problem Solving skills — perfect for a programming-based track.",
+    "3D Printing is better suited for later, once Engineering Skills have developed further.",
   ],
   "ควรต่อ level 2": [
-    "จากข้อมูล 12 sessions ที่ผ่านมา แนะนำให้ต่อ **Robotics Level 2** ก่อนเลยครับ 🤖",
-    "เหตุผล: น้องมี Logical Thinking และ Problem Solving ที่แข็งแกร่ง เหมาะกับการต่อยอด programming-based",
-    "3D Printing เหมาะกว่าในภายหลัง เมื่อ Engineering Skill พัฒนาขึ้นแล้ว",
+    "Based on 12 past sessions, I recommend continuing with **Robotics Level 2** first! 🤖",
+    "Reason: The student has strong Logical Thinking and Problem Solving skills — perfect for a programming-based track.",
+    "3D Printing is better suited for later, once Engineering Skills have developed further.",
   ],
   "mechanical structure": [
-    "ใช่เลย! จากการสังเกต session 4–6 โครงสร้างหุ่นยนต์มักจะหลวมในส่วน joint 🔧",
-    "แนะนำให้ฝึก: Lego Technic structure, Bridge challenge, Load-bearing design",
-    "ใช้เวลาแค่ 1–2 สัปดาห์เสริม ก็จะเห็นความแตกต่างชัดเจน",
+    "Yes! Based on observations from sessions 4–6, the robot structure tends to be loose at the joints. 🔧",
+    "Recommended practice: Lego Technic structure, Bridge challenge, Load-bearing design.",
+    "Just 1–2 weeks of focused practice will make a noticeable difference.",
   ],
   "competition track": [
-    "น้องเหมาะมากกับ Competition Track! 🏆",
-    "Teamwork score อยู่ที่ 90/100 และ Problem Solving 78/100 — สูงกว่าค่าเฉลี่ยนักเรียนทั่วไป",
-    "แนะนำให้เริ่มเตรียมตัวด้วย Competition Prep Module ในเทอมหน้า",
+    "The student is a great fit for the Competition Track! 🏆",
+    "Teamwork score: 90/100 and Problem Solving: 78/100 — both above average for peers.",
+    "Recommend starting Competition Prep Module next semester.",
   ],
   "animation": [
-    "น่าสนใจมากเลยครับ! Animation เหมาะกับน้องมากเพราะ Creativity score สูงถึง 85/100 🎨",
-    "แนะนำให้ลอง: Scratch animation, Stop-motion, Servo motor choreography",
-    "การทำ Animation จะเสริม presentation skill และเปิดโลก digital art ให้กว้างขึ้น",
+    "Excellent idea! Animation is a great match because the Creativity score is as high as 85/100. 🎨",
+    "Suggested activities: Scratch animation, Stop-motion, Servo motor choreography.",
+    "Animation will build presentation skills and open the door to the world of digital art.",
   ],
   "engineering หรือ design": [
-    "จากการวิเคราะห์ น้องมีแนวโน้มด้าน **Engineering** มากกว่า Design ประมาณ 60:40 🧠",
-    "Logical Thinking (72) และ Problem Solving (78) ชี้ว่าน้องชอบ 'ทำให้มันทำงานได้' มากกว่า 'ทำให้มันสวย'",
-    "แต่ Creativity (85) สูงมากเช่นกัน อาจเป็น Engineering-Creative hybrid ที่หายากมาก!",
+    "Based on the analysis, the student leans toward **Engineering** over Design, roughly 60:40. 🧠",
+    "Logical Thinking (72) and Problem Solving (78) suggest a preference for 'making it work' over 'making it beautiful'.",
+    "However, Creativity (85) is also very high — this could be a rare Engineering-Creative hybrid!",
   ],
   "ทักษะที่ควรฝึก": [
-    "ทักษะที่ควรเน้นตอนนี้ตามลำดับความสำคัญ: 💪",
-    "1. 🔴 Mechanical Structure (ฝึกด่วน) — โครงสร้างยังหลวม",
-    "2. 🟡 Animation & Motion Design — Creativity สูง ควรนำมาใช้",
-    "3. 🟡 Electronics & Circuit — จะช่วย debug robot ได้เร็วขึ้น",
-    "4. 🟢 Data & Coding Logic — เสริมพื้นฐาน AI/ML ในอนาคต",
+    "Skills to focus on right now, in priority order: 💪",
+    "1. 🔴 Mechanical Structure (urgent) — structural joints are still loose.",
+    "2. 🟡 Animation & Motion Design — high Creativity score should be leveraged.",
+    "3. 🟡 Electronics & Circuit — will speed up robot debugging.",
+    "4. 🟢 Data & Coding Logic — builds foundation for AI/ML in the future.",
   ],
   "คอร์สถัดไป": [
-    "คอร์สที่แนะนำถัดไป (เรียงตามความเหมาะสม): 🎯",
-    "🥇 Robotics Level 2 — match 92% (แนะนำสูงสุด)",
-    "🥈 Competition Prep Track — match 85%",
-    "🥉 Electronics Fundamentals — match 74%",
+    "Recommended next courses (ranked by suitability): 🎯",
+    "🥇 Robotics Level 2 — 92% match (top recommendation)",
+    "🥈 Competition Prep Track — 85% match",
+    "🥉 Electronics Fundamentals — 74% match",
   ],
   "default": [
-    "ขอบคุณสำหรับคำถามนะครับ! 🤖",
-    "ฟีเจอร์นี้ยังอยู่ในช่วง Coming Soon — ในเวอร์ชันจริง AI จะวิเคราะห์จากข้อมูลการเรียนทั้งหมดและตอบคำถามนี้ได้อย่างแม่นยำ",
-    "ลองกดคำถามสำเร็จรูปด้านบนเพื่อดูตัวอย่างผลลัพธ์ได้เลยครับ 👆",
+    "Thanks for your question! 🤖",
+    "This feature is still Coming Soon — in the real version, AI will analyze all learning data and answer accurately.",
+    "Try clicking the preset questions above to see example results! 👆",
   ],
 }
 
 // ── Preset questions ───────────────────────────────────────────────────────
 const PRESET_QUESTIONS = [
-  { label: "ควรต่อ Level 2 หรือ Robotics?",         key: "ควรต่อ level 2 หรือ robotics" },
-  { label: "ควรฝึก Mechanical structure เพิ่มไหม?",  key: "mechanical structure" },
-  { label: "เหมาะกับ Competition Track ไหม?",        key: "competition track" },
-  { label: "ควรลอง Animation ไหม?",                  key: "animation" },
-  { label: "Engineering หรือ Design มากกว่า?",        key: "engineering หรือ design" },
-  { label: "ทักษะที่ควรฝึกเพิ่มตอนนี้คืออะไร?",      key: "ทักษะที่ควรฝึก" },
-  { label: "แนะนำคอร์สถัดไป",                         key: "คอร์สถัดไป" },
+  { label: "Continue Level 2 or Robotics?",          key: "ควรต่อ level 2 หรือ robotics" },
+  { label: "Should we practice Mechanical Structure?", key: "mechanical structure" },
+  { label: "Is the student suited for Competition Track?", key: "competition track" },
+  { label: "Should we try Animation?",               key: "animation" },
+  { label: "More Engineering or Design?",             key: "engineering หรือ design" },
+  { label: "What skills should we focus on now?",    key: "ทักษะที่ควรฝึก" },
+  { label: "Recommend next course",                   key: "คอร์สถัดไป" },
 ]
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -104,9 +104,9 @@ export default function AIRecommendation({ studentName }: Props) {
     {
       role: "ai",
       lines: [
-        `สวัสดีครับ! ผม BOROT AI 🤖`,
-        `${studentName ? `ผมได้วิเคราะห์ข้อมูลการเรียนของน้อง ${studentName} แล้ว` : "ผมวิเคราะห์ข้อมูลการเรียนพร้อมแล้ว"}`,
-        "ลองกดคำถามด้านล่าง หรือพิมพ์ถามได้เลยครับ (Demo mode — คำตอบเป็นตัวอย่าง)",
+        `Hello! I'm BOROT AI 🤖`,
+        `${studentName ? `I've analyzed the learning data for ${studentName}.` : "I've finished analyzing the learning data."}`,
+        "Try clicking a question below, or type your own! (Demo mode — answers are examples)",
       ],
     },
   ])
@@ -151,7 +151,7 @@ export default function AIRecommendation({ studentName }: Props) {
           <div>
             <h2 className="text-2xl font-bold">AI Recommendation</h2>
             <p className="text-xs text-muted-foreground">
-              ทดลองถาม AI วิเคราะห์พัฒนาการ · Demo Mode
+              Ask AI to analyze learning progress · Demo Mode
             </p>
           </div>
         </div>
@@ -162,7 +162,7 @@ export default function AIRecommendation({ studentName }: Props) {
 
       {/* Preset question chips */}
       <div>
-        <p className="text-xs text-muted-foreground font-medium mb-2">💡 คำถามตัวอย่าง — กดเพื่อถามเลย:</p>
+        <p className="text-xs text-muted-foreground font-medium mb-2">💡 Sample questions — click to ask:</p>
         <div className="flex flex-wrap gap-2">
           {PRESET_QUESTIONS.map((q) => (
             <button
@@ -186,7 +186,7 @@ export default function AIRecommendation({ studentName }: Props) {
             <Sparkles className="h-4 w-4 text-yellow-300" />
             BOROT AI Chat · Demo
             <span className="ml-auto text-[10px] bg-white/20 px-2 py-0.5 rounded-full">
-              คำตอบเป็นตัวอย่าง
+              Example answers only
             </span>
           </CardTitle>
         </CardHeader>
@@ -253,7 +253,7 @@ export default function AIRecommendation({ studentName }: Props) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="พิมพ์คำถามของคุณ... (กด Enter หรือ ส่ง)"
+              placeholder="Type your question... (Press Enter or Send)"
               disabled={isLoading}
               className="flex-1 text-sm px-3 py-2 rounded-full border border-gray-200 bg-gray-50
                 focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-300
@@ -279,7 +279,7 @@ export default function AIRecommendation({ studentName }: Props) {
 
       {/* Disclaimer */}
       <p className="text-center text-xs text-muted-foreground pb-2">
-        🤖 Demo เท่านั้น — AI จริงจะเชื่อมกับข้อมูลการเรียน · Coming Soon
+        🤖 Demo only — Real AI will connect to learning data · Coming Soon
       </p>
     </div>
   )
