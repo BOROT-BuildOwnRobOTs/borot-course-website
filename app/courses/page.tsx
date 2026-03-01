@@ -5,26 +5,10 @@ import { Navbar } from "@/components/navbar"
 
 /* ─── Track config ─────────────────────────────────────────────── */
 const tracks = {
-  rj_basic: {
-    color: "#E5690D",
-    colorLight: "#FFF7F0",
-    colorMid: "#FED7AA",
-  },
-  rj_advanced: {
-    color: "#C2410C",
-    colorLight: "#FFF1EB",
-    colorMid: "#FDBA74",
-  },
-  inventors3d: {
-    color: "#0D9488",
-    colorLight: "#F0FDFA",
-    colorMid: "#99F6E4",
-  },
-  robogenesis: {
-    color: "#6366F1",
-    colorLight: "#EEF2FF",
-    colorMid: "#C7D2FE",
-  },
+  rj_basic: { color: "#E5690D", colorLight: "#FFF7F0", colorMid: "#FED7AA" },
+  rj_advanced: { color: "#C2410C", colorLight: "#FFF1EB", colorMid: "#FDBA74" },
+  inventors3d: { color: "#0D9488", colorLight: "#F0FDFA", colorMid: "#99F6E4" },
+  robogenesis: { color: "#6366F1", colorLight: "#EEF2FF", colorMid: "#C7D2FE" },
 }
 
 type TrackKey = keyof typeof tracks
@@ -43,312 +27,34 @@ interface Node {
   desc: string
   tools: string
   emoji: string
-  miniCamp?: {
-    price: string
-    note: string
-  }
+  miniCamp?: { price: string; note: string }
 }
 
 /* ─── Node data ────────────────────────────────────────────────── */
 const nodes: Node[] = [
-  /* ── Col 0 : RoboJourney Beginner ── */
-  {
-    id: "rj-l1", track: "rj_basic", col: 0, row: 0,
-    badge: "Level 1", title: "Junior Discovery", age: "Age 4–8",
-    sessions: "10 sessions · 2 hrs each",
-    price: "14,490 THB",
-    desc: "First steps into robotics — explore simple mechanisms and give your first programming commands using Lego WeDo.",
-    tools: "Lego WeDo",
-    emoji: "🦾",
-  },
-  {
-    id: "rj-l2", track: "rj_basic", col: 0, row: 1,
-    badge: "Level 2", title: "Junior Challenge", age: "Age 4–8",
-    sessions: "10 sessions · 2 hrs each",
-    price: "15,990 THB",
-    desc: "Solve robot challenges using Lego WeDo — analytical thinking to build and program robots meeting set criteria.",
-    tools: "Lego WeDo",
-    emoji: "🏆",
-  },
-  {
-    id: "rj-l3", track: "rj_basic", col: 0, row: 2,
-    badge: "Level 3", title: "Master Adventure", age: "Age 7–12",
-    sessions: "10 sessions · 2 hrs each",
-    price: "19,990 THB",
-    desc: "Step up to Lego Spike Prime with diverse motors & sensors — intermediate programming for simulated missions.",
-    tools: "Lego Spike Prime",
-    emoji: "🚀",
-  },
-  {
-    id: "rj-l4", track: "rj_basic", col: 0, row: 3,
-    badge: "Level 4", title: "Master Mission", age: "Age 7–12",
-    sessions: "10 sessions · 2 hrs each",
-    price: "19,900 THB",
-    desc: "Complex mechanisms like extendable grabber arms — precision coding and robust structural design for demanding missions.",
-    tools: "Lego Spike Prime",
-    emoji: "🦿",
-  },
-
-  /* ── Col 1 : RoboJourney Advanced ── */
-  {
-    id: "rj-l5", track: "rj_advanced", col: 1, row: 0,
-    badge: "Level 5", title: "IoT Smart House", age: "Age 9+",
-    sessions: "12 sessions · 2 hrs each",
-    price: "23,990 THB",
-    desc: "Build a Smart House model — connect and control electronic devices over a network using IoT principles.",
-    tools: "ESP32 · Wi-Fi · Dashboard",
-    emoji: "🏠",
-  },
-  {
-    id: "rj-l6", track: "rj_advanced", col: 1, row: 1,
-    badge: "Level 6", title: "Waste Sorting AI", age: "Age 9+",
-    sessions: "12 sessions · 2 hrs each",
-    price: "25,990 THB",
-    desc: "Build a smart trash bin that auto-sorts waste — learn foundational AI for object classification and recognition.",
-    tools: "Camera Module · AI · Arduino",
-    emoji: "♻️",
-  },
-  {
-    id: "rj-l7", track: "rj_advanced", col: 1, row: 2,
-    badge: "Level 7", title: "AI Robotic Hand", age: "Age 9+",
-    sessions: "12 sessions · 2 hrs each",
-    price: "28,990 THB",
-    priceNote: "+ 12,000 THB for robot kit",
-    desc: "Assemble and program an AI Robotic Hand — merge Micro:bit with biomechanical concepts and machine learning.",
-    tools: "Micro:bit · Servo · ML Model",
-    emoji: "🖐️",
-  },
-  {
-    id: "rj-l8", track: "rj_advanced", col: 1, row: 3,
-    badge: "Level 8", title: "Smart Manipulator", age: "Age 9+",
-    sessions: "12 sessions · 2 hrs each",
-    price: "31,290 THB",
-    priceNote: "+ 15,000 THB for robot kit",
-    desc: "Control an industrial robotic arm simulation using Computer Vision — advanced AI for high-precision object handling.",
-    tools: "Robotic Arm · Computer Vision · AI",
-    emoji: "🦾",
-  },
-
-  /* ── Col 2 : Little 3D Inventors ── */
-  {
-    id: "3d-l1", track: "inventors3d", col: 2, row: 0,
-    badge: "Level 1", title: "3D Inventors Basic", age: "Age 5+",
-    sessions: "4 sessions · 2 hrs each",
-    price: "8,390 THB",
-    desc: "Learn 2D/3D spatial concepts, design your first models in Onshape, and create real keychains & toys with a 3D printer.",
-    tools: "Onshape · 3D Printer · AI ideation",
-    emoji: "🧱",
-    miniCamp: {
-      price: "12,990 THB",
-      note: "Mini Camp available once a month (2-day intensive, 10:00 AM – 3:00 PM)",
-    },
-  },
-  {
-    id: "3d-l2", track: "inventors3d", col: 2, row: 1,
-    badge: "Level 2", title: "3D Inventors Pro", age: "Age 7+",
-    sessions: "4 sessions · 2 hrs each",
-    price: "8,890 THB",
-    desc: "Master precision measurement with Vernier calipers, design functional items like lamps and vases, balance form vs. function.",
-    tools: "Onshape · Vernier Calipers · 3D Printer",
-    emoji: "🏮",
-  },
-  {
-    id: "3d-l3", track: "inventors3d", col: 2, row: 2,
-    badge: "Level 3", title: "3D Inventors Advanced", age: "Age 10+",
-    sessions: "4 sessions · 2 hrs each",
-    price: "9,390 THB",
-    desc: "3D Assembly design, build a working Vise and Snail Robot, use engineering hand tools, and master full print settings.",
-    tools: "Onshape Assembly · Engineering Tools · 3D Printer",
-    emoji: "🤖",
-  },
-
-  /* ── Col 3 : Robogenesis ── */
-  {
-    id: "rg-s1", track: "robogenesis", col: 3, row: 0,
-    badge: "Step 1", title: "Basic Create — Design 3D", age: "Age 5+",
-    sessions: "4 sessions · 2 hrs each",
-    price: "9,590 THB",
-    desc: "3D thinking with Tinkercad — create keychains, house models, and creative pieces through hands-on experimentation.",
-    tools: "Tinkercad · 3D Printer",
-    emoji: "🎨",
-  },
-  {
-    id: "rg-s2", track: "robogenesis", col: 3, row: 1,
-    badge: "Step 2", title: "Power — Circuits", age: "Age 5+",
-    sessions: "4 sessions · 2 hrs each",
-    price: "9,990 THB",
-    desc: "Breadboard wiring, control LEDs & motors, learn Logic Gates (AND/OR), and practice real circuit troubleshooting.",
-    tools: "Breadboard · LEDs · Motors · RGB LED",
-    emoji: "⚡",
-  },
-  {
-    id: "rg-s3", track: "robogenesis", col: 3, row: 2,
-    badge: "Step 3", title: "Control — Programming", age: "Age 5+",
-    sessions: "4 sessions · 2 hrs each",
-    price: "10,590 THB",
-    desc: "Block-based coding, loops & events, if-else logic — build interactive Micro:bit games and team projects.",
-    tools: "Micro:bit · Block Editor · Sensors",
-    emoji: "💻",
-  },
+  { id: "rj-l1", track: "rj_basic", col: 0, row: 0, badge: "Level 1", title: "Junior Discovery", age: "Age 4–8", sessions: "10 sessions · 2 hrs each", price: "14,490 THB", desc: "First steps into robotics — explore simple mechanisms and give your first programming commands using Lego WeDo.", tools: "Lego WeDo", emoji: "🦾" },
+  { id: "rj-l2", track: "rj_basic", col: 0, row: 1, badge: "Level 2", title: "Junior Challenge", age: "Age 4–8", sessions: "10 sessions · 2 hrs each", price: "15,990 THB", desc: "Solve robot challenges using Lego WeDo — analytical thinking to build and program robots meeting set criteria.", tools: "Lego WeDo", emoji: "🏆" },
+  { id: "rj-l3", track: "rj_basic", col: 0, row: 2, badge: "Level 3", title: "Master Adventure", age: "Age 7–12", sessions: "10 sessions · 2 hrs each", price: "19,990 THB", desc: "Step up to Lego Spike Prime with diverse motors & sensors — intermediate programming for simulated missions.", tools: "Lego Spike Prime", emoji: "🚀" },
+  { id: "rj-l4", track: "rj_basic", col: 0, row: 3, badge: "Level 4", title: "Master Mission", age: "Age 7–12", sessions: "10 sessions · 2 hrs each", price: "19,900 THB", desc: "Complex mechanisms like extendable grabber arms — precision coding and robust structural design for demanding missions.", tools: "Lego Spike Prime", emoji: "🦿" },
+  { id: "rj-l5", track: "rj_advanced", col: 1, row: 0, badge: "Level 5", title: "IoT Smart House", age: "Age 9+", sessions: "12 sessions · 2 hrs each", price: "23,990 THB", desc: "Build a Smart House model — connect and control electronic devices over a network using IoT principles.", tools: "ESP32 · Wi-Fi · Dashboard", emoji: "🏠" },
+  { id: "rj-l6", track: "rj_advanced", col: 1, row: 1, badge: "Level 6", title: "Waste Sorting AI", age: "Age 9+", sessions: "12 sessions · 2 hrs each", price: "25,990 THB", desc: "Build a smart trash bin that auto-sorts waste — learn foundational AI for object classification and recognition.", tools: "Camera Module · AI · Arduino", emoji: "♻️" },
+  { id: "rj-l7", track: "rj_advanced", col: 1, row: 2, badge: "Level 7", title: "AI Robotic Hand", age: "Age 9+", sessions: "12 sessions · 2 hrs each", price: "28,990 THB", priceNote: "+ 12,000 THB for robot kit", desc: "Assemble and program an AI Robotic Hand — merge Micro:bit with biomechanical concepts and machine learning.", tools: "Micro:bit · Servo · ML Model", emoji: "🖐️" },
+  { id: "rj-l8", track: "rj_advanced", col: 1, row: 3, badge: "Level 8", title: "Smart Manipulator", age: "Age 9+", sessions: "12 sessions · 2 hrs each", price: "31,290 THB", priceNote: "+ 15,000 THB for robot kit", desc: "Control an industrial robotic arm simulation using Computer Vision — advanced AI for high-precision object handling.", tools: "Robotic Arm · Computer Vision · AI", emoji: "🦾" },
+  { id: "3d-l1", track: "inventors3d", col: 2, row: 0, badge: "Level 1", title: "3D Inventors Basic", age: "Age 5+", sessions: "4 sessions · 2 hrs each", price: "8,390 THB", desc: "Learn 2D/3D spatial concepts, design your first models in Onshape, and create real keychains & toys with a 3D printer.", tools: "Onshape · 3D Printer · AI ideation", emoji: "🧱", miniCamp: { price: "12,990 THB", note: "Mini Camp available once a month (2-day intensive, 10:00 AM – 3:00 PM)" } },
+  { id: "3d-l2", track: "inventors3d", col: 2, row: 1, badge: "Level 2", title: "3D Inventors Pro", age: "Age 7+", sessions: "4 sessions · 2 hrs each", price: "8,890 THB", desc: "Master precision measurement with Vernier calipers, design functional items like lamps and vases, balance form vs. function.", tools: "Onshape · Vernier Calipers · 3D Printer", emoji: "🏮" },
+  { id: "3d-l3", track: "inventors3d", col: 2, row: 2, badge: "Level 3", title: "3D Inventors Advanced", age: "Age 10+", sessions: "4 sessions · 2 hrs each", price: "9,390 THB", desc: "3D Assembly design, build a working Vise and Snail Robot, use engineering hand tools, and master full print settings.", tools: "Onshape Assembly · Engineering Tools · 3D Printer", emoji: "🤖" },
+  { id: "rg-s1", track: "robogenesis", col: 3, row: 0, badge: "Step 1", title: "Basic Create — Design 3D", age: "Age 5+", sessions: "4 sessions · 2 hrs each", price: "9,590 THB", desc: "3D thinking with Tinkercad — create keychains, house models, and creative pieces through hands-on experimentation.", tools: "Tinkercad · 3D Printer", emoji: "🎨" },
+  { id: "rg-s2", track: "robogenesis", col: 3, row: 1, badge: "Step 2", title: "Power — Circuits", age: "Age 5+", sessions: "4 sessions · 2 hrs each", price: "9,990 THB", desc: "Breadboard wiring, control LEDs & motors, learn Logic Gates (AND/OR), and practice real circuit troubleshooting.", tools: "Breadboard · LEDs · Motors · RGB LED", emoji: "⚡" },
+  { id: "rg-s3", track: "robogenesis", col: 3, row: 2, badge: "Step 3", title: "Control — Programming", age: "Age 5+", sessions: "4 sessions · 2 hrs each", price: "10,590 THB", desc: "Block-based coding, loops & events, if-else logic — build interactive Micro:bit games and team projects.", tools: "Micro:bit · Block Editor · Sensors", emoji: "💻" },
 ]
 
 /* ─── Column metadata ──────────────────────────────────────────── */
 const columns = [
-  {
-    col: 0,
-    trackNum: "Track 1 — Beginner",
-    label: "RoboJourney",
-    sub: "Robotics Foundations",
-    color: "#E5690D",
-    bg: "#FFF7F0",
-    border: "#FED7AA",
-  },
-  {
-    col: 1,
-    trackNum: "Track 1 — Advanced",
-    label: "RoboJourney",
-    sub: "AI & IoT Innovation",
-    color: "#C2410C",
-    bg: "#FFF1EB",
-    border: "#FDBA74",
-  },
-  {
-    col: 2,
-    trackNum: "Track 2",
-    label: "Little 3D Inventors",
-    sub: "3D Design & Innovation",
-    color: "#0D9488",
-    bg: "#F0FDFA",
-    border: "#99F6E4",
-  },
-  {
-    col: 3,
-    trackNum: "Track 3",
-    label: "Robogenesis Series",
-    sub: "Integrated Innovation",
-    color: "#6366F1",
-    bg: "#EEF2FF",
-    border: "#C7D2FE",
-  },
+  { col: 0, trackNum: "Track 1 — Beginner", label: "RoboJourney", sub: "Robotics Foundations", color: "#E5690D", bg: "#FFF7F0", border: "#FED7AA" },
+  { col: 1, trackNum: "Track 1 — Advanced", label: "RoboJourney", sub: "AI & IoT Innovation", color: "#C2410C", bg: "#FFF1EB", border: "#FDBA74" },
+  { col: 2, trackNum: "Track 2", label: "Little 3D Inventors", sub: "3D Design & Innovation", color: "#0D9488", bg: "#F0FDFA", border: "#99F6E4" },
+  { col: 3, trackNum: "Track 3", label: "Robogenesis Series", sub: "Integrated Innovation", color: "#6366F1", bg: "#EEF2FF", border: "#C7D2FE" },
 ]
-
-/* ─── Add-on packages ──────────────────────────────────────────── */
-const addons = [
-  {
-    track: "Track 1",
-    color: "#E5690D",
-    bg: "#FFF7F0",
-    border: "#FED7AA",
-    items: [
-      {
-        icon: "🇬🇧",
-        title: "Instruction in English",
-        desc: "Native-level instructors guaranteed with IELTS 4.5+ / TOEIC 550+",
-        price: "+3,499 THB / course",
-      },
-    ],
-  },
-  {
-    track: "Track 2",
-    color: "#0D9488",
-    bg: "#F0FDFA",
-    border: "#99F6E4",
-    items: [
-      {
-        icon: "👤",
-        title: "Private Class",
-        desc: "One-on-one tutoring — learn at your own pace",
-        price: "+790 THB / course",
-      },
-      {
-        icon: "🇬🇧",
-        title: "Instruction in English",
-        desc: "Native-level instructors guaranteed with IELTS 4.5+ / TOEIC 550+",
-        price: "+2,499 THB / course",
-      },
-    ],
-  },
-  {
-    track: "Track 3",
-    color: "#6366F1",
-    bg: "#EEF2FF",
-    border: "#C7D2FE",
-    items: [
-      {
-        icon: "👤",
-        title: "Private Class",
-        desc: "One-on-one tutoring — learn at your own pace",
-        price: "+790 THB / course",
-      },
-      {
-        icon: "🇬🇧",
-        title: "Instruction in English",
-        desc: "Native-level instructors guaranteed with IELTS 4.5+ / TOEIC 550+",
-        price: "+2,499 THB / course",
-      },
-    ],
-  },
-]
-
-/* ─── Arrow ────────────────────────────────────────────────────── */
-function Arrow({ color }: { color: string }) {
-  return (
-    <div className="flex flex-col items-center" style={{ height: 28 }}>
-      <div className="w-px flex-1" style={{ background: color, opacity: 0.3 }} />
-      <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
-        <path d="M5 6L0 0H10L5 6Z" fill={color} fillOpacity={0.35} />
-      </svg>
-    </div>
-  )
-}
-
-/* ─── Node Card (compact — detail shows in right panel) ────────── */
-function NodeCard({ node, isActive, onClick }: { node: Node; isActive: boolean; onClick: () => void }) {
-  const t = tracks[node.track]
-  return (
-    <button
-      onClick={onClick}
-      className="w-full text-left rounded-xl border-2 transition-all duration-200 overflow-hidden"
-      style={{
-        borderColor: isActive ? t.color : "#E9ECEF",
-        background: isActive ? t.colorLight : "#FFFFFF",
-        boxShadow: isActive ? `0 4px 18px -4px ${t.color}33` : "0 1px 4px 0 #00000008",
-      }}
-    >
-      <div className="p-3 flex items-center gap-3">
-        {/* Emoji thumbnail */}
-        <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-xl"
-          style={{ background: t.colorMid + "55" }}
-        >
-          {node.emoji}
-        </div>
-        <div className="flex-1 min-w-0">
-          {/* Badge */}
-          <span
-            className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
-            style={{ color: t.color, background: t.colorMid + "66" }}
-          >
-            {node.badge}
-          </span>
-          {/* Title */}
-          <p className="font-semibold text-sm leading-snug mt-0.5 truncate" style={{ color: isActive ? t.color : "#111827" }}>
-            {node.title}
-          </p>
-          {/* Sessions + price */}
-          <div className="flex items-center justify-between gap-2 mt-0.5">
-            <span className="text-[10px] text-[#9CA3AF]">{node.sessions}</span>
-            <span className="text-[11px] font-bold flex-shrink-0" style={{ color: t.color }}>{node.price}</span>
-          </div>
-        </div>
-        {/* Active indicator */}
-        {isActive && (
-          <div className="w-1.5 h-8 rounded-full flex-shrink-0" style={{ background: t.color }} />
-        )}
-      </div>
-    </button>
-  )
-}
 
 /* ─── Weekly mockup data ────────────────────────────────────────── */
 const weeklyMockup: Record<string, { week: string; topic: string; activity: string }[]> = {
@@ -467,6 +173,224 @@ const learningOutcomes: Record<string, string[]> = {
   "rg-s3": ["Program with block-based coding", "Apply loops, events, and conditionals", "Build interactive Micro:bit projects", "Collaborate on a team coding challenge"],
 }
 
+/* ─── Arrow ────────────────────────────────────────────────────── */
+function Arrow({ color }: { color: string }) {
+  return (
+    <div className="flex flex-col items-center" style={{ height: 28 }}>
+      <div className="w-px flex-1" style={{ background: color, opacity: 0.3 }} />
+      <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+        <path d="M5 6L0 0H10L5 6Z" fill={color} fillOpacity={0.35} />
+      </svg>
+    </div>
+  )
+}
+
+/* ─── Node Card ────────────────────────────────────────────────── */
+function NodeCard({ node, isActive, onClick }: { node: Node; isActive: boolean; onClick: () => void }) {
+  const t = tracks[node.track]
+  return (
+    <button
+      onClick={onClick}
+      className="w-full text-left rounded-xl border-2 transition-all duration-200 overflow-hidden"
+      style={{
+        borderColor: isActive ? t.color : "#E9ECEF",
+        background: isActive ? t.colorLight : "#FFFFFF",
+        boxShadow: isActive ? `0 4px 18px -4px ${t.color}33` : "0 1px 4px 0 #00000008",
+      }}
+    >
+      <div className="p-3 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-xl" style={{ background: t.colorMid + "55" }}>
+          {node.emoji}
+        </div>
+        <div className="flex-1 min-w-0">
+          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full" style={{ color: t.color, background: t.colorMid + "66" }}>
+            {node.badge}
+          </span>
+          <p className="font-semibold text-sm leading-snug mt-0.5 truncate" style={{ color: isActive ? t.color : "#111827" }}>
+            {node.title}
+          </p>
+          <div className="flex items-center justify-between gap-2 mt-0.5">
+            <span className="text-[10px] text-[#9CA3AF]">{node.sessions}</span>
+            <span className="text-[11px] font-bold flex-shrink-0" style={{ color: t.color }}>{node.price}</span>
+          </div>
+        </div>
+        {isActive && <div className="w-1.5 h-8 rounded-full flex-shrink-0" style={{ background: t.color }} />}
+      </div>
+    </button>
+  )
+}
+
+/* ─── Compact Info Card ────────────────────────────────────────── */
+function InfoCard() {
+  const [tab, setTab] = useState<"cross" | "addons" | "contact">("contact")
+
+  const tabs = [
+    { key: "cross" as const, icon: "↔", label: "Pathways" },
+    { key: "addons" as const, icon: "✦", label: "Add-ons" },
+    { key: "contact" as const, icon: "📬", label: "Contact" },
+  ]
+
+  return (
+    <div
+      className="rounded-2xl border border-[#E5E7EB] bg-white overflow-hidden"
+      style={{ width: 600, boxShadow: "0 2px 12px 0 #00000009" }}
+    >
+      {/* Tab strip */}
+      <div className="flex border-b border-[#F3F4F6] bg-[#FAFAFA]">
+        {tabs.map((t) => {
+          const active = tab === t.key
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className="flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-all"
+              style={{
+                background: active ? "#fff" : "transparent",
+                borderBottom: active ? "2px solid #E5690D" : "2px solid transparent",
+              }}
+            >
+              <span className="text-sm leading-none">{t.icon}</span>
+              <span
+                className="text-[9px] font-bold uppercase tracking-wider leading-none"
+                style={{ color: active ? "#E5690D" : "#B0B7C3" }}
+              >
+                {t.label}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Panel body */}
+      <div className="p-4">
+
+        {/* ── Cross-Track Pathways ── */}
+        {tab === "cross" && (
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { from: "3D Inventors L3", fromC: "#0D9488", fromBg: "#F0FDFA", to: "Robogenesis S2", toC: "#6366F1", toBg: "#EEF2FF", note: "Apply 3D into circuits" },
+              { from: "3D Inventors L3", fromC: "#0D9488", fromBg: "#F0FDFA", to: "RoboJourney L5–8", toC: "#C2410C", toBg: "#FFF1EB", note: "Skip to AI & IoT" },
+              { from: "Robogenesis S3", fromC: "#6366F1", fromBg: "#EEF2FF", to: "RoboJourney L5–8", toC: "#C2410C", toBg: "#FFF1EB", note: "3D + Code → Advanced AI" },
+              { from: "RoboJourney L4", fromC: "#E5690D", fromBg: "#FFF7F0", to: "RoboJourney L5–8", toC: "#C2410C", toBg: "#FFF1EB", note: "Natural Track 1 flow" },
+            ].map((p, i) => (
+              <div key={i} className="rounded-xl border border-[#F3F4F6] bg-[#FAFAFA] px-3 py-2.5 flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5 flex-nowrap">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap" style={{ color: p.fromC, background: p.fromBg }}>{p.from}</span>
+                  <svg width="12" height="10" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+                    <path d="M3 8h10M9 4l4 4-4 4" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap" style={{ color: p.toC, background: p.toBg }}>{p.to}</span>
+                </div>
+                <p className="text-[9px] text-[#9CA3AF] leading-snug">{p.note}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Add-ons ── */}
+        {tab === "addons" && (
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-xl border border-[#FED7AA] bg-[#FFF7F0] px-3 py-2.5 flex flex-col gap-1.5">
+              <span className="text-lg">🇬🇧</span>
+              <div>
+                <p className="text-[11px] font-bold text-[#111827] whitespace-nowrap">English Instruction</p>
+                <p className="text-[9px] text-[#9CA3AF] mt-0.5 whitespace-nowrap">IELTS 4.5+ / TOEIC 550+</p>
+              </div>
+              <p className="text-[11px] font-bold text-[#E5690D] mt-auto">+3,499 THB</p>
+              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full self-start whitespace-nowrap" style={{ color: "#E5690D", background: "#FED7AA55" }}>Track 1</span>
+            </div>
+            <div className="rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-3 py-2.5 flex flex-col gap-1.5">
+              <span className="text-lg">👤</span>
+              <div>
+                <p className="text-[11px] font-bold text-[#111827] whitespace-nowrap">Private Class</p>
+                <p className="text-[9px] text-[#9CA3AF] mt-0.5 whitespace-nowrap">One-on-one tutoring</p>
+              </div>
+              <p className="text-[11px] font-bold text-[#374151] mt-auto">+790 THB</p>
+              <div className="flex gap-1 flex-wrap">
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full whitespace-nowrap" style={{ color: "#0D9488", background: "#F0FDFA" }}>Track 2</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full whitespace-nowrap" style={{ color: "#6366F1", background: "#EEF2FF" }}>Track 3</span>
+              </div>
+            </div>
+            <div className="rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-3 py-2.5 flex flex-col gap-1.5">
+              <span className="text-lg">🇬🇧</span>
+              <div>
+                <p className="text-[11px] font-bold text-[#111827] whitespace-nowrap">English Instruction</p>
+                <p className="text-[9px] text-[#9CA3AF] mt-0.5 whitespace-nowrap">IELTS 4.5+ / TOEIC 550+</p>
+              </div>
+              <p className="text-[11px] font-bold text-[#374151] mt-auto">+2,499 THB</p>
+              <div className="flex gap-1 flex-wrap">
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full whitespace-nowrap" style={{ color: "#0D9488", background: "#F0FDFA" }}>Track 2</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full whitespace-nowrap" style={{ color: "#6366F1", background: "#EEF2FF" }}>Track 3</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Contact ── */}
+        {tab === "contact" && (
+          <div className="flex gap-4 overflow-hidden">
+            {/* Col 1: Phones — fixed width to prevent clipping */}
+            <div className="flex-shrink-0" style={{ width: 200 }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#9CA3AF] mb-2">📞 Phone</p>
+              <div className="flex flex-col gap-1.5">
+                {[
+                  { label: "KMUTT Smart Kid", number: "02 003 6619" },
+                  { label: "Jib", number: "062 445 3659" },
+                  { label: "Sine", number: "089 885 8860" },
+                  { label: "Da", number: "095 241 5393" },
+                  { label: "Plaifah", number: "095 739 3384" },
+                ].map((p) => (
+                  <div key={p.label} className="flex items-center justify-between gap-3">
+                    <span className="text-[10px] text-[#9CA3AF] whitespace-nowrap">{p.label}</span>
+                    <a href={`tel:${p.number.replace(/\s/g, "")}`} className="text-[10px] font-bold text-[#374151] hover:text-[#E5690D] transition-colors tabular-nums whitespace-nowrap">
+                      {p.number}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="w-px bg-[#F3F4F6] flex-shrink-0" />
+
+            {/* Col 2: Location */}
+            <div className="flex-shrink-0" style={{ width: 140 }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#9CA3AF] mb-2">📍 Location</p>
+              <div className="rounded-xl bg-[#FFF7F0] border border-[#FED7AA44] px-2.5 py-2">
+                <p className="text-[11px] font-bold text-[#111827] whitespace-nowrap">KMUTT Smart Kid</p>
+                <p className="text-[10px] text-[#6B7280] mt-0.5 leading-snug">2nd Fl, EMJOY Zone · EmQuartier</p>
+              </div>
+            </div>
+
+            <div className="w-px bg-[#F3F4F6] flex-shrink-0" />
+
+            {/* Col 3: Social */}
+            <div className="flex-shrink-0 flex flex-col gap-2" style={{ width: 150 }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#9CA3AF]">💬 Social</p>
+              <a href="https://line.me/R/ti/p/@679vxwsy" target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 p-2 rounded-xl border border-[#E5E7EB] bg-white hover:border-[#06C755] transition-all group">
+                <span className="w-6 h-6 rounded-lg bg-[#06C755] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">L</span>
+                <div>
+                  <p className="text-[10px] font-bold text-[#111827] group-hover:text-[#06C755] transition-colors whitespace-nowrap">@679vxwsy</p>
+                  <p className="text-[9px] text-[#9CA3AF]">LINE</p>
+                </div>
+              </a>
+              <a href="https://facebook.com/KMUTTWORKS" target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 p-2 rounded-xl border border-[#E5E7EB] bg-white hover:border-[#1877F2] transition-all group">
+                <span className="w-6 h-6 rounded-lg bg-[#1877F2] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">f</span>
+                <div>
+                  <p className="text-[10px] font-bold text-[#111827] group-hover:text-[#1877F2] transition-colors whitespace-nowrap">KMUTTWORKS</p>
+                  <p className="text-[9px] text-[#9CA3AF]">Facebook</p>
+                </div>
+              </a>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  )
+}
+
 /* ─── Course Detail Panel ───────────────────────────────────────── */
 function CourseDetailPanel({ node }: { node: Node }) {
   const t = tracks[node.track]
@@ -475,15 +399,10 @@ function CourseDetailPanel({ node }: { node: Node }) {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Header */}
       <div className="rounded-2xl overflow-hidden border" style={{ borderColor: t.colorMid }}>
-        {/* Image / Hero */}
         <div
           className="w-full relative flex items-center justify-center"
-          style={{
-            height: 200,
-            background: `linear-gradient(135deg, ${t.colorMid}88 0%, ${t.colorLight} 100%)`,
-          }}
+          style={{ height: 200, background: `linear-gradient(135deg, ${t.colorMid}88 0%, ${t.colorLight} 100%)` }}
         >
           <img
             src={`/images/courses/${node.id}.png`}
@@ -494,18 +413,12 @@ function CourseDetailPanel({ node }: { node: Node }) {
           <div className="relative z-10 text-center px-6">
             <span style={{ fontSize: 56 }}>{node.emoji}</span>
           </div>
-          {/* Overlay badge */}
           <div className="absolute bottom-3 left-4">
-            <span
-              className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
-              style={{ color: "#fff", background: t.color }}
-            >
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ color: "#fff", background: t.color }}>
               {node.badge} · {node.age}
             </span>
           </div>
         </div>
-
-        {/* Title + meta */}
         <div className="p-5" style={{ background: t.colorLight }}>
           <h2 className="text-xl font-bold text-[#111827]">{node.title}</h2>
           <div className="flex flex-wrap items-center gap-3 mt-2">
@@ -515,8 +428,7 @@ function CourseDetailPanel({ node }: { node: Node }) {
           </div>
           <div className="flex flex-wrap gap-1.5 mt-3">
             {node.tools.split(" · ").map((tool) => (
-              <span key={tool} className="text-[10px] px-2 py-0.5 rounded-full border font-medium"
-                style={{ borderColor: t.colorMid, color: t.color, background: "#fff" }}>
+              <span key={tool} className="text-[10px] px-2 py-0.5 rounded-full border font-medium" style={{ borderColor: t.colorMid, color: t.color, background: "#fff" }}>
                 {tool}
               </span>
             ))}
@@ -524,7 +436,6 @@ function CourseDetailPanel({ node }: { node: Node }) {
         </div>
       </div>
 
-      {/* Overview */}
       <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5">
         <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-2">📋 Course Overview</p>
         <p className="text-sm text-[#374151] leading-relaxed">{node.desc}</p>
@@ -537,17 +448,13 @@ function CourseDetailPanel({ node }: { node: Node }) {
         )}
       </div>
 
-      {/* Weekly breakdown */}
       {weekly.length > 0 && (
         <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-3">📅 Session Breakdown</p>
           <div className="flex flex-col gap-2">
             {weekly.map((w, i) => (
               <div key={i} className="flex gap-3 items-start">
-                <div
-                  className="flex-shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg text-center min-w-[72px]"
-                  style={{ background: t.colorMid + "55", color: t.color }}
-                >
+                <div className="flex-shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg text-center min-w-[72px]" style={{ background: t.colorMid + "55", color: t.color }}>
                   {w.week}
                 </div>
                 <div>
@@ -560,15 +467,13 @@ function CourseDetailPanel({ node }: { node: Node }) {
         </div>
       )}
 
-      {/* Learning Outcomes */}
       {outcomes.length > 0 && (
         <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-3">🎯 Learning Outcomes</p>
           <div className="flex flex-col gap-2">
             {outcomes.map((o, i) => (
               <div key={i} className="flex items-start gap-2">
-                <span className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
-                  style={{ background: t.color }}>
+                <span className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5" style={{ background: t.color }}>
                   {i + 1}
                 </span>
                 <p className="text-sm text-[#374151]">{o}</p>
@@ -583,28 +488,23 @@ function CourseDetailPanel({ node }: { node: Node }) {
 
 /* ─── Page ─────────────────────────────────────────────────────── */
 export default function CoursesPage() {
-  const [activeCol, setActiveCol] = useState<number | null>(null)
-  const [activeNodeId, setActiveNodeId] = useState<string | null>(null)
+  const [activeCol, setActiveCol] = useState<number | null>(0)
+  const [activeNodeId, setActiveNodeId] = useState<string | null>("rj-l1")
 
   const colNodes = (col: number) => nodes.filter((n) => n.col === col).sort((a, b) => a.row - b.row)
 
   const selectCol = (col: number) => {
     if (activeCol === col) {
-      // Deselect
       setActiveCol(null)
       setActiveNodeId(null)
     } else {
       setActiveCol(col)
-      // Auto-select first course of that column
       const first = colNodes(col)[0]
       if (first) setActiveNodeId(first.id)
     }
   }
 
   const activeNode = nodes.find((n) => n.id === activeNodeId) ?? null
-
-  // Always keep original column order
-  const orderedColumns = columns
 
   return (
     <>
@@ -616,39 +516,33 @@ export default function CoursesPage() {
 
         {/* ── Header ── */}
         <div className="pt-28 pb-8 px-6 container mx-auto max-w-7xl">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-            <div>
+          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+            {/* Left: title + description + inline legend */}
+            <div className="flex-1">
               <p className="text-xs font-bold tracking-[0.22em] uppercase text-[#E5690D] mb-2">Learning Pathways</p>
               <h1 className="text-4xl md:text-5xl font-bold text-[#0F0F0F] leading-tight">Course Roadmap</h1>
               <p className="mt-3 text-[#6B7280] text-base max-w-lg leading-relaxed">
                 Three interconnected tracks — follow one path or combine them.<br />
                 Select a track to explore courses, then click a course to see full details.
               </p>
+
             </div>
-            <div className="flex flex-col gap-2 lg:items-end">
-              {[
-                { color: "#E5690D", label: "Track 1 — RoboJourney (Robotics & AI)" },
-                { color: "#0D9488", label: "Track 2 — Little 3D Inventors" },
-                { color: "#6366F1", label: "Track 3 — Robogenesis Series" },
-              ].map((l) => (
-                <div key={l.label} className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: l.color }} />
-                  <span className="text-sm text-[#374151] font-medium">{l.label}</span>
-                </div>
-              ))}
+            {/* Right: compact tabbed info card */}
+            <div className="flex-shrink-0 lg:mt-1">
+              <InfoCard />
             </div>
           </div>
         </div>
 
         {/* ── Main Content ── */}
-        <div className="px-6 container mx-auto max-w-7xl pb-16">
+        <div className="px-6 container mx-auto max-w-7xl pb-20">
 
-          {/* Track tab headers — sticky, always full width */}
+          {/* Track tab headers */}
           <div
             className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6 z-20 bg-transparent"
             style={{ position: "sticky", top: 80 }}
           >
-            {orderedColumns.map((col) => {
+            {columns.map((col) => {
               const isSelected = activeCol === col.col
               return (
                 <button
@@ -677,7 +571,7 @@ export default function CoursesPage() {
             })}
           </div>
 
-          {/* No track selected — placeholder */}
+          {/* No track selected */}
           {activeCol === null && (
             <div className="flex flex-col items-center justify-center text-center py-20 rounded-2xl border-2 border-dashed border-[#E5E7EB]">
               <span className="text-5xl mb-4">👆</span>
@@ -686,10 +580,10 @@ export default function CoursesPage() {
             </div>
           )}
 
-          {/* Course list (left) + Detail panel (right) */}
+          {/* Course list + Detail panel */}
           {activeCol !== null && (
             <div className="flex gap-5" style={{ alignItems: "flex-start" }}>
-              {/* LEFT: Course list — scrollable */}
+              {/* LEFT: Course list */}
               <div style={{ width: 320, flexShrink: 0 }}>
                 {activeCol === 1 && (
                   <div className="flex items-center gap-2 mb-2 px-1">
@@ -701,18 +595,14 @@ export default function CoursesPage() {
                 <div className="flex flex-col">
                   {colNodes(activeCol).map((node, idx, arr) => (
                     <div key={node.id} className="flex flex-col">
-                      <NodeCard
-                        node={node}
-                        isActive={activeNodeId === node.id}
-                        onClick={() => setActiveNodeId(node.id)}
-                      />
+                      <NodeCard node={node} isActive={activeNodeId === node.id} onClick={() => setActiveNodeId(node.id)} />
                       {idx < arr.length - 1 && <Arrow color={tracks[node.track].color} />}
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* RIGHT: Detail panel — sticky below tabs */}
+              {/* RIGHT: Detail panel */}
               {activeNode && (
                 <div className="flex-1 min-w-0" style={{ position: "sticky", top: 200, maxHeight: "calc(100vh - 210px)", overflowY: "auto" }}>
                   <CourseDetailPanel node={activeNode} />
@@ -721,113 +611,6 @@ export default function CoursesPage() {
             </div>
           )}
 
-          {/* ── Bottom row: Cross-track + Add-ons ── */}
-          <div className="mt-8 grid xl:grid-cols-2 gap-4 pb-6">
-            <div className="rounded-2xl border border-dashed border-[#D1D5DB] bg-white p-5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-3">↔ Cross-Track Pathways</p>
-              <div className="flex flex-col gap-2.5">
-                {[
-                  { from: "3D Inventors Advanced (L3)", fromColor: "#0D9488", to: "Robogenesis Step 2", toColor: "#6366F1", note: "Apply 3D background into circuits" },
-                  { from: "3D Inventors Advanced (L3)", fromColor: "#0D9488", to: "RoboJourney L5–8", toColor: "#C2410C", note: "Skip straight to AI & IoT" },
-                  { from: "Robogenesis Step 3", fromColor: "#6366F1", to: "RoboJourney L5–8", toColor: "#C2410C", note: "3D + Circuits + Code → Advanced AI" },
-                  { from: "RoboJourney L4", fromColor: "#E5690D", to: "RoboJourney L5–8", toColor: "#C2410C", note: "Natural progression within Track 1" },
-                ].map((p, i) => (
-                  <div key={i} className="flex items-center gap-2 flex-wrap">
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: p.fromColor }} />
-                    <span className="text-sm font-semibold" style={{ color: p.fromColor }}>{p.from}</span>
-                    <span className="text-[#9CA3AF] text-sm">→</span>
-                    <span className="text-sm font-semibold" style={{ color: p.toColor }}>{p.to}</span>
-                    <span className="text-xs text-[#9CA3AF]">— {p.note}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-3">✦ Special Add-on Packages</p>
-              <div className="flex flex-col divide-y divide-[#F3F4F6]">
-                <div className="flex items-center gap-3 py-2.5">
-                  <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0 w-16 text-center" style={{ color: "#E5690D", background: "#FFF7F0" }}>Track 1</span>
-                  <span className="text-base flex-shrink-0">🇬🇧</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#111827] leading-snug">Instruction in English</p>
-                    <p className="text-xs text-[#9CA3AF]">IELTS 4.5+ / TOEIC 550+ instructors guaranteed</p>
-                  </div>
-                  <span className="text-xs font-bold whitespace-nowrap flex-shrink-0 text-[#E5690D]">+3,499 THB / course</span>
-                </div>
-                <div className="flex items-center gap-3 py-2.5">
-                  <div className="flex flex-col gap-1 flex-shrink-0 w-16">
-                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-center" style={{ color: "#0D9488", background: "#F0FDFA" }}>Track 2</span>
-                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-center" style={{ color: "#6366F1", background: "#EEF2FF" }}>Track 3</span>
-                  </div>
-                  <span className="text-base flex-shrink-0">👤</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#111827] leading-snug">Private Class</p>
-                    <p className="text-xs text-[#9CA3AF]">One-on-one tutoring at your own pace</p>
-                  </div>
-                  <span className="text-xs font-bold whitespace-nowrap flex-shrink-0 text-[#6B7280]">+790 THB / course</span>
-                </div>
-                <div className="flex items-center gap-3 py-2.5">
-                  <div className="flex flex-col gap-1 flex-shrink-0 w-16">
-                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-center" style={{ color: "#0D9488", background: "#F0FDFA" }}>Track 2</span>
-                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-center" style={{ color: "#6366F1", background: "#EEF2FF" }}>Track 3</span>
-                  </div>
-                  <span className="text-base flex-shrink-0">🇬🇧</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#111827] leading-snug">Instruction in English</p>
-                    <p className="text-xs text-[#9CA3AF]">IELTS 4.5+ / TOEIC 550+ instructors guaranteed</p>
-                  </div>
-                  <span className="text-xs font-bold whitespace-nowrap flex-shrink-0 text-[#6B7280]">+2,499 THB / course</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Contact section ── */}
-          <div className="pb-16">
-            <div className="rounded-2xl border border-[#E5E7EB] bg-white p-6">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-5">📬 Contact Us</p>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div>
-                  <p className="text-xs font-bold text-[#374151] mb-2 flex items-center gap-1.5"><span>📞</span> Phone</p>
-                  <div className="flex flex-col gap-1.5">
-                    {[
-                      { label: "KMUTT Smart Kid", number: "02 003 6619" },
-                      { label: "Jib", number: "062 445 3659" },
-                      { label: "Sine", number: "089 885 8860" },
-                      { label: "Da", number: "095 241 5393" },
-                      { label: "Plaifah", number: "095 739 3384" },
-                    ].map((p) => (
-                      <div key={p.label} className="flex items-center justify-between gap-2">
-                        <span className="text-xs text-[#9CA3AF]">{p.label}</span>
-                        <a href={`tel:${p.number.replace(/\s/g, "")}`} className="text-xs font-semibold text-[#111827] hover:text-[#E5690D] transition-colors">{p.number}</a>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-[#374151] mb-2 flex items-center gap-1.5"><span>📍</span> Location</p>
-                  <p className="text-sm font-semibold text-[#111827]">KMUTT Smart Kid</p>
-                  <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">2nd Floor, EMJOY Zone<br />EmQuartier</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-[#374151] mb-2 flex items-center gap-1.5"><span>💬</span> LINE Official</p>
-                  <a href="https://line.me/R/ti/p/@679vxwsy" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E5E7EB] hover:border-[#06C755] hover:bg-[#F0FFF4] transition-all group">
-                    <span className="text-lg">🟢</span>
-                    <span className="text-sm font-semibold text-[#111827] group-hover:text-[#06C755]">@679vxwsy</span>
-                  </a>
-                  <p className="text-xs text-[#9CA3AF] mt-1.5">KMUTT Smart Kid</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-[#374151] mb-2 flex items-center gap-1.5"><span>📘</span> Facebook</p>
-                  <a href="https://facebook.com/KMUTTWORKS" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E5E7EB] hover:border-[#1877F2] hover:bg-[#EFF6FF] transition-all group">
-                    <span className="text-lg">📘</span>
-                    <span className="text-sm font-semibold text-[#111827] group-hover:text-[#1877F2]">KMUTTWORKS</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
     </>
