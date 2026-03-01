@@ -15,13 +15,6 @@ const nextConfig = {
       bodySizeLimit: '200mb',
     },
   },
-  // Increase body parser limit for API route handlers (e.g. /api/upload for mobile video/image uploads)
-  api: {
-    bodyParser: {
-      sizeLimit: '200mb',
-    },
-    responseLimit: false,
-  },
 }
 
 export default nextConfig
