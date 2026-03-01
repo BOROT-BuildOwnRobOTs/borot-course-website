@@ -13,9 +13,8 @@ export function Navbar() {
 
   const navItems = [
     { href: "/", label: "Home" },
-    { href: "/modules", label: "Modules" },
-    { href: "/pricing", label: "Pricing" },
-    { href: "/about", label: "About" },
+    { href: "/courses", label: "Courses" },   // เปลี่ยนจาก /modules → /courses
+    { href: "/about", label: "About" },        // ตัด Pricing ออก
   ]
 
   return (
