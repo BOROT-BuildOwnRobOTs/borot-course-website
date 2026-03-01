@@ -237,7 +237,16 @@ export default function TeacherStampDialog({
               <div className="mt-2 flex flex-wrap gap-2">
                 {images.map((url, i) => (
                   <div key={i} className="relative group w-20 h-20">
-                    <img src={url} alt="" onClick={() => setLightboxImg(url)} className="w-full h-full object-cover rounded-lg border cursor-zoom-in" />
+                    <img
+                      src={url}
+                      alt=""
+                      onClick={() => setLightboxImg(url)}
+                      onError={(e) => {
+                        // Hide broken images (e.g. old local /uploads/ paths that no longer exist)
+                        e.currentTarget.closest<HTMLDivElement>('.group')!.style.display = 'none'
+                      }}
+                      className="w-full h-full object-cover rounded-lg border cursor-zoom-in"
+                    />
                     <button
                       onClick={() => setImages((p) => p.filter((_, j) => j !== i))}
                       className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full items-center justify-center hidden group-hover:flex shadow"

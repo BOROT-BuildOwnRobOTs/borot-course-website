@@ -71,9 +71,24 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({ success: true, url: uploadResult.secure_url })
-  } catch (error) {
-    const errMsg = error instanceof Error ? error.message : String(error)
-    console.error('Upload error:', errMsg)
+  } catch (error: unknown) {
+    // Cloudinary SDK may throw plain objects with .message or .error.message
+    let errMsg = 'Unknown upload error'
+    if (error instanceof Error) {
+      errMsg = error.message
+    } else if (error && typeof error === 'object') {
+      const e = error as Record<string, unknown>
+      if (typeof e.message === 'string') {
+        errMsg = e.message
+      } else if (e.error && typeof e.error === 'object' && typeof (e.error as Record<string, unknown>).message === 'string') {
+        errMsg = (e.error as Record<string, unknown>).message as string
+      } else {
+        try { errMsg = JSON.stringify(error) } catch { errMsg = String(error) }
+      }
+    } else {
+      errMsg = String(error)
+    }
+    console.error('Upload error:', errMsg, error)
     return NextResponse.json(
       { success: false, error: `Failed to upload file: ${errMsg}` },
       { status: 500 }

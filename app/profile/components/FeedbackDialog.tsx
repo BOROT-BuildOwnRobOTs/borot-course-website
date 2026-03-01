@@ -82,6 +82,10 @@ export default function FeedbackDialog({ open, onClose, entry, sessionInfo }: Pr
                         src={url}
                         alt=""
                         onClick={() => setLightboxImg(url)}
+                        onError={(e) => {
+                          // Hide broken images (e.g. old local /uploads/ paths that no longer exist)
+                          e.currentTarget.style.display = 'none'
+                        }}
                         className="w-20 h-20 object-cover rounded-lg border cursor-zoom-in hover:opacity-80 transition-opacity"
                       />
                     ))}
