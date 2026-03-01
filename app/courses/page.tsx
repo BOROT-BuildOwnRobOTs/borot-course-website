@@ -302,159 +302,329 @@ function Arrow({ color }: { color: string }) {
   )
 }
 
-/* ─── Node Card ────────────────────────────────────────────────── */
+/* ─── Node Card (compact — detail shows in right panel) ────────── */
 function NodeCard({ node, isActive, onClick }: { node: Node; isActive: boolean; onClick: () => void }) {
   const t = tracks[node.track]
   return (
     <button
       onClick={onClick}
-      className="w-full text-left rounded-2xl border-2 transition-all duration-200 overflow-hidden"
+      className="w-full text-left rounded-xl border-2 transition-all duration-200 overflow-hidden"
       style={{
         borderColor: isActive ? t.color : "#E9ECEF",
         background: isActive ? t.colorLight : "#FFFFFF",
-        boxShadow: isActive ? `0 6px 28px -4px ${t.color}28` : "0 1px 6px 0 #00000008",
+        boxShadow: isActive ? `0 4px 18px -4px ${t.color}33` : "0 1px 4px 0 #00000008",
       }}
     >
-      {/* Banner */}
-      <div
-        className="w-full relative overflow-hidden"
-        style={{
-          height: 96,
-          background: `linear-gradient(135deg, ${t.colorMid}55 0%, ${t.colorLight} 100%)`,
-          borderBottom: `1px solid ${t.colorMid}55`,
-        }}
-      >
-        <img
-          src={`/images/courses/${node.id}.png`}
-          alt={node.title}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            // fallback to emoji if image not found
-            const target = e.currentTarget
-            target.style.display = "none"
-            const fallback = target.nextElementSibling as HTMLElement
-            if (fallback) fallback.style.display = "flex"
-          }}
-        />
-        {/* Emoji fallback — hidden when image loads */}
+      <div className="p-3 flex items-center gap-3">
+        {/* Emoji thumbnail */}
         <div
-          className="absolute inset-0 items-center justify-center"
-          style={{ display: "none" }}
+          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-xl"
+          style={{ background: t.colorMid + "55" }}
         >
-          <span style={{ fontSize: 32 }}>{node.emoji}</span>
+          {node.emoji}
         </div>
-      </div>
-
-      {/* Body */}
-      <div className="p-3">
-        {/* Badge + Age */}
-        <div className="flex items-center justify-between gap-2 mb-1.5">
+        <div className="flex-1 min-w-0">
+          {/* Badge */}
           <span
-            className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+            className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
             style={{ color: t.color, background: t.colorMid + "66" }}
           >
             {node.badge}
           </span>
-          <span className="text-[11px] text-[#9CA3AF] font-medium">{node.age}</span>
-        </div>
-
-        {/* Title */}
-        <p className="font-semibold text-sm leading-snug" style={{ color: isActive ? t.color : "#111827" }}>
-          {node.title}
-        </p>
-
-        {/* Always-visible: sessions + price */}
-        <div className="flex items-center justify-between mt-2 gap-2">
-          <span className="text-[11px] text-[#6B7280]">{node.sessions}</span>
-          <span className="text-[12px] font-bold" style={{ color: t.color }}>{node.price}</span>
-        </div>
-
-        {/* Expandable */}
-        <div
-          className="overflow-hidden transition-all duration-300 ease-in-out"
-          style={{ maxHeight: isActive ? "300px" : "0px", opacity: isActive ? 1 : 0 }}
-        >
-          {node.priceNote && (
-            <p className="text-[11px] mt-1 font-medium" style={{ color: t.color }}>
-              {node.priceNote}
-            </p>
-          )}
-          <p className="text-xs text-[#6B7280] mt-2 leading-relaxed">{node.desc}</p>
-          <div className="mt-2 flex flex-wrap gap-1">
-            {node.tools.split(" · ").map((tool) => (
-              <span
-                key={tool}
-                className="text-[10px] px-2 py-0.5 rounded-full border font-medium"
-                style={{ borderColor: t.colorMid, color: t.color, background: t.colorLight }}
-              >
-                {tool}
-              </span>
-            ))}
+          {/* Title */}
+          <p className="font-semibold text-sm leading-snug mt-0.5 truncate" style={{ color: isActive ? t.color : "#111827" }}>
+            {node.title}
+          </p>
+          {/* Sessions + price */}
+          <div className="flex items-center justify-between gap-2 mt-0.5">
+            <span className="text-[10px] text-[#9CA3AF]">{node.sessions}</span>
+            <span className="text-[11px] font-bold flex-shrink-0" style={{ color: t.color }}>{node.price}</span>
           </div>
-
-          {/* Mini Camp badge */}
-          {node.miniCamp && (
-            <div
-              className="mt-3 rounded-xl p-2.5 border"
-              style={{ background: t.colorLight, borderColor: t.colorMid }}
-            >
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: t.color }}>
-                🏕 Mini Camp Option
-              </p>
-              <p className="text-[11px] text-[#374151] leading-relaxed">{node.miniCamp.note}</p>
-              <p className="text-[12px] font-bold mt-1" style={{ color: t.color }}>{node.miniCamp.price}</p>
-            </div>
-          )}
         </div>
+        {/* Active indicator */}
+        {isActive && (
+          <div className="w-1.5 h-8 rounded-full flex-shrink-0" style={{ background: t.color }} />
+        )}
       </div>
     </button>
   )
 }
 
+/* ─── Weekly mockup data ────────────────────────────────────────── */
+const weeklyMockup: Record<string, { week: string; topic: string; activity: string }[]> = {
+  "rj-l1": [
+    { week: "Week 1–2", topic: "Introduction to Robotics", activity: "Explore Lego WeDo parts, build your first simple robot" },
+    { week: "Week 3–4", topic: "Movement & Mechanisms", activity: "Program motors and explore gear systems" },
+    { week: "Week 5–6", topic: "Sensors & Reactions", activity: "Use tilt and motion sensors to make robots respond" },
+    { week: "Week 7–8", topic: "Creative Missions", activity: "Design robots to complete mini challenge tasks" },
+    { week: "Week 9–10", topic: "Final Project", activity: "Build and present a robot solving a real-world problem" },
+  ],
+  "rj-l2": [
+    { week: "Week 1–2", topic: "Review & Advanced Builds", activity: "Reinforce WeDo skills with complex structures" },
+    { week: "Week 3–4", topic: "Analytical Problem Solving", activity: "Robot challenges with scoring criteria" },
+    { week: "Week 5–6", topic: "Programming Logic", activity: "Sequential and conditional programming" },
+    { week: "Week 7–8", topic: "Team Challenge", activity: "Cooperative mission with partner robots" },
+    { week: "Week 9–10", topic: "Competition Simulation", activity: "Mock robotics competition with judging" },
+  ],
+  "rj-l3": [
+    { week: "Week 1–2", topic: "Lego Spike Prime Intro", activity: "Explore the Spike Prime kit and Python basics" },
+    { week: "Week 3–4", topic: "Motors & Sensors Deep Dive", activity: "Color, distance, and force sensor projects" },
+    { week: "Week 5–6", topic: "Mission Programming", activity: "Simulated mission maps and autonomous runs" },
+    { week: "Week 7–8", topic: "Mechanical Design", activity: "Optimize attachment designs for efficiency" },
+    { week: "Week 9–10", topic: "Showcase Mission", activity: "Full mission run with debrief and optimization" },
+  ],
+  "rj-l4": [
+    { week: "Week 1–2", topic: "Advanced Mechanisms", activity: "Extendable arms, grabbers, and lifts" },
+    { week: "Week 3–4", topic: "Precision Coding", activity: "PID control concepts and accurate navigation" },
+    { week: "Week 5–6", topic: "Structural Engineering", activity: "Stress-test robot frames for demanding tasks" },
+    { week: "Week 7–8", topic: "Complex Mission Strategy", activity: "Multi-step autonomous mission planning" },
+    { week: "Week 9–10", topic: "Championship Prep", activity: "Full run simulation and team presentation" },
+  ],
+  "rj-l5": [
+    { week: "Week 1–2", topic: "IoT Fundamentals", activity: "Network basics, Wi-Fi, and ESP32 setup" },
+    { week: "Week 3–4", topic: "Sensor Integration", activity: "Temperature, humidity, and light sensors" },
+    { week: "Week 5–6", topic: "Dashboard & Control", activity: "Build a web dashboard to monitor the house" },
+    { week: "Week 7–8", topic: "Automation Rules", activity: "If-this-then-that smart home logic" },
+    { week: "Week 9–10", topic: "Smart House Demo", activity: "Present a fully connected Smart House model" },
+    { week: "Week 11–12", topic: "Advanced Features", activity: "Voice control and multi-device integration" },
+  ],
+  "rj-l6": [
+    { week: "Week 1–2", topic: "AI & Computer Vision Basics", activity: "Camera module setup, image capture" },
+    { week: "Week 3–4", topic: "Object Classification", activity: "Train a simple ML model to classify waste" },
+    { week: "Week 5–6", topic: "Mechanical Sorting", activity: "Servo-based sorting gate mechanism" },
+    { week: "Week 7–8", topic: "Model Optimization", activity: "Improve accuracy and reduce false positives" },
+    { week: "Week 9–10", topic: "Live Testing", activity: "Real waste sorting demo with multiple categories" },
+    { week: "Week 11–12", topic: "Final Showcase", activity: "Fully autonomous waste bin presentation" },
+  ],
+  "rj-l7": [
+    { week: "Week 1–2", topic: "Biomechanics & Hand Design", activity: "Study human hand anatomy, plan robotic version" },
+    { week: "Week 3–4", topic: "Servo Programming", activity: "Control individual finger servos with Micro:bit" },
+    { week: "Week 5–6", topic: "Gesture Recognition", activity: "Train ML model to detect hand gestures" },
+    { week: "Week 7–8", topic: "Assembly & Calibration", activity: "Full robotic hand assembly and tuning" },
+    { week: "Week 9–10", topic: "Interactive Demo", activity: "Mirror human hand movements in real time" },
+    { week: "Week 11–12", topic: "Final Project", activity: "Present AI Robotic Hand with gesture control" },
+  ],
+  "rj-l8": [
+    { week: "Week 1–2", topic: "Computer Vision Fundamentals", activity: "Object detection setup with camera" },
+    { week: "Week 3–4", topic: "Robotic Arm Kinematics", activity: "Understand joint movements and degrees of freedom" },
+    { week: "Week 5–6", topic: "Pick & Place Programming", activity: "Automate object pick-up and placement" },
+    { week: "Week 7–8", topic: "Precision Calibration", activity: "Fine-tune arm accuracy for small objects" },
+    { week: "Week 9–10", topic: "Advanced Vision Pipeline", activity: "Multi-object detection and sorting" },
+    { week: "Week 11–12", topic: "Industrial Simulation", activity: "Simulate factory assembly line with robotic arm" },
+  ],
+  "3d-l1": [
+    { week: "Session 1", topic: "2D & 3D Thinking", activity: "Spatial reasoning exercises, intro to Onshape" },
+    { week: "Session 2", topic: "First 3D Model", activity: "Design a custom keychain from scratch" },
+    { week: "Session 3", topic: "3D Printing Process", activity: "Slice and print your model, learn settings" },
+    { week: "Session 4", topic: "Creative Project", activity: "Design and print a unique toy or figurine" },
+  ],
+  "3d-l2": [
+    { week: "Session 1", topic: "Precision Measurement", activity: "Use Vernier calipers to measure real objects" },
+    { week: "Session 2", topic: "Functional Design", activity: "Design a lamp or vase with practical dimensions" },
+    { week: "Session 3", topic: "Form vs. Function", activity: "Iterate design for both looks and usability" },
+    { week: "Session 4", topic: "Final Print", activity: "Print and present functional object with reflection" },
+  ],
+  "3d-l3": [
+    { week: "Session 1", topic: "Assembly Design", activity: "Multi-part designs with joints and assemblies" },
+    { week: "Session 2", topic: "Vise Build", activity: "Engineer a working vise with moving parts" },
+    { week: "Session 3", topic: "Snail Robot", activity: "Design and assemble an articulated robot model" },
+    { week: "Session 4", topic: "Full Print & Showcase", activity: "Advanced print settings and final presentation" },
+  ],
+  "rg-s1": [
+    { week: "Session 1", topic: "3D Thinking with Tinkercad", activity: "Intro to Tinkercad, basic shapes and tools" },
+    { week: "Session 2", topic: "Keychain & Models", activity: "Design personalized keychain and house model" },
+    { week: "Session 3", topic: "Creative Exploration", activity: "Combine shapes for original creative pieces" },
+    { week: "Session 4", topic: "Print & Present", activity: "3D print your design and share your creation" },
+  ],
+  "rg-s2": [
+    { week: "Session 1", topic: "Breadboard Basics", activity: "Wire LEDs and resistors, understand circuits" },
+    { week: "Session 2", topic: "Motor Control", activity: "Control motors with switches and logic gates" },
+    { week: "Session 3", topic: "Logic Gates", activity: "AND/OR gate experiments with real components" },
+    { week: "Session 4", topic: "Troubleshooting", activity: "Debug a broken circuit, real engineering practice" },
+  ],
+  "rg-s3": [
+    { week: "Session 1", topic: "Block Coding Intro", activity: "First programs with loops and events on Micro:bit" },
+    { week: "Session 2", topic: "Conditionals & Logic", activity: "If-else programs with sensor inputs" },
+    { week: "Session 3", topic: "Interactive Games", activity: "Build a button-controlled game on Micro:bit" },
+    { week: "Session 4", topic: "Team Project", activity: "Collaborate to build a sensor-based team project" },
+  ],
+}
+
+const learningOutcomes: Record<string, string[]> = {
+  "rj-l1": ["Understand basic robot structure and mechanisms", "Give simple programming commands", "Develop problem-solving with hands-on challenges", "Build confidence in STEM exploration"],
+  "rj-l2": ["Apply analytical thinking to robot challenges", "Program robots to meet specific criteria", "Work independently on structured missions", "Develop resilience through iterative testing"],
+  "rj-l3": ["Program with Lego Spike Prime intermediate level", "Use diverse sensors for autonomous navigation", "Design and optimize mechanical attachments", "Complete simulated robotics missions"],
+  "rj-l4": ["Build complex mechanisms like grabber arms", "Write precision code for accurate robot movement", "Design robust robot structures for demanding tasks", "Execute multi-step autonomous strategies"],
+  "rj-l5": ["Understand IoT networking fundamentals", "Connect and control smart devices remotely", "Build functional web dashboards", "Create automated smart home scenarios"],
+  "rj-l6": ["Train basic AI models for object classification", "Integrate computer vision with mechanical systems", "Optimize model accuracy for real-world use", "Build a fully autonomous sorting device"],
+  "rj-l7": ["Understand biomechanics and servo control", "Implement gesture recognition with ML", "Assemble and calibrate a robotic hand", "Merge hardware and AI into a working system"],
+  "rj-l8": ["Apply computer vision for precision tasks", "Program industrial-style robotic arm movements", "Optimize pick-and-place sequences", "Simulate real factory automation scenarios"],
+  "3d-l1": ["Understand 2D and 3D spatial concepts", "Design original models in Onshape", "Operate a 3D printer safely", "Apply creative thinking to physical design"],
+  "3d-l2": ["Use Vernier calipers for precise measurement", "Design functional 3D objects", "Balance aesthetic and practical considerations", "Master print settings for quality output"],
+  "3d-l3": ["Create multi-part assemblies in Onshape", "Use engineering hand tools safely", "Build working mechanical devices", "Master advanced 3D print configurations"],
+  "rg-s1": ["Think spatially in 3D with Tinkercad", "Design and print original creations", "Understand the full design-to-print workflow", "Develop creative and iterative design skills"],
+  "rg-s2": ["Understand basic electrical circuits", "Wire components on a breadboard correctly", "Apply logic gate principles", "Troubleshoot real circuit problems"],
+  "rg-s3": ["Program with block-based coding", "Apply loops, events, and conditionals", "Build interactive Micro:bit projects", "Collaborate on a team coding challenge"],
+}
+
+/* ─── Course Detail Panel ───────────────────────────────────────── */
+function CourseDetailPanel({ node }: { node: Node }) {
+  const t = tracks[node.track]
+  const weekly = weeklyMockup[node.id] ?? []
+  const outcomes = learningOutcomes[node.id] ?? []
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Header */}
+      <div className="rounded-2xl overflow-hidden border" style={{ borderColor: t.colorMid }}>
+        {/* Image / Hero */}
+        <div
+          className="w-full relative flex items-center justify-center"
+          style={{
+            height: 200,
+            background: `linear-gradient(135deg, ${t.colorMid}88 0%, ${t.colorLight} 100%)`,
+          }}
+        >
+          <img
+            src={`/images/courses/${node.id}.png`}
+            alt={node.title}
+            className="w-full h-full object-cover absolute inset-0"
+            onError={(e) => { e.currentTarget.style.display = "none" }}
+          />
+          <div className="relative z-10 text-center px-6">
+            <span style={{ fontSize: 56 }}>{node.emoji}</span>
+          </div>
+          {/* Overlay badge */}
+          <div className="absolute bottom-3 left-4">
+            <span
+              className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
+              style={{ color: "#fff", background: t.color }}
+            >
+              {node.badge} · {node.age}
+            </span>
+          </div>
+        </div>
+
+        {/* Title + meta */}
+        <div className="p-5" style={{ background: t.colorLight }}>
+          <h2 className="text-xl font-bold text-[#111827]">{node.title}</h2>
+          <div className="flex flex-wrap items-center gap-3 mt-2">
+            <span className="text-sm text-[#6B7280]">{node.sessions}</span>
+            <span className="text-base font-bold" style={{ color: t.color }}>{node.price}</span>
+            {node.priceNote && <span className="text-xs text-[#9CA3AF]">{node.priceNote}</span>}
+          </div>
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {node.tools.split(" · ").map((tool) => (
+              <span key={tool} className="text-[10px] px-2 py-0.5 rounded-full border font-medium"
+                style={{ borderColor: t.colorMid, color: t.color, background: "#fff" }}>
+                {tool}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Overview */}
+      <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-2">📋 Course Overview</p>
+        <p className="text-sm text-[#374151] leading-relaxed">{node.desc}</p>
+        {node.miniCamp && (
+          <div className="mt-3 rounded-xl p-3 border" style={{ background: t.colorLight, borderColor: t.colorMid }}>
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: t.color }}>🏕 Mini Camp Option</p>
+            <p className="text-xs text-[#374151] leading-relaxed">{node.miniCamp.note}</p>
+            <p className="text-sm font-bold mt-1" style={{ color: t.color }}>{node.miniCamp.price}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Weekly breakdown */}
+      {weekly.length > 0 && (
+        <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-3">📅 Session Breakdown</p>
+          <div className="flex flex-col gap-2">
+            {weekly.map((w, i) => (
+              <div key={i} className="flex gap-3 items-start">
+                <div
+                  className="flex-shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg text-center min-w-[72px]"
+                  style={{ background: t.colorMid + "55", color: t.color }}
+                >
+                  {w.week}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[#111827]">{w.topic}</p>
+                  <p className="text-[11px] text-[#6B7280] mt-0.5">{w.activity}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Learning Outcomes */}
+      {outcomes.length > 0 && (
+        <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-3">🎯 Learning Outcomes</p>
+          <div className="flex flex-col gap-2">
+            {outcomes.map((o, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <span className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
+                  style={{ background: t.color }}>
+                  {i + 1}
+                </span>
+                <p className="text-sm text-[#374151]">{o}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ─── Page ─────────────────────────────────────────────────────── */
 export default function CoursesPage() {
-  const [active, setActive] = useState<string | null>(null)
+  const [activeCol, setActiveCol] = useState<number | null>(null)
+  const [activeNodeId, setActiveNodeId] = useState<string | null>(null)
+
   const colNodes = (col: number) => nodes.filter((n) => n.col === col).sort((a, b) => a.row - b.row)
-  const toggle = (id: string) => setActive((prev) => (prev === id ? null : id))
+
+  const selectCol = (col: number) => {
+    if (activeCol === col) {
+      // Deselect
+      setActiveCol(null)
+      setActiveNodeId(null)
+    } else {
+      setActiveCol(col)
+      // Auto-select first course of that column
+      const first = colNodes(col)[0]
+      if (first) setActiveNodeId(first.id)
+    }
+  }
+
+  const activeNode = nodes.find((n) => n.id === activeNodeId) ?? null
+
+  // Always keep original column order
+  const orderedColumns = columns
 
   return (
     <>
       <Navbar />
       <main className="min-h-screen font-sans relative">
-        {/* Background image */}
-        <div
-          className="fixed inset-0 -z-10"
-          style={{
-            backgroundImage: "url('/images/bg-classroom.png')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundAttachment: "fixed",
-            opacity: 0.07,
-          }}
-        />
-        {/* Orange-white tint layer */}
-        <div
-          className="fixed inset-0 -z-10"
-          style={{
-            background: "linear-gradient(135deg, #FFF7F0 0%, #FFFBF7 40%, #F9F8F6 100%)",
-          }}
-        />
+        {/* Background */}
+        <div className="fixed inset-0 -z-10" style={{ backgroundImage: "url('/images/bg-classroom.png')", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed", opacity: 0.07 }} />
+        <div className="fixed inset-0 -z-10" style={{ background: "linear-gradient(135deg, #FFF7F0 0%, #FFFBF7 40%, #F9F8F6 100%)" }} />
+
         {/* ── Header ── */}
-        <div className="pt-28 pb-10 px-6 container mx-auto max-w-7xl">
+        <div className="pt-28 pb-8 px-6 container mx-auto max-w-7xl">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
             <div>
-              <p className="text-xs font-bold tracking-[0.22em] uppercase text-[#E5690D] mb-2">
-                Learning Pathways
-              </p>
-              <h1 className="text-4xl md:text-5xl font-bold text-[#0F0F0F] leading-tight">
-                Course Roadmap
-              </h1>
+              <p className="text-xs font-bold tracking-[0.22em] uppercase text-[#E5690D] mb-2">Learning Pathways</p>
+              <h1 className="text-4xl md:text-5xl font-bold text-[#0F0F0F] leading-tight">Course Roadmap</h1>
               <p className="mt-3 text-[#6B7280] text-base max-w-lg leading-relaxed">
-                Three interconnected tracks — follow one path or combine them.
-                Click any card to see full details.
+                Three interconnected tracks — follow one path or combine them.<br />
+                Select a track to explore courses, then click a course to see full details.
               </p>
             </div>
-            {/* Legend */}
             <div className="flex flex-col gap-2 lg:items-end">
               {[
                 { color: "#E5690D", label: "Track 1 — RoboJourney (Robotics & AI)" },
@@ -470,55 +640,91 @@ export default function CoursesPage() {
           </div>
         </div>
 
-        {/* ── Roadmap Grid ── */}
-        <div className="px-6 container mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            {columns.map((col) => (
-              <div key={col.col} className="flex flex-col">
-                {/* Column header */}
-                <div
-                  className="rounded-2xl px-4 py-3 text-center mb-3 border"
-                  style={{ background: col.bg, borderColor: col.border, borderBottomWidth: 3, borderBottomColor: col.color }}
+        {/* ── Main Content ── */}
+        <div className="px-6 container mx-auto max-w-7xl pb-16">
+
+          {/* Track tab headers — sticky, always full width */}
+          <div
+            className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6 z-20 bg-transparent"
+            style={{ position: "sticky", top: 80 }}
+          >
+            {orderedColumns.map((col) => {
+              const isSelected = activeCol === col.col
+              return (
+                <button
+                  key={col.col}
+                  onClick={() => selectCol(col.col)}
+                  className="rounded-2xl px-4 py-3 text-center border-2 transition-all duration-200 cursor-pointer w-full"
+                  style={{
+                    background: isSelected ? col.color : col.bg,
+                    borderColor: isSelected ? col.color : col.border,
+                    borderBottomWidth: 3,
+                    borderBottomColor: col.color,
+                    boxShadow: isSelected ? `0 4px 20px -4px ${col.color}55` : "0 1px 4px 0 #00000008",
+                  }}
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: col.color }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: isSelected ? "rgba(255,255,255,0.75)" : col.color }}>
                     {col.trackNum}
                   </p>
-                  <p className="text-base font-bold text-[#111827]">{col.label}</p>
-                  <p className="text-xs text-[#6B7280] mt-0.5">{col.sub}</p>
-                </div>
+                  <p className="text-base font-bold leading-tight" style={{ color: isSelected ? "#fff" : "#111827" }}>
+                    {col.label}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: isSelected ? "rgba(255,255,255,0.65)" : "#6B7280" }}>
+                    {col.sub}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
 
-                {/* Part 2 label for advanced */}
-                {col.col === 1 && (
-                  <div className="flex items-center gap-2 mb-3 px-1">
+          {/* No track selected — placeholder */}
+          {activeCol === null && (
+            <div className="flex flex-col items-center justify-center text-center py-20 rounded-2xl border-2 border-dashed border-[#E5E7EB]">
+              <span className="text-5xl mb-4">👆</span>
+              <p className="text-[#9CA3AF] font-medium text-base">Select a track above to explore courses</p>
+              <p className="text-[#C4C4C4] text-sm mt-1">Click any track tab to see its course roadmap</p>
+            </div>
+          )}
+
+          {/* Course list (left) + Detail panel (right) */}
+          {activeCol !== null && (
+            <div className="flex gap-5" style={{ alignItems: "flex-start" }}>
+              {/* LEFT: Course list — scrollable */}
+              <div style={{ width: 320, flexShrink: 0 }}>
+                {activeCol === 1 && (
+                  <div className="flex items-center gap-2 mb-2 px-1">
                     <div className="flex-1 h-px" style={{ background: "#C2410C", opacity: 0.2 }} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: "#C2410C", opacity: 0.5 }}>
-                      Beyond the Mission
-                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: "#C2410C", opacity: 0.5 }}>Beyond the Mission</span>
                     <div className="flex-1 h-px" style={{ background: "#C2410C", opacity: 0.2 }} />
                   </div>
                 )}
-
-                {/* Nodes */}
                 <div className="flex flex-col">
-                  {colNodes(col.col).map((node, idx, arr) => (
+                  {colNodes(activeCol).map((node, idx, arr) => (
                     <div key={node.id} className="flex flex-col">
-                      <NodeCard node={node} isActive={active === node.id} onClick={() => toggle(node.id)} />
+                      <NodeCard
+                        node={node}
+                        isActive={activeNodeId === node.id}
+                        onClick={() => setActiveNodeId(node.id)}
+                      />
                       {idx < arr.length - 1 && <Arrow color={tracks[node.track].color} />}
                     </div>
                   ))}
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* ── Bottom row: Cross-track + Add-ons side by side ── */}
-          <div className="mt-6 grid xl:grid-cols-2 gap-4 pb-6">
+              {/* RIGHT: Detail panel — sticky below tabs */}
+              {activeNode && (
+                <div className="flex-1 min-w-0" style={{ position: "sticky", top: 200, maxHeight: "calc(100vh - 210px)", overflowY: "auto" }}>
+                  <CourseDetailPanel node={activeNode} />
+                </div>
+              )}
+            </div>
+          )}
 
-            {/* Cross-Track Pathways */}
+          {/* ── Bottom row: Cross-track + Add-ons ── */}
+          <div className="mt-8 grid xl:grid-cols-2 gap-4 pb-6">
             <div className="rounded-2xl border border-dashed border-[#D1D5DB] bg-white p-5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-3">
-                ↔ Cross-Track Pathways
-              </p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-3">↔ Cross-Track Pathways</p>
               <div className="flex flex-col gap-2.5">
                 {[
                   { from: "3D Inventors Advanced (L3)", fromColor: "#0D9488", to: "Robogenesis Step 2", toColor: "#6366F1", note: "Apply 3D background into circuits" },
@@ -537,18 +743,11 @@ export default function CoursesPage() {
               </div>
             </div>
 
-            {/* Special Add-on Packages — single box, color-coded rows */}
             <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-3">
-                ✦ Special Add-on Packages
-              </p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-3">✦ Special Add-on Packages</p>
               <div className="flex flex-col divide-y divide-[#F3F4F6]">
-
-                {/* Track 1 only — English */}
                 <div className="flex items-center gap-3 py-2.5">
-                  <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0 w-16 text-center" style={{ color: "#E5690D", background: "#FFF7F0" }}>
-                    Track 1
-                  </span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0 w-16 text-center" style={{ color: "#E5690D", background: "#FFF7F0" }}>Track 1</span>
                   <span className="text-base flex-shrink-0">🇬🇧</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-[#111827] leading-snug">Instruction in English</p>
@@ -556,8 +755,6 @@ export default function CoursesPage() {
                   </div>
                   <span className="text-xs font-bold whitespace-nowrap flex-shrink-0 text-[#E5690D]">+3,499 THB / course</span>
                 </div>
-
-                {/* Track 2 + 3 shared — Private Class */}
                 <div className="flex items-center gap-3 py-2.5">
                   <div className="flex flex-col gap-1 flex-shrink-0 w-16">
                     <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-center" style={{ color: "#0D9488", background: "#F0FDFA" }}>Track 2</span>
@@ -570,8 +767,6 @@ export default function CoursesPage() {
                   </div>
                   <span className="text-xs font-bold whitespace-nowrap flex-shrink-0 text-[#6B7280]">+790 THB / course</span>
                 </div>
-
-                {/* Track 2 + 3 shared — English */}
                 <div className="flex items-center gap-3 py-2.5">
                   <div className="flex flex-col gap-1 flex-shrink-0 w-16">
                     <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-center" style={{ color: "#0D9488", background: "#F0FDFA" }}>Track 2</span>
@@ -584,7 +779,6 @@ export default function CoursesPage() {
                   </div>
                   <span className="text-xs font-bold whitespace-nowrap flex-shrink-0 text-[#6B7280]">+2,499 THB / course</span>
                 </div>
-
               </div>
             </div>
           </div>
@@ -592,16 +786,10 @@ export default function CoursesPage() {
           {/* ── Contact section ── */}
           <div className="pb-16">
             <div className="rounded-2xl border border-[#E5E7EB] bg-white p-6">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-5">
-                📬 Contact Us
-              </p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-5">📬 Contact Us</p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-
-                {/* Phone */}
                 <div>
-                  <p className="text-xs font-bold text-[#374151] mb-2 flex items-center gap-1.5">
-                    <span>📞</span> Phone
-                  </p>
+                  <p className="text-xs font-bold text-[#374151] mb-2 flex items-center gap-1.5"><span>📞</span> Phone</p>
                   <div className="flex flex-col gap-1.5">
                     {[
                       { label: "KMUTT Smart Kid", number: "02 003 6619" },
@@ -612,65 +800,31 @@ export default function CoursesPage() {
                     ].map((p) => (
                       <div key={p.label} className="flex items-center justify-between gap-2">
                         <span className="text-xs text-[#9CA3AF]">{p.label}</span>
-                        <a
-                          href={`tel:${p.number.replace(/\s/g, "")}`}
-                          className="text-xs font-semibold text-[#111827] hover:text-[#E5690D] transition-colors"
-                        >
-                          {p.number}
-                        </a>
+                        <a href={`tel:${p.number.replace(/\s/g, "")}`} className="text-xs font-semibold text-[#111827] hover:text-[#E5690D] transition-colors">{p.number}</a>
                       </div>
                     ))}
                   </div>
                 </div>
-
-                {/* Location */}
                 <div>
-                  <p className="text-xs font-bold text-[#374151] mb-2 flex items-center gap-1.5">
-                    <span>📍</span> Location
-                  </p>
+                  <p className="text-xs font-bold text-[#374151] mb-2 flex items-center gap-1.5"><span>📍</span> Location</p>
                   <p className="text-sm font-semibold text-[#111827]">KMUTT Smart Kid</p>
-                  <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">
-                    2nd Floor, EMJOY Zone<br />EmQuartier
-                  </p>
+                  <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">2nd Floor, EMJOY Zone<br />EmQuartier</p>
                 </div>
-
-                {/* LINE */}
                 <div>
-                  <p className="text-xs font-bold text-[#374151] mb-2 flex items-center gap-1.5">
-                    <span>💬</span> LINE Official
-                  </p>
-                  <a
-                    href="https://line.me/R/ti/p/@679vxwsy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E5E7EB] hover:border-[#06C755] hover:bg-[#F0FFF4] transition-all group"
-                  >
+                  <p className="text-xs font-bold text-[#374151] mb-2 flex items-center gap-1.5"><span>💬</span> LINE Official</p>
+                  <a href="https://line.me/R/ti/p/@679vxwsy" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E5E7EB] hover:border-[#06C755] hover:bg-[#F0FFF4] transition-all group">
                     <span className="text-lg">🟢</span>
-                    <span className="text-sm font-semibold text-[#111827] group-hover:text-[#06C755]">
-                      @679vxwsy
-                    </span>
+                    <span className="text-sm font-semibold text-[#111827] group-hover:text-[#06C755]">@679vxwsy</span>
                   </a>
                   <p className="text-xs text-[#9CA3AF] mt-1.5">KMUTT Smart Kid</p>
                 </div>
-
-                {/* Facebook */}
                 <div>
-                  <p className="text-xs font-bold text-[#374151] mb-2 flex items-center gap-1.5">
-                    <span>📘</span> Facebook
-                  </p>
-                  <a
-                    href="https://facebook.com/KMUTTWORKS"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E5E7EB] hover:border-[#1877F2] hover:bg-[#EFF6FF] transition-all group"
-                  >
+                  <p className="text-xs font-bold text-[#374151] mb-2 flex items-center gap-1.5"><span>📘</span> Facebook</p>
+                  <a href="https://facebook.com/KMUTTWORKS" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E5E7EB] hover:border-[#1877F2] hover:bg-[#EFF6FF] transition-all group">
                     <span className="text-lg">📘</span>
-                    <span className="text-sm font-semibold text-[#111827] group-hover:text-[#1877F2]">
-                      KMUTTWORKS
-                    </span>
+                    <span className="text-sm font-semibold text-[#111827] group-hover:text-[#1877F2]">KMUTTWORKS</span>
                   </a>
                 </div>
-
               </div>
             </div>
           </div>
