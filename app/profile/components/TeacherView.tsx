@@ -123,6 +123,15 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
     })
   }
 
+  // Update a student's enrollments locally after reschedule
+  const handleStudentUpdate = (studentId: string, updatedEnrollments: TeacherStudentData["enrollments"]) => {
+    setStudents((prev) =>
+      prev.map((s) =>
+        s._id === studentId ? { ...s, enrollments: updatedEnrollments } : s
+      )
+    )
+  }
+
   const loading = loadingStudents || loadingSessions
 
   // Build set of course IDs this teacher teaches (from sessions)
@@ -386,6 +395,7 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
                         teacherId={user._id}
                         onSessionsUpdate={handleSessionsUpdate}
                         onSessionAdd={handleSessionAdd}
+                        onStudentUpdate={handleStudentUpdate}
                       />
                     ))}
                   </CardContent>

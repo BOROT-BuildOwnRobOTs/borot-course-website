@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Star, MessageSquare, Loader2, Upload, ImageIcon, X, FileVideo, Trash2,
-  UserCheck, UserX, AlertCircle,
+  UserCheck, UserX, AlertCircle, RefreshCw,
 } from "lucide-react"
 import type { AttendanceEntry, SessionData } from "../types"
 import { uploadFile } from "../lib/videoUtils"
@@ -127,6 +127,7 @@ interface TeacherStampDialogProps {
   onCheckinToggle: (sessionId: string, studentId: string, checkedIn: boolean) => Promise<void>
   onCheckinRetroactive: (courseId: string, courseName: string, studentId: string, scheduledAt: string, checkedIn: boolean) => Promise<SessionData | null>
   onFeedbackSaved: (sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[]) => Promise<void>
+  onReschedule?: () => void
 }
 
 export default function TeacherStampDialog({
@@ -144,6 +145,7 @@ export default function TeacherStampDialog({
   onCheckinToggle,
   onCheckinRetroactive,
   onFeedbackSaved,
+  onReschedule,
 }: TeacherStampDialogProps) {
   const [rating, setRating] = useState(0)
   const [feedback, setFeedback] = useState("")
@@ -382,24 +384,39 @@ export default function TeacherStampDialog({
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => handleCheckin(!isCheckedIn)}
-                disabled={checkinLoading}
-                className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                  isCheckedIn
-                    ? "bg-green-500 text-white border-green-500 hover:bg-red-500 hover:border-red-500"
-                    : "bg-white text-gray-500 border-gray-300 hover:bg-green-50 hover:border-green-400 hover:text-green-600"
-                }`}
-              >
-                {checkinLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : isCheckedIn ? (
-                  <UserCheck className="h-3.5 w-3.5" />
-                ) : (
-                  <UserX className="h-3.5 w-3.5" />
+              <div className="flex items-center gap-2">
+                {onReschedule && (
+                  <button
+                    onClick={() => {
+                      handleExplicitClose()
+                      // Small delay to let the stamp dialog close before opening reschedule
+                      setTimeout(() => onReschedule(), 150)
+                    }}
+                    className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-all border border-orange-300 text-orange-600 bg-orange-50 hover:bg-orange-100 hover:border-orange-400"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    เปลี่ยนวันเรียน
+                  </button>
                 )}
-                {isCheckedIn ? "เช็คอินแล้ว" : "เช็คอิน"}
-              </button>
+                <button
+                  onClick={() => handleCheckin(!isCheckedIn)}
+                  disabled={checkinLoading}
+                  className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                    isCheckedIn
+                      ? "bg-green-500 text-white border-green-500 hover:bg-red-500 hover:border-red-500"
+                      : "bg-white text-gray-500 border-gray-300 hover:bg-green-50 hover:border-green-400 hover:text-green-600"
+                  }`}
+                >
+                  {checkinLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : isCheckedIn ? (
+                    <UserCheck className="h-3.5 w-3.5" />
+                  ) : (
+                    <UserX className="h-3.5 w-3.5" />
+                  )}
+                  {isCheckedIn ? "เช็คอินแล้ว" : "เช็คอิน"}
+                </button>
+              </div>
             </div>
 
             {/* Star rating */}

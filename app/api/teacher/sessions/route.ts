@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import connectDB from '@/lib/mongodb'
 import Session from '@/models/Session'
+import Student from '@/models/Student'
 
 // GET /api/teacher/sessions?teacherId=xxx
 export async function GET(req: NextRequest) {
@@ -17,7 +18,25 @@ export async function GET(req: NextRequest) {
     }
 
     const objectId = new mongoose.Types.ObjectId(teacherId)
-    const sessions = await Session.find({ teacher: objectId }).sort({ scheduledAt: -1 }).lean()
+
+    // Find all course IDs this teacher is responsible for via student enrollments
+    const enrolledStudents = await Student.find({ 'enrollments.teacher': objectId }).lean()
+    const courseIdSet = new Set<string>()
+    for (const student of enrolledStudents as any[]) {
+      for (const e of student.enrollments || []) {
+        if (e.teacher?.toString() === teacherId) {
+          courseIdSet.add(e.course.toString())
+        }
+      }
+    }
+    const courseObjectIds = [...courseIdSet].map((id) => new mongoose.Types.ObjectId(id))
+
+    // Query sessions where teacher matches OR course is one this teacher teaches
+    const query = courseObjectIds.length > 0
+      ? { $or: [{ teacher: objectId }, { course: { $in: courseObjectIds } }] }
+      : { teacher: objectId }
+
+    const sessions = await Session.find(query).sort({ scheduledAt: -1 }).lean()
 
     // Normalize ObjectId fields to plain strings for consistent frontend comparison
     const normalized = sessions.map((s: any) => ({

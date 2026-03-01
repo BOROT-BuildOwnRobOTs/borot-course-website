@@ -60,6 +60,12 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Ensure the teacher field is set on the session (in case it was created by admin
+    // or another mechanism without this teacher's ID)
+    if (!session.teacher || session.teacher.toString() !== teacherId) {
+      session.teacher = teacherId
+    }
+
     // Now check-in the student
     const attendanceEntry = session.attendance.find(
       (a: any) => a.student.toString() === studentId

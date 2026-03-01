@@ -26,6 +26,7 @@ interface Props {
   teacherId: string
   onSessionsUpdate: (updater: (prev: SessionData[]) => SessionData[]) => void
   onSessionAdd: (session: SessionData) => void
+  onStudentUpdate?: (studentId: string, updatedEnrollments: TeacherStudentEnrollment[]) => void
 }
 
 function getSlotLabel(slot: { day: string; time: string } | undefined): string {
@@ -52,7 +53,7 @@ function findSessionForStamp(
 }
 
 export default function TeacherEnrollmentStamps({
-  student, enrollment, enrollIdx, sessions, teacherId, onSessionsUpdate, onSessionAdd,
+  student, enrollment, enrollIdx, sessions, teacherId, onSessionsUpdate, onSessionAdd, onStudentUpdate,
 }: Props) {
   const [expanded, setExpanded] = useState(false)
   const [stampDialogOpen, setStampDialogOpen] = useState(false)
@@ -60,6 +61,7 @@ export default function TeacherEnrollmentStamps({
   const [selectedSession, setSelectedSession] = useState<SessionData | null>(null)
   const [selectedAttendee, setSelectedAttendee] = useState<AttendanceEntry | null>(null)
   const [selectedStampDate, setSelectedStampDate] = useState<Date | null>(null)
+  const [selectedOrigStampDate, setSelectedOrigStampDate] = useState<Date | null>(null)
 
   // Reschedule state
   const [reschedOpen, setReschedOpen] = useState(false)
@@ -88,6 +90,7 @@ export default function TeacherEnrollmentStamps({
     setSelectedSession(session || null)
     setSelectedAttendee(attendance || null)
     setSelectedStampDate(actualDate)
+    setSelectedOrigStampDate(stampDate)
     setStampDialogOpen(true)
   }
 
@@ -192,7 +195,32 @@ export default function TeacherEnrollmentStamps({
         }),
       })
       const j = await res.json()
-      if (j.success) setReschedOpen(false)
+      if (j.success) {
+        setReschedOpen(false)
+        // Update local state so stamps reflect the change immediately
+        if (onStudentUpdate) {
+          const updatedEnrollments = student.enrollments.map((e, i) => {
+            if (i !== enrollIdx) return e
+            const origStr = reschedOrigDate.toDateString()
+            const existingRescheds = (e.reschedules || []).filter(
+              (r) => new Date(r.originalDate).toDateString() !== origStr
+            )
+            return {
+              ...e,
+              reschedules: [
+                ...existingRescheds,
+                {
+                  originalDate: reschedOrigDate.toISOString(),
+                  newSlot: { day: reschedNewSlotDay, time: reschedNewSlotTime },
+                  newDate: new Date(reschedNewDate).toISOString(),
+                  reason: reschedReason,
+                },
+              ],
+            }
+          })
+          onStudentUpdate(student._id, updatedEnrollments)
+        }
+      }
     } finally {
       setSavingResched(false)
     }
@@ -293,6 +321,7 @@ export default function TeacherEnrollmentStamps({
         onCheckinToggle={handleCheckinToggle}
         onCheckinRetroactive={handleCheckinRetroactive}
         onFeedbackSaved={handleFeedbackSaved}
+        onReschedule={selectedOrigStampDate ? () => openReschedule(selectedOrigStampDate) : undefined}
       />
 
       {/* Reschedule dialog */}
