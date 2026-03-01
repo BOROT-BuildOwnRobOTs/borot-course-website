@@ -10,6 +10,7 @@ import {
   UserCheck, UserX, AlertCircle,
 } from "lucide-react"
 import type { AttendanceEntry, SessionData } from "../types"
+import { uploadFile } from "../lib/videoUtils"
 
 /**
  * Check if a file is HEIC/HEIF format (common on iOS).
@@ -110,32 +111,6 @@ async function compressImage(file: File, maxDim = 1920, quality = 0.82): Promise
   })
 }
 
-async function uploadFile(file: File): Promise<string> {
-  const formData = new FormData()
-  formData.append("file", file)
-
-  // Add a generous timeout (90 s) so mobile uploads don't hang forever
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 90_000)
-
-  try {
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-      signal: controller.signal,
-    })
-    const j = await res.json()
-    if (!j.success) throw new Error(j.error || "Upload failed")
-    return j.url
-  } catch (err: any) {
-    if (err?.name === "AbortError") {
-      throw new Error("อัพโหลดหมดเวลา — ลองอีกครั้งหรือเลือกรูปที่เล็กกว่า")
-    }
-    throw err
-  } finally {
-    clearTimeout(timeout)
-  }
-}
 
 interface TeacherStampDialogProps {
   open: boolean
