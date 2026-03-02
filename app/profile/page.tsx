@@ -40,7 +40,7 @@ export default function ProfilePage() {
           <Button variant="ghost" asChild className="gap-2 -ml-2">
             <Link href="/">
               <Home className="h-4 w-4" />
-              กลับหน้าแรก
+              Back to Home
             </Link>
           </Button>
         </div>

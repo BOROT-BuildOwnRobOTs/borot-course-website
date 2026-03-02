@@ -76,10 +76,10 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  active: 'กำลังเรียน',
-  completed: 'จบแล้ว',
-  dropped: 'ออกกลางคัน',
-  pending: 'รอเริ่ม',
+  active: 'In Progress',
+  completed: 'Completed',
+  dropped: 'Dropped',
+  pending: 'Pending',
 }
 
 export default function ParentsTab() {
@@ -162,7 +162,7 @@ export default function ParentsTab() {
 
   const handleSaveParent = async () => {
     if (!parentForm.name.trim() || !parentForm.email.trim()) return
-    if (!editParent && !parentForm.password.trim()) { setParentError('กรุณาใส่ password'); return }
+    if (!editParent && !parentForm.password.trim()) { setParentError('Please enter a password'); return }
     setSavingParent(true)
     setParentError('')
     try {
@@ -173,7 +173,7 @@ export default function ParentsTab() {
         : parentForm
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const json = await res.json()
-      if (!json.success) { setParentError(json.error || 'เกิดข้อผิดพลาด'); return }
+      if (!json.success) { setParentError(json.error || 'An error occurred'); return }
       setParentDialogOpen(false)
       fetchAll()
     } finally {
@@ -182,7 +182,7 @@ export default function ParentsTab() {
   }
 
   const handleDeleteParent = async (id: string) => {
-    if (!confirm('ลบผู้ปกครองคนนี้? ข้อมูลนักเรียนที่เชื่อมโยงจะยังอยู่')) return
+    if (!confirm('Delete this parent? Linked student data will remain.')) return
     await fetch(`/api/admin/parents/${id}`, { method: 'DELETE' })
     fetchAll()
   }
@@ -224,7 +224,7 @@ export default function ParentsTab() {
   }
 
   const handleDeleteStudent = async (id: string) => {
-    if (!confirm('ลบนักเรียนคนนี้?')) return
+    if (!confirm('Delete this student?')) return
     await fetch(`/api/admin/students/${id}`, { method: 'DELETE' })
     fetchAll()
   }
@@ -314,7 +314,7 @@ export default function ParentsTab() {
   }
 
   const handleRemoveEnrollment = async (student: Student, enrollmentIdx: number) => {
-    if (!confirm('ลบการลงทะเบียนนี้?')) return
+    if (!confirm('Remove this enrollment?')) return
     const updated = student.enrollments.filter((_, i) => i !== enrollmentIdx)
     await fetch(`/api/admin/students/${student._id}`, {
       method: 'PUT',
@@ -327,18 +327,18 @@ export default function ParentsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">ผู้ปกครองทั้งหมด ({parents.length})</h2>
+        <h2 className="text-xl font-semibold text-gray-800">All Parents ({parents.length})</h2>
         <Button onClick={openAddParent} className="bg-orange-500 hover:bg-orange-600 text-white">
-          <Plus className="w-4 h-4 mr-2" /> เพิ่มผู้ปกครอง
+          <Plus className="w-4 h-4 mr-2" /> Add Parent
         </Button>
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-gray-400">กำลังโหลด...</div>
+        <div className="text-center py-8 text-gray-400">Loading...</div>
       ) : parents.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p>ยังไม่มีผู้ปกครอง</p>
+          <p>No parents yet</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -374,7 +374,7 @@ export default function ParentsTab() {
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           <Badge variant="secondary" className="text-xs">
-                            {children.length} คน / {totalEnrollments} คอร์ส
+                            {children.length} students / {totalEnrollments} courses
                           </Badge>
                           <Button variant="ghost" size="sm" onClick={() => openEditParent(p)}>
                             <Pencil className="w-3.5 h-3.5 text-gray-500" />
@@ -397,21 +397,21 @@ export default function ParentsTab() {
                   {isExpanded && (
                     <div className="mt-4 ml-13 pl-4 border-l-2 border-orange-100">
                       <div className="flex items-center justify-between mb-3">
-                        <p className="text-sm font-medium text-gray-600">นักเรียน ({children.length} คน)</p>
+                        <p className="text-sm font-medium text-gray-600">Students ({children.length})</p>
                         <Button size="sm" variant="outline" onClick={() => openAddStudent(p._id)}
                           className="h-7 text-xs border-orange-300 text-orange-600 hover:bg-orange-50">
-                          <UserPlus className="w-3.5 h-3.5 mr-1" /> เพิ่มนักเรียน
+                          <UserPlus className="w-3.5 h-3.5 mr-1" /> Add Student
                         </Button>
                       </div>
 
                       {/* Enrollment Status Filter */}
                       <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                        <span className="text-xs text-gray-500 shrink-0">คอร์ส:</span>
+                        <span className="text-xs text-gray-500 shrink-0">Courses:</span>
                         {(
                           [
-                            { value: 'active',    label: '🕐 กำลังเรียน', activeClass: 'bg-blue-500 text-white border-blue-500' },
-                            { value: 'completed', label: '✅ จบแล้ว',     activeClass: 'bg-green-500 text-white border-green-500' },
-                            { value: 'all',       label: 'ทั้งหมด',        activeClass: 'bg-gray-600 text-white border-gray-600' },
+                            { value: 'active',    label: '🕐 In Progress', activeClass: 'bg-blue-500 text-white border-blue-500' },
+                            { value: 'completed', label: '✅ Completed',    activeClass: 'bg-green-500 text-white border-green-500' },
+                            { value: 'all',       label: 'All',             activeClass: 'bg-gray-600 text-white border-gray-600' },
                           ] as const
                         ).map(({ value, label, activeClass }) => (
                           <button
@@ -430,7 +430,7 @@ export default function ParentsTab() {
                       </div>
 
                       {children.length === 0 ? (
-                        <p className="text-xs text-gray-400 italic py-2">ยังไม่มีนักเรียน</p>
+                        <p className="text-xs text-gray-400 italic py-2">No students yet</p>
                       ) : (
                         <div className="space-y-3">
                           {children.map((s) => (
@@ -439,14 +439,14 @@ export default function ParentsTab() {
                                 <div>
                                   <span className="font-medium text-sm text-gray-800">{s.name}</span>
                                   {s.nickname && <span className="text-xs text-gray-400 ml-1">({s.nickname})</span>}
-                                  {s.age && <span className="text-xs text-gray-400 ml-1">อายุ {s.age} ปี</span>}
+                                  {s.age && <span className="text-xs text-gray-400 ml-1">Age {s.age}</span>}
                                 </div>
                                 <div className="flex gap-1">
                                   <Button
                                     variant="ghost" size="sm" className="h-6 px-2 text-xs"
                                     onClick={() => openEnroll(s)}
                                   >
-                                    <BookOpen className="w-3 h-3 mr-1" /> เพิ่มคอร์ส
+                                    <BookOpen className="w-3 h-3 mr-1" /> Add Course
                                   </Button>
                                   <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => openEditStudent(s, p._id)}>
                                     <Pencil className="w-3 h-3 text-gray-400" />
@@ -485,7 +485,7 @@ export default function ParentsTab() {
                                           )}
                                           {e.startDate && (
                                             <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
-                                              เริ่ม {new Date(e.startDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}
+                                              Start {new Date(e.startDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: '2-digit' })}
                                             </span>
                                           )}
                                         </div>
@@ -533,20 +533,20 @@ export default function ParentsTab() {
       <Dialog open={parentDialogOpen} onOpenChange={setParentDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editParent ? 'แก้ไขข้อมูลผู้ปกครอง' : 'เพิ่มผู้ปกครองใหม่'}</DialogTitle>
+            <DialogTitle>{editParent ? 'Edit Parent' : 'Add New Parent'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {parentError && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded">{parentError}</p>}
             <div>
-              <Label>ชื่อ-นามสกุล *</Label>
-              <Input value={parentForm.name} onChange={(e) => setParentForm({ ...parentForm, name: e.target.value })} placeholder="ชื่อผู้ปกครอง" />
+              <Label>Full Name *</Label>
+              <Input value={parentForm.name} onChange={(e) => setParentForm({ ...parentForm, name: e.target.value })} placeholder="Parent name" />
             </div>
             <div>
               <Label>Email *</Label>
               <Input type="email" value={parentForm.email} onChange={(e) => setParentForm({ ...parentForm, email: e.target.value })} placeholder="parent@example.com" />
             </div>
             <div>
-              <Label>{editParent ? 'Password (เว้นว่างถ้าไม่เปลี่ยน)' : 'Password *'}</Label>
+              <Label>{editParent ? 'Password (leave blank to keep unchanged)' : 'Password *'}</Label>
               <div className="relative">
                 <Input
                   type={showParentPassword ? 'text' : 'password'}
@@ -565,14 +565,14 @@ export default function ParentsTab() {
               </div>
             </div>
             <div>
-              <Label>เบอร์โทร</Label>
+              <Label>Phone</Label>
               <Input value={parentForm.phone} onChange={(e) => setParentForm({ ...parentForm, phone: e.target.value })} placeholder="0812345678" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setParentDialogOpen(false)}>ยกเลิก</Button>
+            <Button variant="outline" onClick={() => setParentDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveParent} disabled={savingParent} className="bg-orange-500 hover:bg-orange-600 text-white">
-              {savingParent ? 'กำลังบันทึก...' : 'บันทึก'}
+              {savingParent ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -582,32 +582,32 @@ export default function ParentsTab() {
       <Dialog open={studentDialogOpen} onOpenChange={setStudentDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editStudent ? 'แก้ไขข้อมูลนักเรียน' : 'เพิ่มนักเรียน'}</DialogTitle>
+            <DialogTitle>{editStudent ? 'Edit Student' : 'Add Student'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>ชื่อ-นามสกุล *</Label>
-              <Input value={studentForm.name} onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })} placeholder="ชื่อนักเรียน" />
+              <Label>Full Name *</Label>
+              <Input value={studentForm.name} onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })} placeholder="Student name" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>ชื่อเล่น</Label>
-                <Input value={studentForm.nickname} onChange={(e) => setStudentForm({ ...studentForm, nickname: e.target.value })} placeholder="ชื่อเล่น" />
+                <Label>Nickname</Label>
+                <Input value={studentForm.nickname} onChange={(e) => setStudentForm({ ...studentForm, nickname: e.target.value })} placeholder="Nickname" />
               </div>
               <div>
-                <Label>อายุ</Label>
-                <Input type="number" value={studentForm.age} onChange={(e) => setStudentForm({ ...studentForm, age: e.target.value })} placeholder="อายุ" />
+                <Label>Age</Label>
+                <Input type="number" value={studentForm.age} onChange={(e) => setStudentForm({ ...studentForm, age: e.target.value })} placeholder="Age" />
               </div>
             </div>
             <div>
-              <Label>หมายเหตุ</Label>
-              <Textarea value={studentForm.notes} onChange={(e) => setStudentForm({ ...studentForm, notes: e.target.value })} rows={2} placeholder="หมายเหตุเพิ่มเติม" />
+              <Label>Notes</Label>
+              <Textarea value={studentForm.notes} onChange={(e) => setStudentForm({ ...studentForm, notes: e.target.value })} rows={2} placeholder="Additional notes" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setStudentDialogOpen(false)}>ยกเลิก</Button>
+            <Button variant="outline" onClick={() => setStudentDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveStudent} disabled={savingStudent} className="bg-orange-500 hover:bg-orange-600 text-white">
-              {savingStudent ? 'กำลังบันทึก...' : 'บันทึก'}
+              {savingStudent ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -617,15 +617,15 @@ export default function ParentsTab() {
       <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>ลงทะเบียนคอร์ส — {enrollStudent?.name}</DialogTitle>
+            <DialogTitle>Enroll in Course — {enrollStudent?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {/* Course */}
             <div>
-              <Label>เลือกคอร์ส *</Label>
+              <Label>Select Course *</Label>
               <Select value={enrollCourseId} onValueChange={setEnrollCourseId}>
                 <SelectTrigger className="h-auto min-h-10">
-                  <SelectValue placeholder="เลือกคอร์ส...">
+                  <SelectValue placeholder="Select a course...">
                     {enrollCourseId && (() => {
                       const selected = courses.find(c => c._id === enrollCourseId)
                       return selected ? (
@@ -656,7 +656,7 @@ export default function ParentsTab() {
             {enrollCourseId && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <Label>เลือก Slot เวลาเรียน</Label>
+                  <Label>Select Class Time Slot</Label>
                   {loadingSlots && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -684,10 +684,10 @@ export default function ParentsTab() {
                         <div className={`text-[10px] mt-1 font-medium ${
                           isSelected ? 'text-white/80' : isFull ? 'text-red-400' : 'text-green-600'
                         }`}>
-                          {slot.count}/{slot.max} ที่นั่ง
+                          {slot.count}/{slot.max} seats
                         </div>
                         {isFull && !isSelected && (
-                          <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">เต็ม</span>
+                          <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>
                         )}
                       </button>
                     )
@@ -696,7 +696,7 @@ export default function ParentsTab() {
                 {enrollSlotDay && enrollSlotTime && (
                   <p className="text-xs text-purple-600 mt-1.5 flex items-center gap-1">
                     <CalendarDays className="w-3 h-3" />
-                    เลือก: {SLOTS.find(s => s.day === enrollSlotDay && s.time === enrollSlotTime)?.dayLabel} {enrollSlotTime} น.
+                    Selected: {SLOTS.find(s => s.day === enrollSlotDay && s.time === enrollSlotTime)?.dayLabel} {enrollSlotTime}
                   </p>
                 )}
               </div>
@@ -705,7 +705,7 @@ export default function ParentsTab() {
             {/* Start date — only show if slot selected */}
             {enrollSlotDay && (
               <div>
-                <Label>วันเริ่มเรียนครั้งแรก</Label>
+                <Label>First Class Date</Label>
                 <Input
                   type="date"
                   value={enrollStartDate}
@@ -713,17 +713,17 @@ export default function ParentsTab() {
                   className="mt-1"
                 />
                 <p className="text-[11px] text-gray-400 mt-1">
-                  * ควรเป็น{enrollSlotDay === 'saturday' ? 'วันเสาร์' : 'วันอาทิตย์'}
+                  * Should be a {enrollSlotDay === 'saturday' ? 'Saturday' : 'Sunday'}
                 </p>
               </div>
             )}
 
             {/* Teacher */}
             <div>
-              <Label>ครูที่ดูแล</Label>
+              <Label>Assigned Teacher</Label>
               <Select value={enrollTeacherId} onValueChange={setEnrollTeacherId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="เลือกครู (ถ้ามี)" />
+                  <SelectValue placeholder="Select a teacher (optional)" />
                 </SelectTrigger>
                 <SelectContent>
                   {teachers.map(t => (
@@ -735,22 +735,22 @@ export default function ParentsTab() {
 
             {/* Status */}
             <div>
-              <Label>สถานะเริ่มต้น</Label>
+              <Label>Initial Status</Label>
               <Select value={enrollStatus} onValueChange={(v) => setEnrollStatus(v as 'active' | 'pending')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">รอเริ่ม</SelectItem>
-                  <SelectItem value="active">กำลังเรียน</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="active">In Progress</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEnrollDialogOpen(false)}>ยกเลิก</Button>
+            <Button variant="outline" onClick={() => setEnrollDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAddEnrollment} disabled={savingEnroll || !enrollCourseId} className="bg-orange-500 hover:bg-orange-600 text-white">
-              {savingEnroll ? 'กำลังบันทึก...' : 'ลงทะเบียน'}
+              {savingEnroll ? 'Saving...' : 'Enroll'}
             </Button>
           </DialogFooter>
         </DialogContent>

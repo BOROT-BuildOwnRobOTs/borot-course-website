@@ -50,19 +50,19 @@ const SKILL_ICONS: Record<string, React.ReactNode> = {
 }
 
 const MONTHLY_PROGRESS = [
-  { month: "ต.ค.", sessions: 4, completed: 4 },
-  { month: "พ.ย.", sessions: 4, completed: 3 },
-  { month: "ธ.ค.", sessions: 4, completed: 4 },
-  { month: "ม.ค.", sessions: 4, completed: 2 },
+  { month: "Oct", sessions: 4, completed: 4 },
+  { month: "Nov", sessions: 4, completed: 3 },
+  { month: "Dec", sessions: 4, completed: 4 },
+  { month: "Jan", sessions: 4, completed: 2 },
 ]
 
 const MOCK_ACHIEVEMENTS = [
-  { label: "First Build",       icon: "🏗️", desc: "สร้างหุ่นยนต์ครั้งแรก",     earned: true },
-  { label: "Bug Squasher",      icon: "🐛", desc: "แก้บัค 10 ครั้ง",           earned: true },
-  { label: "Team Player",       icon: "🤝", desc: "ทำงานร่วมทีม 5 โปรเจกต์",  earned: true },
-  { label: "Creative Mind",     icon: "💡", desc: "ออกแบบโปรเจกต์สร้างสรรค์", earned: false },
-  { label: "Code Master",       icon: "👨‍💻", desc: "เขียนโค้ด 100 บรรทัด",     earned: false },
-  { label: "Robot Champion",    icon: "🤖", desc: "จบ Module ทั้งหมด",         earned: false },
+  { label: "First Build",       icon: "🏗️", desc: "Built first robot",          earned: true },
+  { label: "Bug Squasher",      icon: "🐛", desc: "Fixed 10 bugs",              earned: true },
+  { label: "Team Player",       icon: "🤝", desc: "Collaborated on 5 projects", earned: true },
+  { label: "Creative Mind",     icon: "💡", desc: "Designed a creative project", earned: false },
+  { label: "Code Master",       icon: "👨‍💻", desc: "Wrote 100 lines of code",    earned: false },
+  { label: "Robot Champion",    icon: "🤖", desc: "Completed all modules",       earned: false },
 ]
 
 // ── Custom tooltip ─────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ export default function LearningProgressDashboard({ students }: Props) {
           <div>
             <h2 className="text-2xl font-bold">Learning Progress Dashboard</h2>
             <p className="text-xs text-muted-foreground">
-              ติดตามพัฒนาการทักษะของลูก · Coming Soon
+              Track your child's skill development · Coming Soon
             </p>
           </div>
         </div>
@@ -145,30 +145,30 @@ export default function LearningProgressDashboard({ students }: Props) {
         {[
           {
             icon: <Star className="h-5 w-5 text-yellow-500" />,
-            label: "คะแนนเฉลี่ย",
+            label: "Average Score",
             value: `${avgCurrent}/100`,
-            sub: "ทุกทักษะ",
+            sub: "All skills",
             color: "bg-yellow-50 border-yellow-200",
           },
           {
             icon: <TrendingUp className="h-5 w-5 text-green-500" />,
-            label: "พัฒนาการ",
+            label: "Growth",
             value: `+${growth} pts`,
-            sub: "จากเดือนก่อน",
+            sub: "vs. last month",
             color: "bg-green-50 border-green-200",
           },
           {
             icon: <BookOpen className="h-5 w-5 text-blue-500" />,
-            label: "คอร์สที่ลงทะเบียน",
+            label: "Enrolled Courses",
             value: student ? String(student.enrollments?.length ?? 0) : "—",
-            sub: "คอร์ส",
+            sub: "courses",
             color: "bg-blue-50 border-blue-200",
           },
           {
             icon: <Clock className="h-5 w-5 text-purple-500" />,
-            label: "ชั่วโมงเรียน",
-            value: "32 ชม.",
-            sub: "สะสม",
+            label: "Learning Hours",
+            value: "32 hrs",
+            sub: "accumulated",
             color: "bg-purple-50 border-purple-200",
           },
         ].map((card, i) => (
@@ -208,7 +208,7 @@ export default function LearningProgressDashboard({ students }: Props) {
                     tickCount={4}
                   />
                   <Radar
-                    name="เดือนก่อน"
+                    name="Previous month"
                     dataKey="previous"
                     stroke="#c4b5fd"
                     fill="#c4b5fd"
@@ -217,7 +217,7 @@ export default function LearningProgressDashboard({ students }: Props) {
                     strokeDasharray="5 3"
                   />
                   <Radar
-                    name="ปัจจุบัน"
+                    name="Current"
                     dataKey="current"
                     stroke="#7c3aed"
                     fill="#7c3aed"
@@ -239,7 +239,7 @@ export default function LearningProgressDashboard({ students }: Props) {
         {/* Skill breakdown bars */}
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">📊 รายละเอียดทักษะ</CardTitle>
+            <CardTitle className="text-base">📊 Skill Breakdown</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {SKILL_DATA.map((s) => {
@@ -282,7 +282,7 @@ export default function LearningProgressDashboard({ students }: Props) {
       {/* Monthly attendance */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">📅 การเข้าเรียนรายเดือน</CardTitle>
+          <CardTitle className="text-base">📅 Monthly Attendance</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -307,7 +307,7 @@ export default function LearningProgressDashboard({ students }: Props) {
                       {pct}%
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">{m.completed}/{m.sessions} ครั้ง</p>
+                  <p className="text-xs text-muted-foreground">{m.completed}/{m.sessions} sessions</p>
                 </div>
               )
             })}
@@ -340,7 +340,7 @@ export default function LearningProgressDashboard({ students }: Props) {
                   <p className="text-xs font-bold truncate">{a.label}</p>
                   <p className="text-[10px] text-muted-foreground leading-tight">{a.desc}</p>
                   {a.earned && (
-                    <span className="text-[10px] text-amber-600 font-semibold">✓ ได้รับแล้ว</span>
+                    <span className="text-[10px] text-amber-600 font-semibold">✓ Earned</span>
                   )}
                 </div>
               </div>
@@ -351,7 +351,7 @@ export default function LearningProgressDashboard({ students }: Props) {
 
       {/* Disclaimer */}
       <p className="text-center text-xs text-muted-foreground pb-2">
-        🚀 ฟีเจอร์นี้กำลังจะมาเร็วๆ นี้ (Coming Soon)
+        🚀 This feature is coming soon (Coming Soon)
       </p>
     </div>
   )

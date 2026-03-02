@@ -32,7 +32,7 @@ interface Props {
 function getSlotLabel(slot: { day: string; time: string } | undefined): string {
   if (!slot) return ""
   const found = SLOTS.find((s) => s.day === slot.day && s.time === slot.time)
-  return found ? `${found.dayLabel} ${found.time} น.` : `${slot.day} ${slot.time}`
+  return found ? `${found.dayLabel} ${found.time}` : `${slot.day} ${slot.time}`
 }
 
 function findSessionForStamp(
@@ -246,12 +246,12 @@ export default function TeacherEnrollmentStamps({
                 </span>
               ) : (
                 <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />ยังไม่ได้เลือก slot
+                  <AlertCircle className="h-3 w-3" />No slot selected
                 </span>
               )}
               {enrollment.startDate && (
                 <span className="text-xs text-muted-foreground">
-                  เริ่ม {new Date(enrollment.startDate).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })}
+                  Start: {new Date(enrollment.startDate).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
                 </span>
               )}
             </div>
@@ -259,7 +259,7 @@ export default function TeacherEnrollmentStamps({
           {stamps.length > 0 && (
             <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1 text-xs text-primary ml-2 shrink-0">
               <CalendarDays className="h-3.5 w-3.5" />
-              <span>{stamps.length} ครั้ง</span>
+              <span>{stamps.length} sessions</span>
               {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
             </button>
           )}
@@ -269,7 +269,7 @@ export default function TeacherEnrollmentStamps({
         {expanded && stamps.length > 0 && (
           <div className="px-4 pt-3 pb-4 bg-white">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              ตารางเรียนทั้งหมด {stamps.length} ครั้ง
+              Full Schedule — {stamps.length} sessions
             </p>
             <div className="flex flex-wrap gap-3">
               {stamps.map((stampDate, stampIdx) => {
@@ -328,17 +328,17 @@ export default function TeacherEnrollmentStamps({
       <Dialog open={reschedOpen} onOpenChange={setReschedOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>เปลี่ยนวันเรียน</DialogTitle>
+            <DialogTitle>Reschedule Session</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {reschedOrigDate && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-700">
-                วันเดิม: {reschedOrigDate.toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                Original date: {reschedOrigDate.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               </div>
             )}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <Label>เลือก Slot ใหม่</Label>
+                <Label>Select New Slot</Label>
                 {loadingReschedSlots && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -371,11 +371,11 @@ export default function TeacherEnrollmentStamps({
                           <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                           </svg>
-                          <span>{slot.count}/{slot.max} คน</span>
+                          <span>{slot.count}/{slot.max}</span>
                         </div>
                       )}
                       {isFull && reschedSlotAvailability.length > 0 && (
-                        <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">เต็ม</span>
+                        <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>
                       )}
                     </button>
                   )
@@ -383,18 +383,18 @@ export default function TeacherEnrollmentStamps({
               </div>
             </div>
             <div>
-              <Label>วันที่ใหม่</Label>
+              <Label>New Date</Label>
               <Input type="date" value={reschedNewDate} onChange={(e) => setReschedNewDate(e.target.value)} className="mt-1" />
             </div>
             <div>
-              <Label>เหตุผล (ไม่บังคับ)</Label>
-              <Input value={reschedReason} onChange={(e) => setReschedReason(e.target.value)} placeholder="เช่น ป่วย / ติดธุระ" className="mt-1" />
+              <Label>Reason (optional)</Label>
+              <Input value={reschedReason} onChange={(e) => setReschedReason(e.target.value)} placeholder="e.g. Sick / Unavailable" className="mt-1" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReschedOpen(false)}>ยกเลิก</Button>
+            <Button variant="outline" onClick={() => setReschedOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveReschedule} disabled={savingResched || !reschedNewSlotDay || !reschedNewDate} className="bg-orange-500 hover:bg-orange-600 text-white">
-              {savingResched ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />กำลังบันทึก...</> : "ยืนยันเปลี่ยนวัน"}
+              {savingResched ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Confirm Reschedule"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -92,10 +92,10 @@ export interface TeacherStudentData {
 
 // Status helpers
 export const STATUS_LABELS: Record<string, string> = {
-  active: "กำลังเรียน",
-  completed: "จบแล้ว",
-  dropped: "ออกกลางคัน",
-  pending: "รอเริ่ม",
+  active: "In Progress",
+  completed: "Completed",
+  dropped: "Dropped",
+  pending: "Pending",
 }
 
 export const STATUS_COLORS: Record<string, string> = {

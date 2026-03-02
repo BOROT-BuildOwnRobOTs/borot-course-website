@@ -78,9 +78,9 @@ export default function ProfileHeader({ user, tierSessionCount, onLogout }: Prop
                 }
               >
                 {user.role === "teacher" ? (
-                  <><GraduationCap className="h-3 w-3 mr-1" /> ครู</>
+                  <><GraduationCap className="h-3 w-3 mr-1" /> Teacher</>
                 ) : (
-                  <><Users className="h-3 w-3 mr-1" /> ผู้ปกครอง</>
+                  <><Users className="h-3 w-3 mr-1" /> Parent</>
                 )}
               </Badge>
             </div>
@@ -111,7 +111,7 @@ export default function ProfileHeader({ user, tierSessionCount, onLogout }: Prop
           onClick={onLogout}
         >
           <LogOut className="h-4 w-4" />
-          ออกจากระบบ
+          Sign Out
         </Button>
       </div>
 
@@ -122,15 +122,15 @@ export default function ProfileHeader({ user, tierSessionCount, onLogout }: Prop
             <div className="grid grid-cols-3 divide-x divide-primary/10 text-center">
               <div>
                 <p className="text-3xl font-bold text-primary">{user.students?.length ?? 0}</p>
-                <p className="text-xs text-muted-foreground mt-1">นักเรียน</p>
+                <p className="text-xs text-muted-foreground mt-1">Students</p>
               </div>
               <div>
                 <p className="text-3xl font-bold text-blue-500">{activeCount}</p>
-                <p className="text-xs text-muted-foreground mt-1">กำลังเรียน</p>
+                <p className="text-xs text-muted-foreground mt-1">In Progress</p>
               </div>
               <div>
                 <p className="text-3xl font-bold text-green-500">{completedCount}</p>
-                <p className="text-xs text-muted-foreground mt-1">จบแล้ว</p>
+                <p className="text-xs text-muted-foreground mt-1">Completed</p>
               </div>
             </div>
           </CardContent>

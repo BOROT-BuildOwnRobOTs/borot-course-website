@@ -161,13 +161,6 @@ export default function TeacherStampDialog({
   const videoInputRef = useRef<HTMLInputElement>(null)
 
   // ── ANDROID FIX: Use a ref-based "busy lock" ──────────────────────────────
-  // React state updates are batched / async — by the time Radix fires its
-  // onOpenChange after the user returns from camera/gallery, the state might
-  // already be stale.  A ref is always synchronously up-to-date.
-  //
-  // The lock stays engaged for a short cooldown (1 s) AFTER the async
-  // operation finishes, which absorbs any delayed focus / pointer / escape
-  // events that Android Chrome queues while the native file-picker was open.
   const busyRef = useRef(false)
   const cooldownTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -177,8 +170,6 @@ export default function TeacherStampDialog({
   }, [])
 
   const unlockDialog = useCallback(() => {
-    // Keep the lock for 2 seconds after the operation finishes
-    // to absorb queued Android interaction events (1 s was not enough on some devices)
     if (cooldownTimer.current) clearTimeout(cooldownTimer.current)
     cooldownTimer.current = setTimeout(() => {
       busyRef.current = false
@@ -208,18 +199,8 @@ export default function TeacherStampDialog({
   }, [open, attendee])
 
   // ── Guard: NEVER allow Radix-initiated close ──────────────────────────────
-  // On Android Chrome, returning from the native file picker (camera/gallery)
-  // fires delayed focus/pointer/interaction events that Radix interprets as
-  // "close the dialog."  Even with onPointerDownOutside / onInteractOutside /
-  // onFocusOutside all prevented, some Android browsers still slip through.
-  //
-  // The safest fix is to NEVER let Radix auto-close the dialog.  The user can
-  // only close it via our explicit "ยกเลิก" / "บันทึก" buttons.
   const handleOpenChange = (o: boolean) => {
-    // Allow opening always
     if (o) { onOpenChange(o); return }
-    // Block ALL automatic close requests — only our explicit buttons close
-    // (handleExplicitClose / handleSaveFeedback call onOpenChange directly)
     return
   }
 
@@ -236,14 +217,12 @@ export default function TeacherStampDialog({
     }
   }
 
-  // ── Lock the dialog as soon as the file picker is about to open ───────────
   const handleFilePickerOpen = useCallback(() => {
     lockDialog()
   }, [lockDialog])
 
   const handleImageUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) {
-      // User cancelled the file picker — release the lock (with cooldown)
       unlockDialog()
       return
     }
@@ -254,9 +233,6 @@ export default function TeacherStampDialog({
       const urls: string[] = []
       let skippedCount = 0
       for (const file of Array.from(files)) {
-        // On Android, file.type is often "application/octet-stream" or empty for camera photos.
-        // Only reject files that are clearly NOT images (e.g. video/* or audio/*).
-        // Let the server handle final validation via file extension with inferMimeType.
         const t = file.type?.toLowerCase() || ""
         const isLikelyNotImage =
           t !== "" &&
@@ -267,25 +243,22 @@ export default function TeacherStampDialog({
           skippedCount++
           continue
         }
-        // Compress large images client-side before uploading.
-        // This dramatically speeds up upload on mobile networks and prevents timeouts.
         const compressed = await compressImage(file)
         const url = await uploadFile(compressed)
         urls.push(url)
       }
       if (urls.length === 0 && skippedCount > 0) {
-        setUploadError("ไม่พบไฟล์รูปภาพที่รองรับ กรุณาลองเลือกใหม่")
+        setUploadError("No supported image files found. Please try selecting again.")
       } else {
         setImages((prev) => [...prev, ...urls])
       }
     } catch (err: any) {
-      const msg = err?.message || "อัพโหลดรูปภาพไม่สำเร็จ"
+      const msg = err?.message || "Image upload failed"
       console.error("Image upload error:", msg, err)
       setUploadError(msg)
     } finally {
       setUploadingImage(false)
       unlockDialog()
-      // Reset file input so the same file can be re-selected
       if (imageInputRef.current) imageInputRef.current.value = ""
     }
   }
@@ -302,13 +275,12 @@ export default function TeacherStampDialog({
       const url = await uploadFile(file)
       setVideoUrl(url)
     } catch (err: any) {
-      const msg = err?.message || "อัพโหลดวิดีโอไม่สำเร็จ"
+      const msg = err?.message || "Video upload failed"
       console.error("Video upload error:", msg, err)
       setUploadError(msg)
     } finally {
       setUploadingVideo(false)
       unlockDialog()
-      // Reset file input so the same file can be re-selected
       if (videoInputRef.current) videoInputRef.current.value = ""
     }
   }
@@ -319,7 +291,6 @@ export default function TeacherStampDialog({
     setSavingFeedback(true)
     try {
       await onFeedbackSaved(session._id, studentId, feedback, rating, videoUrl, images)
-      // Explicitly close after successful save
       busyRef.current = false
       if (cooldownTimer.current) clearTimeout(cooldownTimer.current)
       onOpenChange(false)
@@ -342,30 +313,20 @@ export default function TeacherStampDialog({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
           className="sm:max-w-lg max-h-[92vh] overflow-y-auto"
-          /* Hide the default X close button — we have explicit ยกเลิก/บันทึก buttons.
-             This prevents accidental taps on the X when returning from file picker on Android. */
           showCloseButton={false}
-          /* CRITICAL for mobile file upload:
-             When the native file picker (camera/gallery) opens on iOS/Android,
-             Radix UI treats it as an "interact outside" event and closes the dialog.
-             Preventing this keeps the dialog open while the user picks a file.
-             We ALWAYS prevent ALL of these — closing is only via our explicit buttons. */
           onPointerDownOutside={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
           onFocusOutside={(e) => e.preventDefault()}
-          /* Always prevent ESC from closing — Android back button / swipe gesture
-             sends ESC and can close the dialog unexpectedly mid-upload.
-             Users close via the ยกเลิก/ปิด button instead. */
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-blue-500" />
-              ครั้งที่ {stampNumber} — {studentName}
+              Session {stampNumber} — {studentName}
             </DialogTitle>
             {stampDate && (
               <p className="text-sm text-muted-foreground">
-                {stampDate.toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                {stampDate.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               </p>
             )}
           </DialogHeader>
@@ -380,7 +341,7 @@ export default function TeacherStampDialog({
                 <div>
                   <p className="font-medium text-sm">{studentName}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {isCheckedIn ? "✅ เช็คอินแล้ว" : "❌ ยังไม่ได้เช็คอิน"}
+                    {isCheckedIn ? "✅ Checked in" : "❌ Not checked in"}
                   </p>
                 </div>
               </div>
@@ -389,13 +350,12 @@ export default function TeacherStampDialog({
                   <button
                     onClick={() => {
                       handleExplicitClose()
-                      // Small delay to let the stamp dialog close before opening reschedule
                       setTimeout(() => onReschedule(), 150)
                     }}
                     className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-all border border-orange-300 text-orange-600 bg-orange-50 hover:bg-orange-100 hover:border-orange-400"
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
-                    เปลี่ยนวันเรียน
+                    Reschedule
                   </button>
                 )}
                 <button
@@ -414,14 +374,14 @@ export default function TeacherStampDialog({
                   ) : (
                     <UserX className="h-3.5 w-3.5" />
                   )}
-                  {isCheckedIn ? "เช็คอินแล้ว" : "เช็คอิน"}
+                  {isCheckedIn ? "Checked In" : "Check In"}
                 </button>
               </div>
             </div>
 
             {/* Star rating */}
             <div>
-              <Label className="text-sm font-medium">คะแนนการเรียน</Label>
+              <Label className="text-sm font-medium">Session Rating</Label>
               <div className="flex gap-1.5 mt-2">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <button
@@ -439,12 +399,12 @@ export default function TeacherStampDialog({
 
             {/* Feedback text */}
             <div>
-              <Label htmlFor="stamp-feedback" className="text-sm font-medium">ความคิดเห็น / บันทึก</Label>
+              <Label htmlFor="stamp-feedback" className="text-sm font-medium">Comments / Notes</Label>
               <Textarea
                 id="stamp-feedback"
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
-                placeholder="เช่น วันนี้นักเรียนทำได้ดีมาก เข้าใจเรื่อง loop ค่อนข้างเร็ว..."
+                placeholder="e.g. The student did very well today, understood loops quite quickly..."
                 className="mt-1.5 min-h-[100px] resize-none"
               />
             </div>
@@ -454,7 +414,7 @@ export default function TeacherStampDialog({
               <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium">อัพโหลดไม่สำเร็จ</p>
+                  <p className="font-medium">Upload failed</p>
                   <p className="text-xs mt-0.5 opacity-80">{uploadError}</p>
                 </div>
                 <button onClick={() => setUploadError(null)} className="ml-auto shrink-0">
@@ -466,20 +426,12 @@ export default function TeacherStampDialog({
             {/* Image upload */}
             <div>
               <Label className="text-sm font-medium flex items-center gap-1.5">
-                <ImageIcon className="h-4 w-4" />รูปภาพ
+                <ImageIcon className="h-4 w-4" />Photos
               </Label>
-              {/* 
-                Use <label htmlFor> to trigger file input — this is the most reliable method
-                for mobile browsers (iOS Safari / Android Chrome). Programmatic .click() on 
-                hidden inputs can be silently blocked inside Dialog portals on mobile.
-              */}
               <input
                 ref={imageInputRef}
                 id="stamp-image-upload"
                 type="file"
-                /* Simplified accept for Android compatibility.
-                   Redundant MIME types alongside image/* confused some Android file pickers
-                   causing them to return files with wrong types or fail silently. */
                 accept="image/*"
                 multiple
                 style={{ position: 'absolute', width: 1, height: 1, opacity: 0, overflow: 'hidden', pointerEvents: 'none' }}
@@ -506,11 +458,10 @@ export default function TeacherStampDialog({
                     </button>
                   </div>
                 ))}
-                {/* Use <label> instead of <button onClick=click()> for reliable mobile file picker */}
                 {uploadingImage ? (
                   <div className="w-20 h-20 border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg flex flex-col items-center justify-center gap-1 text-blue-500">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-[9px] font-medium">อัพโหลด...</span>
+                    <span className="text-[9px] font-medium">Uploading...</span>
                   </div>
                 ) : (
                   <label
@@ -519,7 +470,7 @@ export default function TeacherStampDialog({
                     className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors cursor-pointer active:bg-blue-50"
                   >
                     <ImageIcon className="h-5 w-5" />
-                    <span className="text-[10px]">เพิ่มรูป</span>
+                    <span className="text-[10px]">Add Photo</span>
                   </label>
                 )}
               </div>
@@ -528,7 +479,7 @@ export default function TeacherStampDialog({
             {/* Video upload */}
             <div>
               <Label className="text-sm font-medium flex items-center gap-1.5">
-                <FileVideo className="h-4 w-4" />วิดีโอการเรียน
+                <FileVideo className="h-4 w-4" />Session Video
               </Label>
               <input
                 ref={videoInputRef}
@@ -546,7 +497,7 @@ export default function TeacherStampDialog({
                     onClick={() => setVideoUrl("")}
                     className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />ลบวิดีโอ
+                    <Trash2 className="h-3.5 w-3.5" />Remove video
                   </button>
                 </div>
               ) : (
@@ -554,7 +505,7 @@ export default function TeacherStampDialog({
                   {uploadingVideo ? (
                     <div className="w-full border-2 border-dashed border-gray-300 rounded-lg py-6 flex flex-col items-center gap-2 text-gray-400">
                       <Loader2 className="h-6 w-6 animate-spin" />
-                      <span className="text-sm">กำลังอัพโหลด...</span>
+                      <span className="text-sm">Uploading...</span>
                     </div>
                   ) : (
                     <label
@@ -563,7 +514,7 @@ export default function TeacherStampDialog({
                       className="w-full border-2 border-dashed border-gray-300 rounded-lg py-6 flex flex-col items-center gap-2 text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors cursor-pointer active:bg-blue-50"
                     >
                       <Upload className="h-6 w-6" />
-                      <span className="text-sm">แตะเพื่อเลือกวิดีโอ</span>
+                      <span className="text-sm">Tap to select video</span>
                     </label>
                   )}
                 </div>
@@ -573,23 +524,20 @@ export default function TeacherStampDialog({
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={handleExplicitClose} disabled={savingFeedback || uploadingVideo || uploadingImage}>
-              ยกเลิก
+              Cancel
             </Button>
             <Button
               onClick={handleSaveFeedback}
               disabled={savingFeedback || uploadingVideo || uploadingImage || !session}
               className="bg-blue-500 hover:bg-blue-600 text-white"
             >
-              {savingFeedback ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />กำลังบันทึก...</> : "บันทึก Feedback"}
+              {savingFeedback ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Save Feedback"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Image Lightbox — uses a nested Radix Dialog so it properly stacks
-          above the parent modal dialog on mobile.  A plain div or createPortal
-          gets blocked by the parent dialog's `inert` attribute that Radix sets
-          on all sibling elements, making close buttons non-interactive. */}
+      {/* Image Lightbox */}
       <Dialog open={!!lightboxImg} onOpenChange={(o) => { if (!o) setLightboxImg(null) }}>
         <DialogContent
           className="bg-transparent border-none shadow-none p-0 max-w-[95vw] gap-0 [&>button]:hidden"
@@ -606,7 +554,7 @@ export default function TeacherStampDialog({
               type="button"
               onClick={() => setLightboxImg(null)}
               className="absolute top-2 right-2 w-10 h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition-colors shadow-lg"
-              aria-label="ปิดรูปภาพ"
+              aria-label="Close image"
             >
               <X className="h-6 w-6" />
             </button>

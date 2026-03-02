@@ -115,7 +115,7 @@ export default function CoursesTab() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('ลบคอร์สนี้?')) return
+    if (!confirm('Delete this course?')) return
     await fetch(`/api/admin/courses/${id}`, { method: 'DELETE' })
     fetchCourses()
   }
@@ -126,18 +126,18 @@ export default function CoursesTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">คอร์สทั้งหมด ({courses.length})</h2>
+        <h2 className="text-xl font-semibold text-gray-800">All Courses ({courses.length})</h2>
         <Button onClick={openAdd} className="bg-orange-500 hover:bg-orange-600 text-white">
-          <Plus className="w-4 h-4 mr-2" /> เพิ่มคอร์ส
+          <Plus className="w-4 h-4 mr-2" /> Add Course
         </Button>
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-gray-400">กำลังโหลด...</div>
+        <div className="text-center py-8 text-gray-400">Loading...</div>
       ) : courses.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p>ยังไม่มีคอร์ส</p>
+          <p>No courses yet</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -164,7 +164,7 @@ export default function CoursesTab() {
               <CardContent className="pt-0">
                 {c.description && <p className="text-sm text-gray-500 mb-2">{c.description}</p>}
                 {c.durationWeeks > 0 && (
-                  <p className="text-xs text-gray-400">{c.durationWeeks} สัปดาห์</p>
+                  <p className="text-xs text-gray-400">{c.durationWeeks} weeks</p>
                 )}
               </CardContent>
             </Card>
@@ -175,16 +175,16 @@ export default function CoursesTab() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editCourse ? 'แก้ไขคอร์ส' : 'เพิ่มคอร์สใหม่'}</DialogTitle>
+            <DialogTitle>{editCourse ? 'Edit Course' : 'Add New Course'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
 
             {/* ── Program dropdown ── */}
             <div>
-              <Label>โปรแกรม / คอร์ส *</Label>
+              <Label>Program / Course *</Label>
               <Select value={form.name} onValueChange={handleProgramChange}>
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="เลือกโปรแกรม" />
+                  <SelectValue placeholder="Select a program" />
                 </SelectTrigger>
                 <SelectContent>
                   {PROGRAM_NAMES.map((p) => (
@@ -197,13 +197,13 @@ export default function CoursesTab() {
             {/* ── Level dropdown (shown only when program is selected) ── */}
             {form.name && (
               <div>
-                <Label>ระดับ *</Label>
+                <Label>Level *</Label>
                 <Select
                   value={form.level}
                   onValueChange={(value) => setForm({ ...form, level: value })}
                 >
                   <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="เลือกระดับ" />
+                    <SelectValue placeholder="Select a level" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableLevels.map((lv) => (
@@ -216,7 +216,7 @@ export default function CoursesTab() {
 
             {/* ── Duration ── */}
             <div>
-              <Label>ระยะเวลา (สัปดาห์)</Label>
+              <Label>Duration (weeks)</Label>
               <Input
                 type="number"
                 value={form.durationWeeks}
@@ -226,7 +226,7 @@ export default function CoursesTab() {
 
             {/* ── Description ── */}
             <div>
-              <Label>คำอธิบาย</Label>
+              <Label>Description</Label>
               <Textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -236,13 +236,13 @@ export default function CoursesTab() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>ยกเลิก</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button
               onClick={handleSave}
               disabled={saving || !form.name || !form.level}
               className="bg-orange-500 hover:bg-orange-600 text-white"
             >
-              {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+              {saving ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>

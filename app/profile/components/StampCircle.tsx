@@ -61,7 +61,7 @@ export default function StampCircle({
         )}
       </div>
       <span className="text-[9px] text-center text-muted-foreground leading-tight max-w-[48px]">
-        {date.toLocaleDateString("th-TH", { day: "numeric", month: "short" })}
+        {date.toLocaleDateString("en-US", { day: "numeric", month: "short" })}
       </span>
     </div>
   )

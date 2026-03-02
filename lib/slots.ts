@@ -1,11 +1,11 @@
 // ── Slot definitions ─────────────────────────────────────────────────────────
 export const SLOTS = [
-  { id: 'sat-1000', day: 'saturday', dayLabel: 'วันเสาร์',   time: '10:00-12:00', startHour: 10, startMin: 0 },
-  { id: 'sat-1300', day: 'saturday', dayLabel: 'วันเสาร์',   time: '13:00-15:00', startHour: 13, startMin: 0 },
-  { id: 'sat-1530', day: 'saturday', dayLabel: 'วันเสาร์',   time: '15:30-17:30', startHour: 15, startMin: 30 },
-  { id: 'sun-1000', day: 'sunday',   dayLabel: 'วันอาทิตย์', time: '10:00-12:00', startHour: 10, startMin: 0 },
-  { id: 'sun-1300', day: 'sunday',   dayLabel: 'วันอาทิตย์', time: '13:00-15:00', startHour: 13, startMin: 0 },
-  { id: 'sun-1530', day: 'sunday',   dayLabel: 'วันอาทิตย์', time: '15:30-17:30', startHour: 15, startMin: 30 },
+  { id: 'sat-1000', day: 'saturday', dayLabel: 'Saturday',  time: '10:00-12:00', startHour: 10, startMin: 0 },
+  { id: 'sat-1300', day: 'saturday', dayLabel: 'Saturday',  time: '13:00-15:00', startHour: 13, startMin: 0 },
+  { id: 'sat-1530', day: 'saturday', dayLabel: 'Saturday',  time: '15:30-17:30', startHour: 15, startMin: 30 },
+  { id: 'sun-1000', day: 'sunday',   dayLabel: 'Sunday',    time: '10:00-12:00', startHour: 10, startMin: 0 },
+  { id: 'sun-1300', day: 'sunday',   dayLabel: 'Sunday',    time: '13:00-15:00', startHour: 13, startMin: 0 },
+  { id: 'sun-1530', day: 'sunday',   dayLabel: 'Sunday',    time: '15:30-17:30', startHour: 15, startMin: 30 },
 ] as const
 
 export const MAX_PER_SLOT = 8
@@ -30,7 +30,7 @@ export function getSlotByDayAndTime(day: string, time: string) {
 export function getSlotLabel(slot: SlotInfo | null | undefined): string {
   if (!slot) return ''
   const found = SLOTS.find((s) => s.day === slot.day && s.time === slot.time)
-  return found ? `${found.dayLabel} ${found.time} น.` : ''
+  return found ? `${found.dayLabel} ${found.time}` : ''
 }
 
 export function getSlotDayOfWeek(day: string): number {

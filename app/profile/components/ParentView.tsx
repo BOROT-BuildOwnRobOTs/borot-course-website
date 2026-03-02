@@ -31,7 +31,7 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
 function getSlotLabel(slot: { day: string; time: string } | null | undefined): string {
   if (!slot) return ""
   const found = SLOTS.find((s) => s.day === slot.day && s.time === slot.time)
-  return found ? `${found.dayLabel} ${found.time} น.` : `${slot.day} ${slot.time}`
+  return found ? `${found.dayLabel} ${found.time}` : `${slot.day} ${slot.time}`
 }
 
 interface Props {
@@ -144,7 +144,7 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
           ].join(" ")}
         >
           <Users className="h-4 w-4" />
-          ข้อมูลนักเรียน
+          Student Info
           {loadingSessions && activeTab === "students" && (
             <Loader2 className="h-3 w-3 animate-spin" />
           )}
@@ -217,7 +217,7 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Users className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-bold">ข้อมูลนักเรียน</h2>
+          <h2 className="text-2xl font-bold">Student Information</h2>
         </div>
         {loadingSessions && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
@@ -225,12 +225,12 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
       {/* Status Filter */}
       {user.students && user.students.length > 0 && (
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground font-medium shrink-0">แสดง:</span>
+          <span className="text-sm text-muted-foreground font-medium shrink-0">Show:</span>
           {(
             [
-              { value: "active",    label: "🕐 กำลังเรียน", activeClass: "bg-blue-500 text-white border-blue-500" },
-              { value: "completed", label: "✅ จบแล้ว",     activeClass: "bg-green-500 text-white border-green-500" },
-              { value: "all",       label: "ทั้งหมด",        activeClass: "bg-gray-700 text-white border-gray-700" },
+              { value: "active",    label: "🕐 In Progress", activeClass: "bg-blue-500 text-white border-blue-500" },
+              { value: "completed", label: "✅ Completed",   activeClass: "bg-green-500 text-white border-green-500" },
+              { value: "all",       label: "All",            activeClass: "bg-gray-700 text-white border-gray-700" },
             ] as const
           ).map(({ value, label, activeClass }) => (
             <button
@@ -254,8 +254,8 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
         <Card className="border-2 border-dashed">
           <CardContent className="py-12 text-center text-muted-foreground">
             <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p>ยังไม่มีข้อมูลนักเรียน</p>
-            <p className="text-xs mt-1">ติดต่อผู้ดูแลระบบเพื่อเพิ่มข้อมูล</p>
+            <p>No student data found</p>
+            <p className="text-xs mt-1">Please contact an administrator to add student information.</p>
           </CardContent>
         </Card>
       ) : (
@@ -283,20 +283,20 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                       <p className="font-bold text-lg leading-tight">{student.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {student.nickname && `(${student.nickname})`}
-                        {student.age && ` อายุ ${student.age} ปี`}
+                        {student.age && ` Age ${student.age}`}
                       </p>
                     </div>
                   </div>
-                  <Badge variant="secondary">{filteredEnrollments.length} คอร์ส</Badge>
+                  <Badge variant="secondary">{filteredEnrollments.length} courses</Badge>
                 </div>
                 {total > 0 && (
                   <div className="mt-3">
                     <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
                       <div className="flex items-center gap-1">
                         <Trophy className="h-3.5 w-3.5" />
-                        <span>ความคืบหน้าโดยรวม</span>
+                        <span>Overall Progress</span>
                       </div>
-                      <span className="font-semibold">{done}/{total} คอร์ส ({progress}%)</span>
+                      <span className="font-semibold">{done}/{total} courses ({progress}%)</span>
                     </div>
                     <Progress value={progress} className="h-2" />
                   </div>
@@ -305,7 +305,7 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
 
               <CardContent className="space-y-4">
                 {filteredEnrollments.length === 0 ? (
-                  <p className="text-sm text-muted-foreground italic">ยังไม่ได้ลงทะเบียนคอร์ส</p>
+                  <p className="text-sm text-muted-foreground italic">No courses enrolled yet</p>
                 ) : (
                   filteredEnrollments.map((enroll, enrollIdx) => {
                     const realEnrollIdx = allEnrollsForStudent.indexOf(enroll)
@@ -335,12 +335,12 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                                 </span>
                               ) : (
                                 <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  <AlertCircle className="h-3 w-3" />ยังไม่ได้เลือก slot
+                                  <AlertCircle className="h-3 w-3" />No slot selected
                                 </span>
                               )}
                               {enroll.startDate && (
                                 <span className="text-xs text-muted-foreground">
-                                  เริ่ม {new Date(enroll.startDate).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })}
+                                  Start: {new Date(enroll.startDate).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
                                 </span>
                               )}
                               <button
@@ -351,7 +351,7 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                                 }}
                                 className="text-xs text-blue-500 hover:text-blue-700 underline"
                               >
-                                {enroll.slot ? "เปลี่ยน slot" : "เลือก slot"}
+                                {enroll.slot ? "Change slot" : "Select slot"}
                               </button>
                             </div>
                           </div>
@@ -361,7 +361,7 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                               className="flex items-center gap-1 text-xs text-primary ml-2 shrink-0"
                             >
                               <CalendarDays className="h-3.5 w-3.5" />
-                              <span>{stamps.length} ครั้ง</span>
+                              <span>{stamps.length} sessions</span>
                               {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                             </button>
                           )}
@@ -371,7 +371,7 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                         {isExpanded && stamps.length > 0 && (
                           <div className="px-4 pt-3 pb-4 bg-white">
                             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                              ตารางเรียนทั้งหมด {stamps.length} ครั้ง
+                              Full Schedule — {stamps.length} sessions
                             </p>
                             <div className="flex flex-wrap gap-3">
                               {stamps.map((stampDate, stampIdx) => {
@@ -410,7 +410,7 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                                             setFeedbackEntry(attendance!)
                                             setFeedbackSessionInfo({
                                               topic: session?.topic || "",
-                                              date: actualDate.toLocaleDateString("th-TH"),
+                                              date: actualDate.toLocaleDateString("en-US"),
                                             })
                                             setFeedbackDialogOpen(true)
                                           } else if (!isCheckedIn && (isFuture || isToday)) {
@@ -423,8 +423,8 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                                         disabled={!isClickable}
                                         title={
                                           isCheckedIn
-                                            ? hasFeedback ? "ดู Feedback จากครู" : "ดูข้อมูลการเข้าเรียน"
-                                            : (!isCheckedIn && (isFuture || isToday)) ? "เปลี่ยนวันเรียน"
+                                            ? hasFeedback ? "View Teacher Feedback" : "View Attendance Info"
+                                            : (!isCheckedIn && (isFuture || isToday)) ? "Reschedule Session"
                                             : undefined
                                         }
                                         className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm transition-all
@@ -449,7 +449,7 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                                       )}
                                     </div>
                                     <span className="text-[9px] text-center text-muted-foreground leading-tight max-w-[48px]">
-                                      {actualDate.toLocaleDateString("th-TH", { day: "numeric", month: "short" })}
+                                      {actualDate.toLocaleDateString("en-US", { day: "numeric", month: "short" })}
                                     </span>
                                   </div>
                                 )
@@ -458,16 +458,16 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                             {/* Legend */}
                             <div className="flex gap-4 mt-4 pt-3 border-t flex-wrap">
                               <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                <div className="w-3.5 h-3.5 rounded-full bg-green-500 shrink-0" />เข้าเรียนแล้ว
+                                <div className="w-3.5 h-3.5 rounded-full bg-green-500 shrink-0" />Attended
                               </span>
                               <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                <div className="w-3.5 h-3.5 rounded-full bg-red-100 border-2 border-red-300 shrink-0" />ขาดเรียน
+                                <div className="w-3.5 h-3.5 rounded-full bg-red-100 border-2 border-red-300 shrink-0" />Absent
                               </span>
                               <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                <div className="w-3.5 h-3.5 rounded-full bg-blue-500 shrink-0" />วันนี้
+                                <div className="w-3.5 h-3.5 rounded-full bg-blue-500 shrink-0" />Today
                               </span>
                               <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                <div className="w-3.5 h-3.5 rounded-full bg-gray-100 border-2 border-gray-300 shrink-0" />ยังไม่ถึง
+                                <div className="w-3.5 h-3.5 rounded-full bg-gray-100 border-2 border-gray-300 shrink-0" />Upcoming
                               </span>
                             </div>
                           </div>
