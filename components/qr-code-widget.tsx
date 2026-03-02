@@ -13,10 +13,10 @@ export function QRCodeWidget() {
         <button
           onClick={() => setIsModalOpen(true)}
           className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 text-sm font-medium"
-          aria-label="สถานะผู้เรียนปัจจุบัน"
+          aria-label="Current Student Status"
         >
           <Users className="w-5 h-5" />
-          <span>สถานะผู้เรียน</span>
+          <span>Student Status</span>
         </button>
       </div>
 

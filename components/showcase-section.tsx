@@ -29,9 +29,9 @@ export function ShowCaseSection() {
         "/images/show_case/showcase-1-2.png",
         "/images/show_case/showcase-1-3.png"
       ],
-      title: "ค่ายอบรมการเขียนโปรแกรม วิทยาการหุ่นยนต์ และปัญญาประดิษฐ์",
-      subtitle: "โครงการอบรมเชิงปฏิบัติการสำหรับนักเรียนระดับประถมศึกษาและมัธยมศึกษา เพื่อเสริมสร้างพื้นฐานด้านการเขียนโปรแกรม หุ่นยนต์ และปัญญาประดิษฐ์",
-      footer: "โรงเรียนสาธิตแห่งมหาวิทยาลัยเกษตรศาสตร์ จังหวัดชลบุรี",
+      title: "Programming, Robotics & AI Training Camp",
+      subtitle: "A hands-on training workshop for primary and secondary school students, building foundational skills in programming, robotics, and artificial intelligence.",
+      footer: "Kasetsart University Laboratory School, Chonburi",
       gradient: "from-orange-400 via-amber-500 to-yellow-500",
     },
     {
@@ -41,9 +41,9 @@ export function ShowCaseSection() {
         "/images/show_case/showcase-2-1.png",
         "/images/show_case/showcase-2-2.png"
       ],
-      title: "ค่ายอบรมวิทยาการหุ่นยนต์และปัญญาประดิษฐ์ สำหรับนักเรียนมัธยมปลาย",
-      subtitle: "ความร่วมมือระหว่าง Borot และ Know Are เพื่อพัฒนาเยาวชนที่สนใจศึกษาต่อด้านวิศวกรรมหุ่นยนต์และปัญญาประดิษฐ์ ผ่านกิจกรรมเชิงปฏิบัติที่ผสานความรู้และเทคโนโลยีเข้าด้วยกัน",
-      footer: "ร่วมจัดโดย Borot Co., Ltd. และ Know Are",
+      title: "Robotics & AI Training Camp for High School Students",
+      subtitle: "A collaboration between Borot and Know Are to develop youth interested in pursuing robotics and AI engineering, through hands-on activities that integrate knowledge and technology.",
+      footer: "Co-organized by Borot Co., Ltd. and Know Are",
       gradient: "from-red-500 via-orange-500 to-amber-500",
     },
     {
@@ -54,9 +54,9 @@ export function ShowCaseSection() {
         "/images/show_case/showcase-3-2.png",
         "/images/show_case/showcase-3-3.png"
       ],
-      title: "โครงการส่งเสริมการเรียนรู้หุ่นยนต์และการเขียนโปรแกรม สำหรับเยาวชนในงาน Play Fun Fest",
-      subtitle: "ความร่วมมือระหว่าง Borot และ บพค. (PMU-B) ในการจัดกิจกรรมเวิร์กชอปเขียนโปรแกรมหุ่นยนต์สำหรับเยาวชน ภายในงาน Play Fun Fest เนื่องในโอกาสวันเด็กแห่งชาติ เพื่อส่งเสริมการเรียนรู้ด้านเทคโนโลยีและวิทยาการหุ่นยนต์",
-      footer: "จัดโดย Borot Co., Ltd. ร่วมกับ บพค. (PMU-B)",
+      title: "Youth Robotics & Programming Workshop at Play Fun Fest",
+      subtitle: "A collaboration between Borot and PMU-B to host a robotics programming workshop for youth at Play Fun Fest during National Children's Day, promoting learning in technology and robotics.",
+      footer: "Organized by Borot Co., Ltd. in partnership with PMU-B",
       gradient: "from-amber-600 via-orange-600 to-red-600",
     },
     {
@@ -72,9 +72,9 @@ export function ShowCaseSection() {
         "/images/show_case/showcase-4-2.png",
         "/images/show_case/showcase-4-3.png"
       ],
-      title: "โครงการเวิร์กชอปสร้างสรรค์นวัตกรรมหุ่นยนต์และงานออกแบบ 3 มิติ",
-      subtitle: "ความร่วมมือระหว่าง Borot, มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี (KMUTT) และสถาบันวิทยาการหุ่นยนต์ภาคสนาม (FIBO) จัดกิจกรรมเวิร์กชอปให้เยาวชนได้เรียนรู้พื้นฐานการออกแบบงาน 3 มิติ และการต่อวงจรไฟฟ้าผ่านกิจกรรมลงมือทำจริง ณ CX Smart Play",
-      footer: "จัดโดย Borot Co., Ltd. ร่วมกับ KMUTT, FIBO และ KX Smart Play",
+      title: "Robotics Innovation & 3D Design Creative Workshop",
+      subtitle: "A collaboration between Borot, KMUTT, and FIBO delivering hands-on workshops where youth learned the basics of 3D design and circuit building through practical activities at CX Smart Play.",
+      footer: "Organized by Borot Co., Ltd. in partnership with KMUTT, FIBO, and KX Smart Play",
       gradient: "from-yellow-500 via-orange-500 to-red-500",
     },
     {
@@ -90,9 +90,9 @@ export function ShowCaseSection() {
         "/images/show_case/showcase-5-2.png",
         "/images/show_case/showcase-5-3.png"
       ],
-      title: "โครงการเวิร์กชอปสร้างหุ่นยนต์และต่อวงจรไฟฟ้า",
-      subtitle: "ความร่วมมือระหว่าง Borot, มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี (KMUTT) และสถาบันวิทยาการหุ่นยนต์ภาคสนาม (FIBO) จัดกิจกรรมเวิร์กชอปเชิงปฏิบัติการให้นักเรียนได้เรียนรู้พื้นฐานการเขียนโปรแกรมสั่งการหุ่นยนต์ การต่อวงจรไฟฟ้า และการสร้างชิ้นงาน 3 มิติ ณ CX Smart Play",
-      footer: "จัดโดย Borot Co., Ltd. ร่วมกับ KMUTT, FIBO และ KX Smart Play",
+      title: "Robot Building & Circuit Workshop",
+      subtitle: "A collaboration between Borot, KMUTT, and FIBO delivering practical workshops where students learned robot programming fundamentals, circuit building, and 3D fabrication at CX Smart Play.",
+      footer: "Organized by Borot Co., Ltd. in partnership with KMUTT, FIBO, and KX Smart Play",
       gradient: "from-orange-500 via-red-500 to-pink-500",
     },
     {
@@ -107,9 +107,9 @@ export function ShowCaseSection() {
         "/images/show_case/showcase-6-1.png",
         "/images/show_case/showcase-6-2.png"
       ],
-      title: "โครงการเวิร์กชอปเขียนโปรแกรม Micro:bit สำหรับเยาวชน",
-      subtitle: "ความร่วมมือระหว่าง Borot, มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี (KMUTT) และสถาบันวิทยาการหุ่นยนต์ภาคสนาม (FIBO) จัดกิจกรรมเวิร์กชอปสอนเขียนโปรแกรมเบื้องต้นด้วย Micro:bit ในรูปแบบ Block-based Coding สำหรับเด็กและเยาวชน ณ ศูนย์สิริกิติ์ ภายในงาน Thailand SciFair",
-      footer: "จัดโดย Borot Co., Ltd. ร่วมกับ KMUTT, FIBO และ Thailand SciFair",
+      title: "Micro:bit Programming Workshop for Youth",
+      subtitle: "A collaboration between Borot, KMUTT, and FIBO delivering an introductory block-based coding workshop using Micro:bit for children and youth at the Queen Sirikit National Convention Center during Thailand SciFair.",
+      footer: "Organized by Borot Co., Ltd. in partnership with KMUTT, FIBO, and Thailand SciFair",
       gradient: "from-blue-500 via-purple-500 to-pink-500",
     },
     {
@@ -125,9 +125,9 @@ export function ShowCaseSection() {
         "/images/show_case/showcase-7-2.png",
         "/images/show_case/showcase-7-3.png"
       ],
-      title: "โครงการสาธิตเทคโนโลยีหุ่นยนต์ในงานครบรอบ 25 ปี FIBO",
-      subtitle: "ความร่วมมือระหว่าง Borot และคณะวิศวกรรมหุ่นยนต์และระบบอัตโนมัติ มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี (KMUTT) ในการจัดแสดงและสาธิตเทคโนโลยีหุ่นยนต์อุตสาหกรรมแขนกล เพื่อเฉลิมฉลองครบรอบ 25 ปีของสถาบันวิทยาการหุ่นยนต์ภาคสนาม (FIBO)",
-      footer: "จัดโดย Borot Co., Ltd. ร่วมกับ FIBO และคณะวิศวกรรมหุ่นยนต์และระบบอัตโนมัติ มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี",
+      title: "Robotics Technology Demo at FIBO 25th Anniversary",
+      subtitle: "A collaboration between Borot and the Faculty of Engineering, KMUTT, showcasing and demonstrating industrial robotic arm technology to celebrate the 25th anniversary of FIBO.",
+      footer: "Organized by Borot Co., Ltd. in partnership with FIBO and the Faculty of Engineering, KMUTT",
       gradient: "from-green-500 via-teal-500 to-cyan-500",
     }
   ]
@@ -152,11 +152,11 @@ export function ShowCaseSection() {
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-6 space-y-3">
           <h2 className="text-5xl md:text-6xl font-bold text-balance py-2">
-            <span className="text-foreground">ผลงาน </span>
+            <span className="text-foreground">Our Work </span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-amber-500 to-red-600 leading-tight">Company Profile</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto text-balance">
-            โครงการและกิจกรรมที่เราได้ร่วมมือกับสถาบันการศึกษาและองค์กรชั้นนำ
+            Projects and activities we have carried out in collaboration with leading educational institutions and organizations.
           </p>
         </div>
 
@@ -179,7 +179,6 @@ export function ShowCaseSection() {
                         {/* Image Section */}
                         <div className="relative group">
                           <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                            {/* Main Image Display - Grid based on number of images */}
                             <div 
                               className={`grid gap-3 p-5 bg-gradient-to-br ${showcase.gradient}`}
                               style={{
@@ -247,7 +246,7 @@ export function ShowCaseSection() {
                               {showcase.title}
                             </h3>
 
-                            {/* Partner Logos - ย้ายมาไว้ที่นี่ */}
+                            {/* Partner Logos */}
                             <div className="flex flex-wrap gap-2 py-2">
                               {showcase.logos.map((logo, logoIndex) => (
                                 <div
@@ -278,7 +277,7 @@ export function ShowCaseSection() {
                           <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
                             <Users className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                             <div>
-                              <p className="text-sm font-medium text-muted-foreground">ความร่วมมือกับ</p>
+                              <p className="text-sm font-medium text-muted-foreground">In collaboration with</p>
                               <p className="text-sm font-semibold">{showcase.footer}</p>
                             </div>
                           </div>
@@ -290,7 +289,7 @@ export function ShowCaseSection() {
                                 size="lg"
                                 className={`w-full md:w-auto bg-gradient-to-r ${showcase.gradient} text-white border-0 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group`}
                               >
-                                ดูรายละเอียดเพิ่มเติม
+                                View More Details
                                 <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                               </Button>
                             </DialogTrigger>
@@ -335,7 +334,7 @@ export function ShowCaseSection() {
                                 <div>
                                   <h4 className="text-xl font-semibold mb-4 flex items-center gap-2">
                                     <div className={`w-1 h-6 bg-gradient-to-b ${showcase.gradient} rounded-full`} />
-                                    ภาพกิจกรรม
+                                    Activity Photos
                                   </h4>
                                   <div className={`grid gap-4 ${showcase.images.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
                                     {showcase.images.map((img, imgIndex) => (
@@ -356,7 +355,7 @@ export function ShowCaseSection() {
 
                                 {/* Description */}
                                 <div className="p-6 bg-muted/50 rounded-xl">
-                                  <h4 className="text-lg font-semibold mb-3">รายละเอียดโครงการ</h4>
+                                  <h4 className="text-lg font-semibold mb-3">Project Details</h4>
                                   <p className="text-muted-foreground leading-relaxed mb-4">{showcase.subtitle}</p>
                                   <div className="flex items-center gap-2 text-sm">
                                     <Users className="w-4 h-4 text-primary" />

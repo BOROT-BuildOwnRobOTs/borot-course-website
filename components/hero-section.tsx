@@ -156,6 +156,10 @@ export function HeroSection() {
         .delay-600 {
           animation-delay: 0.25s;
         }
+
+        .delay-700 {
+          animation-delay: 0.3s;
+        }
         
         .initial-hidden {
           opacity: 0;
@@ -167,6 +171,15 @@ export function HeroSection() {
         
         .animate-pulse-subtle {
           animation: pulse 4s ease-in-out infinite;
+        }
+
+        .partner-logo-item {
+          transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .partner-logo-item:hover {
+          opacity: 1 !important;
+          transform: scale(1.05);
         }
       `}</style>
       {/* Background Image */}
@@ -180,7 +193,7 @@ export function HeroSection() {
           opacity: 0.8
         }}
       />
-      {/* Background Gradient Circles ฝั่งซ้าย */}
+      {/* Background Gradient Circles */}
       <div 
         className="absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
         style={{
@@ -223,7 +236,6 @@ export function HeroSection() {
               Program Details
             </h1>
 
-
             {/* Subtitle */}
             <p className="text-sm md:text-base lg:text-lg font-medium leading-relaxed initial-hidden animate-fade-in-up delay-300"
               style={{ color: '#484848', fontFamily: 'var(--font-geist-sans)' }}>
@@ -247,25 +259,9 @@ export function HeroSection() {
               Learning Path 2025
             </button>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center initial-hidden animate-fade-in-up delay-500">
-              <Link href="/modules">
-                <Button
-                  size="lg"
-                  className="px-6 py-3 text-base font-semibold rounded-lg hover-lift"
-                  style={{
-                    backgroundColor: '#E5690D',
-                    color: '#FFF',
-                    fontSize: '16px',
-                    fontWeight: 600,
-                    lineHeight: '24px',
-                    fontFamily: 'var(--font-geist-sans)'
-                  }}
-                >
-                  สมัครเข้าร่วมโครงการ
-                </Button>
-              </Link>
-              <Link href="/about">
+            {/* CTA Button */}
+            <div className="flex items-center initial-hidden animate-fade-in-up delay-500">
+              <Link href="/courses">
                 <Button
                   variant="outline"
                   size="lg"
@@ -279,9 +275,66 @@ export function HeroSection() {
                     borderColor: '#E5690D'
                   }}
                 >
-                  รายละเอียดเพิ่มเติม
+                  View Course Details
                 </Button>
               </Link>
+            </div>
+
+            {/* Partner Logos */}
+            <div className="flex flex-col gap-3 w-full initial-hidden animate-fade-in-up delay-700 mt-2">
+              <p
+                className="text-xs font-medium uppercase tracking-widest"
+                style={{ color: '#B0B0B0', fontFamily: 'var(--font-geist-sans)' }}
+              >
+                Our Partners
+              </p>
+              <div className="flex items-center gap-5 flex-wrap">
+                {/* Partner 1 - KMUTT Smart Kid */}
+                <div className="partner-logo-item" style={{ opacity: 0.75 }}>
+                  <Image
+                    src="/images/partner-kmutt-smartkid.png"
+                    alt="KMUTT Smart Kid"
+                    width={90}
+                    height={40}
+                    className="object-contain"
+                  />
+                </div>
+
+                {/* Partner 2 - KMUTT */}
+                <div className="partner-logo-item" style={{ opacity: 0.75 }}>
+                  <Image
+                    src="/images/partner-kmutt.png"
+                    alt="KMUTT"
+                    width={70}
+                    height={40}
+                    className="object-contain"
+                  />
+                </div>
+
+                {/* Partner 3 - KMUTT Continuing Education Center */}
+                <div className="partner-logo-item" style={{ opacity: 0.75 }}>
+                  <Image
+                    src="/images/partner-kmutt-cec.png"
+                    alt="KMUTT Continuing Education Center"
+                    width={110}
+                    height={40}
+                    className="object-contain"
+                  />
+                </div>
+
+                {/* Partner 4 - KMUTT Works */}
+                <div className="partner-logo-item" style={{ opacity: 0.75 }}>
+                  <Image
+                    src="/images/partner-kmuttworks.png"
+                    alt="KMUTT Works"
+                    width={100}
+                    height={40}
+                    className="object-contain"
+                  />
+                </div>
+
+
+              </div>
             </div>
 
           </div>
@@ -290,7 +343,7 @@ export function HeroSection() {
           <div className="hidden lg:flex justify-center items-center relative relative mt-20">
             <div className="relative w-[550px] h-[550px]">
 
-              {/* Dashed Border Circle - เส้นขอบประ */}
+              {/* Dashed Border Circle */}
               <div 
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
                 style={{
@@ -306,7 +359,7 @@ export function HeroSection() {
                 />
               </div>
               
-              {/* Main Circle - วงกลมใหญ่ตรงกลาง */}
+              {/* Main Circle */}
               <div 
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full overflow-hidden hover-lift animate-pulse-subtle"
                 style={{
@@ -324,7 +377,7 @@ export function HeroSection() {
                 />
               </div>
 
-              {/* Top Left Circle - วงกลมบนซ้าย */}
+              {/* Top Left Circle */}
               <div 
                 className="absolute rounded-full overflow-hidden hover-lift animate-float"
                 style={{
@@ -344,7 +397,7 @@ export function HeroSection() {
                 />
               </div>
 
-              {/* Right Middle Circle - วงกลมขวากลาง */}
+              {/* Right Middle Circle */}
               <div 
                 className="absolute rounded-full overflow-hidden hover-lift animate-float-slow"
                 style={{
@@ -364,7 +417,7 @@ export function HeroSection() {
                 />
               </div>
 
-              {/* Bottom Left Circle - วงกลมล่างซ้าย */}
+              {/* Bottom Left Circle */}
               <div 
                 className="absolute rounded-full overflow-hidden hover-lift animate-float"
                 style={{
@@ -384,7 +437,7 @@ export function HeroSection() {
                 />
               </div>
 
-              {/* Mascot - ตัวมาสคอตสิงโต */}
+              {/* Mascot */}
               <div 
                 className="absolute animate-rotate-float hover-scale"
                 style={{
