@@ -180,7 +180,7 @@ export function HeroSection() {
           opacity: 0.8
         }}
       />
-      {/* Background Gradient Circles ฝั่งซ้าย */}
+      {/* Background Gradient Circles */}
       <div 
         className="absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
         style={{
@@ -223,7 +223,6 @@ export function HeroSection() {
               Program Details
             </h1>
 
-
             {/* Subtitle */}
             <p className="text-sm md:text-base lg:text-lg font-medium leading-relaxed initial-hidden animate-fade-in-up delay-300"
               style={{ color: '#484848', fontFamily: 'var(--font-geist-sans)' }}>
@@ -247,25 +246,9 @@ export function HeroSection() {
               Learning Path 2025
             </button>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center initial-hidden animate-fade-in-up delay-500">
-              <Link href="/modules">
-                <Button
-                  size="lg"
-                  className="px-6 py-3 text-base font-semibold rounded-lg hover-lift"
-                  style={{
-                    backgroundColor: '#E5690D',
-                    color: '#FFF',
-                    fontSize: '16px',
-                    fontWeight: 600,
-                    lineHeight: '24px',
-                    fontFamily: 'var(--font-geist-sans)'
-                  }}
-                >
-                  สมัครเข้าร่วมโครงการ
-                </Button>
-              </Link>
-              <Link href="/about">
+            {/* CTA Button */}
+            <div className="flex items-center initial-hidden animate-fade-in-up delay-500">
+              <Link href="/courses">
                 <Button
                   variant="outline"
                   size="lg"
@@ -279,7 +262,7 @@ export function HeroSection() {
                     borderColor: '#E5690D'
                   }}
                 >
-                  รายละเอียดเพิ่มเติม
+                  View Course Details
                 </Button>
               </Link>
             </div>
@@ -290,7 +273,7 @@ export function HeroSection() {
           <div className="hidden lg:flex justify-center items-center relative relative mt-20">
             <div className="relative w-[550px] h-[550px]">
 
-              {/* Dashed Border Circle - เส้นขอบประ */}
+              {/* Dashed Border Circle */}
               <div 
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
                 style={{
@@ -306,7 +289,7 @@ export function HeroSection() {
                 />
               </div>
               
-              {/* Main Circle - วงกลมใหญ่ตรงกลาง */}
+              {/* Main Circle */}
               <div 
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full overflow-hidden hover-lift animate-pulse-subtle"
                 style={{
@@ -324,7 +307,7 @@ export function HeroSection() {
                 />
               </div>
 
-              {/* Top Left Circle - วงกลมบนซ้าย */}
+              {/* Top Left Circle */}
               <div 
                 className="absolute rounded-full overflow-hidden hover-lift animate-float"
                 style={{
@@ -344,7 +327,7 @@ export function HeroSection() {
                 />
               </div>
 
-              {/* Right Middle Circle - วงกลมขวากลาง */}
+              {/* Right Middle Circle */}
               <div 
                 className="absolute rounded-full overflow-hidden hover-lift animate-float-slow"
                 style={{
@@ -364,7 +347,7 @@ export function HeroSection() {
                 />
               </div>
 
-              {/* Bottom Left Circle - วงกลมล่างซ้าย */}
+              {/* Bottom Left Circle */}
               <div 
                 className="absolute rounded-full overflow-hidden hover-lift animate-float"
                 style={{
@@ -384,7 +367,7 @@ export function HeroSection() {
                 />
               </div>
 
-              {/* Mascot - ตัวมาสคอตสิงโต */}
+              {/* Mascot */}
               <div 
                 className="absolute animate-rotate-float hover-scale"
                 style={{

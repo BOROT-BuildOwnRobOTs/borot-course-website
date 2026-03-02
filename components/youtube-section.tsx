@@ -3,23 +3,22 @@
 import { useState } from "react"
 
 export function YouTubeSection() {
-  // ใส่ YouTube Video ID ตรงนี้ (ตัวอย่าง: "dQw4w9WgXcQ" จาก URL: youtube.com/watch?v=dQw4w9WgXcQ)
   const videos = [
     {
       id: 1,
-      videoId: "Y_rbhjwqqAA", // ⬅️ ใส่ YouTube Video ID ตรงนี้
+      videoId: "Y_rbhjwqqAA",
       title: "BittleX ep2",
-      thumbnail: "" // จะใช้ YouTube thumbnail อัตโนมัติ
+      thumbnail: ""
     },
     {
       id: 2,
-      videoId: "nVR0HtS3gf4", // ⬅️ ใส่ YouTube Video ID ตรงนี้
-      title: "OnShape EP1 : มาสร้างพวงกุญแจ 3 มิติกันเถอะ",
+      videoId: "nVR0HtS3gf4",
+      title: "OnShape EP1 : Let's Create a 3D Keychain",
       thumbnail: ""
     },
     {
       id: 3,
-      videoId: "vYZuUnm4uBo", // ⬅️ ใส่ YouTube Video ID ตรงนี้
+      videoId: "vYZuUnm4uBo",
       title: "MiniBorot EP1: Introduction to MiniBorot",
       thumbnail: ""
     }
@@ -37,13 +36,13 @@ export function YouTubeSection() {
       <div className="w-full max-w-[1440px] text-center">
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
           <span style={{ color: "#101010" }}>YouTube </span>
-          <span style={{ color: "#E5690D" }}>Chanal</span>
+          <span style={{ color: "#E5690D" }}>Channel</span>
         </h2>
         <p
           className="text-base md:text-lg max-w-3xl mx-auto leading-relaxed"
           style={{ color: "#484848" }}
         >
-          ติดตามเนื้อหาและผลงานของผู้เข้าร่วมโครงการผ่าน YouTube Channel
+          Follow content and projects from our participants on our YouTube Channel.
         </p>
       </div>
 
@@ -64,7 +63,6 @@ export function YouTubeSection() {
               style={{ aspectRatio: "16/9" }}
             >
               {video.videoId ? (
-                // แสดง YouTube Embed เมื่อมี Video ID
                 <iframe
                   className="absolute inset-0 w-full h-full"
                   src={`https://www.youtube.com/embed/${video.videoId}`}
@@ -74,7 +72,6 @@ export function YouTubeSection() {
                   allowFullScreen
                 />
               ) : (
-                // Placeholder เมื่อยังไม่มี Video ID
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -97,7 +94,7 @@ export function YouTubeSection() {
                     />
                   </svg>
                   <p className="text-sm font-medium">YouTube Video</p>
-                  <p className="text-xs mt-1">ใส่ Video ID</p>
+                  <p className="text-xs mt-1">Enter Video ID</p>
                 </div>
               )}
             </div>
@@ -111,7 +108,6 @@ export function YouTubeSection() {
                 {video.title}
               </h3>
               
-              {/* ปุ่มดูใน YouTube (แสดงเมื่อมี videoId) */}
               {video.videoId && (
                 <a
                   href={`https://www.youtube.com/watch?v=${video.videoId}`}
@@ -120,7 +116,7 @@ export function YouTubeSection() {
                   className="inline-flex items-center gap-2 mt-3 text-sm font-medium transition-colors hover:opacity-80"
                   style={{ color: "#E5690D" }}
                 >
-                  <span>ดูที่ YouTube</span>
+                  <span>Watch on YouTube</span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-4 w-4"
@@ -145,7 +141,7 @@ export function YouTubeSection() {
       {/* View All Button */}
       <div className="w-full max-w-[1440px] flex justify-center mt-4">
         <a
-          href="https://youtube.com/@borot.Official" // ⬅️ ใส่ลิงก์ YouTube Channel ตรงนี้
+          href="https://youtube.com/@borot.Official"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-lg font-semibold transition-all hover:opacity-90"
@@ -154,7 +150,7 @@ export function YouTubeSection() {
             color: "#FFFFFF",
           }}
         >
-          <span>ดู Channel ทั้งหมด</span>
+          <span>View Full Channel</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-5 w-5"
