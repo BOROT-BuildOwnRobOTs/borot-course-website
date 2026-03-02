@@ -156,6 +156,10 @@ export function HeroSection() {
         .delay-600 {
           animation-delay: 0.25s;
         }
+
+        .delay-700 {
+          animation-delay: 0.3s;
+        }
         
         .initial-hidden {
           opacity: 0;
@@ -167,6 +171,15 @@ export function HeroSection() {
         
         .animate-pulse-subtle {
           animation: pulse 4s ease-in-out infinite;
+        }
+
+        .partner-logo-item {
+          transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .partner-logo-item:hover {
+          opacity: 1 !important;
+          transform: scale(1.05);
         }
       `}</style>
       {/* Background Image */}
@@ -265,6 +278,63 @@ export function HeroSection() {
                   View Course Details
                 </Button>
               </Link>
+            </div>
+
+            {/* Partner Logos */}
+            <div className="flex flex-col gap-3 w-full initial-hidden animate-fade-in-up delay-700 mt-2">
+              <p
+                className="text-xs font-medium uppercase tracking-widest"
+                style={{ color: '#B0B0B0', fontFamily: 'var(--font-geist-sans)' }}
+              >
+                Our Partners
+              </p>
+              <div className="flex items-center gap-5 flex-wrap">
+                {/* Partner 1 - KMUTT Smart Kid */}
+                <div className="partner-logo-item" style={{ opacity: 0.75 }}>
+                  <Image
+                    src="/images/partner-kmutt-smartkid.png"
+                    alt="KMUTT Smart Kid"
+                    width={90}
+                    height={40}
+                    className="object-contain"
+                  />
+                </div>
+
+                {/* Partner 2 - KMUTT */}
+                <div className="partner-logo-item" style={{ opacity: 0.75 }}>
+                  <Image
+                    src="/images/partner-kmutt.png"
+                    alt="KMUTT"
+                    width={70}
+                    height={40}
+                    className="object-contain"
+                  />
+                </div>
+
+                {/* Partner 3 - KMUTT Continuing Education Center */}
+                <div className="partner-logo-item" style={{ opacity: 0.75 }}>
+                  <Image
+                    src="/images/partner-kmutt-cec.png"
+                    alt="KMUTT Continuing Education Center"
+                    width={110}
+                    height={40}
+                    className="object-contain"
+                  />
+                </div>
+
+                {/* Partner 4 - KMUTT Works */}
+                <div className="partner-logo-item" style={{ opacity: 0.75 }}>
+                  <Image
+                    src="/images/partner-kmuttworks.png"
+                    alt="KMUTT Works"
+                    width={100}
+                    height={40}
+                    className="object-contain"
+                  />
+                </div>
+
+
+              </div>
             </div>
 
           </div>
