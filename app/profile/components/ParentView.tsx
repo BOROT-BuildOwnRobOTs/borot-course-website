@@ -71,12 +71,17 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
     originalStampDate: Date,
     actualDate?: Date,
   ) => {
+    // Use actualDate as the definitive date to match against.
+    // For non-rescheduled stamps actualDate === originalStampDate.
+    // For rescheduled stamps actualDate is the NEW date — we must NOT match on
+    // the original date, otherwise a session created on the rescheduled date can
+    // also be picked up by a different stamp whose original date coincides,
+    // causing "double green bubbles".
+    const targetDate = actualDate || originalStampDate
     return sessions.find((s) => {
       if (s.course !== courseId) return false
       const sessionDate = new Date(s.scheduledAt)
-      const matchOriginal = isSameDay(sessionDate, originalStampDate)
-      const matchActual = actualDate ? isSameDay(sessionDate, actualDate) : false
-      if (!matchOriginal && !matchActual) return false
+      if (!isSameDay(sessionDate, targetDate)) return false
       return s.attendance.some((a) => a.student === studentId)
     })
   }
