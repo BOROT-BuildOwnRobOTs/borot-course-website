@@ -70,6 +70,7 @@ export default function TeacherEnrollmentStamps({
   const [reschedNewSlotTime, setReschedNewSlotTime] = useState("")
   const [reschedNewDate, setReschedNewDate] = useState("")
   const [reschedReason, setReschedReason] = useState("")
+  const [rescheduleRemaining, setRescheduleRemaining] = useState(false)
   const [savingResched, setSavingResched] = useState(false)
   const [reschedSlotAvailability, setReschedSlotAvailability] = useState<{
     id: string; day: string; dayLabel: string; time: string; count: number; max: number; available: boolean
@@ -169,6 +170,7 @@ export default function TeacherEnrollmentStamps({
     setReschedNewSlotTime(enrollment.slot?.time || "")
     setReschedNewDate(getNextSlotDateStr(enrollment.slot?.day || "saturday"))
     setReschedReason("")
+    setRescheduleRemaining(false)
     setReschedSlotAvailability([])
     setReschedOpen(true)
     // Fetch slot availability
@@ -178,6 +180,11 @@ export default function TeacherEnrollmentStamps({
       .then((j) => { if (j.success) setReschedSlotAvailability(j.data) })
       .finally(() => setLoadingReschedSlots(false))
   }
+
+  // Count remaining sessions from the selected date onward (for the UI label)
+  const remainingSessionsCount = reschedOrigDate
+    ? stamps.filter((s) => s.getTime() >= reschedOrigDate.getTime() - 12 * 60 * 60 * 1000).length
+    : 0
 
   const handleSaveReschedule = async () => {
     if (!reschedOrigDate || !reschedNewSlotDay || !reschedNewSlotTime || !reschedNewDate) return
@@ -192,6 +199,7 @@ export default function TeacherEnrollmentStamps({
           newSlot: { day: reschedNewSlotDay, time: reschedNewSlotTime },
           newDate: new Date(reschedNewDate).toISOString(),
           reason: reschedReason,
+          rescheduleRemaining,
         }),
       })
       const j = await res.json()
@@ -201,21 +209,45 @@ export default function TeacherEnrollmentStamps({
         if (onStudentUpdate) {
           const updatedEnrollments = student.enrollments.map((e, i) => {
             if (i !== enrollIdx) return e
-            const origStr = reschedOrigDate.toDateString()
-            const existingRescheds = (e.reschedules || []).filter(
-              (r) => new Date(r.originalDate).toDateString() !== origStr
-            )
-            return {
-              ...e,
-              reschedules: [
-                ...existingRescheds,
-                {
-                  originalDate: reschedOrigDate.toISOString(),
-                  newSlot: { day: reschedNewSlotDay, time: reschedNewSlotTime },
-                  newDate: new Date(reschedNewDate).toISOString(),
-                  reason: reschedReason,
-                },
-              ],
+
+            if (rescheduleRemaining) {
+              // Bulk: apply offset to all remaining stamp dates
+              const origDateObj = reschedOrigDate
+              const newDateObj = new Date(reschedNewDate)
+              const offsetMs = newDateObj.getTime() - origDateObj.getTime()
+              const remainingStamps = stamps.filter(
+                (s) => s.getTime() >= origDateObj.getTime() - 12 * 60 * 60 * 1000
+              )
+              // Remove old reschedules for these dates, then add new ones
+              const remainingDateStrs = new Set(remainingStamps.map((s) => s.toDateString()))
+              const existingRescheds = (e.reschedules || []).filter(
+                (r) => !remainingDateStrs.has(new Date(r.originalDate).toDateString())
+              )
+              const newRescheds = remainingStamps.map((stampDate) => ({
+                originalDate: stampDate.toISOString(),
+                newSlot: { day: reschedNewSlotDay, time: reschedNewSlotTime },
+                newDate: new Date(stampDate.getTime() + offsetMs).toISOString(),
+                reason: reschedReason,
+              }))
+              return { ...e, reschedules: [...existingRescheds, ...newRescheds] }
+            } else {
+              // Single reschedule
+              const origStr = reschedOrigDate.toDateString()
+              const existingRescheds = (e.reschedules || []).filter(
+                (r) => new Date(r.originalDate).toDateString() !== origStr
+              )
+              return {
+                ...e,
+                reschedules: [
+                  ...existingRescheds,
+                  {
+                    originalDate: reschedOrigDate.toISOString(),
+                    newSlot: { day: reschedNewSlotDay, time: reschedNewSlotTime },
+                    newDate: new Date(reschedNewDate).toISOString(),
+                    reason: reschedReason,
+                  },
+                ],
+              }
             }
           })
           onStudentUpdate(student._id, updatedEnrollments)
@@ -390,11 +422,42 @@ export default function TeacherEnrollmentStamps({
               <Label>Reason (optional)</Label>
               <Input value={reschedReason} onChange={(e) => setReschedReason(e.target.value)} placeholder="e.g. Sick / Unavailable" className="mt-1" />
             </div>
+            {/* Reschedule all remaining option */}
+            {remainingSessionsCount > 1 && (
+              <div
+                onClick={() => setRescheduleRemaining(!rescheduleRemaining)}
+                className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                  rescheduleRemaining
+                    ? "bg-blue-50 border-blue-300 ring-1 ring-blue-200"
+                    : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <div className={`mt-0.5 h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
+                  rescheduleRemaining
+                    ? "bg-blue-500 border-blue-500"
+                    : "border-gray-300 bg-white"
+                }`}>
+                  {rescheduleRemaining && (
+                    <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium ${rescheduleRemaining ? "text-blue-700" : "text-gray-700"}`}>
+                    เลื่อนที่เหลือทั้งหมด
+                  </p>
+                  <p className={`text-xs mt-0.5 ${rescheduleRemaining ? "text-blue-600" : "text-muted-foreground"}`}>
+                    Reschedule all {remainingSessionsCount} remaining sessions with the same offset
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setReschedOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveReschedule} disabled={savingResched || !reschedNewSlotDay || !reschedNewDate} className="bg-orange-500 hover:bg-orange-600 text-white">
-              {savingResched ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Confirm Reschedule"}
+              {savingResched ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : rescheduleRemaining ? `Reschedule ${remainingSessionsCount} Sessions` : "Confirm Reschedule"}
             </Button>
           </DialogFooter>
         </DialogContent>
