@@ -394,7 +394,9 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                                   attendance?.feedback ||
                                   attendance?.videoUrl ||
                                   (attendance?.imageUrls && attendance.imageUrls.length > 0) ||
-                                  (attendance?.rating && attendance.rating > 0)
+                                  (attendance?.rating && attendance.rating > 0) ||
+                                  attendance?.artworkName ||
+                                  attendance?.artworkImageUrl
                                 )
                                 const isClickable = isCheckedIn || (!isCheckedIn && (isFuture || isToday))
 

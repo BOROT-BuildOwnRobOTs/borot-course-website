@@ -9,6 +9,9 @@ export interface IAttendance {
   rating?: number
   videoUrl?: string
   imageUrls?: string[]
+  artworkImageUrl?: string
+  artworkName?: string
+  artworkDescription?: string
 }
 
 export interface ISession extends Document {
@@ -34,6 +37,9 @@ const AttendanceSchema = new Schema<IAttendance>({
   rating: { type: Number, min: 1, max: 5 },
   videoUrl: { type: String, default: '' },
   imageUrls: { type: [String], default: [] },
+  artworkImageUrl: { type: String, default: '' },
+  artworkName: { type: String, default: '' },
+  artworkDescription: { type: String, default: '' },
 })
 
 const SessionSchema = new Schema<ISession>(

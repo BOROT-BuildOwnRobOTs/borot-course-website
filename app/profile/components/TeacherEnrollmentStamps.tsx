@@ -146,12 +146,12 @@ export default function TeacherEnrollmentStamps({
   }
 
   const handleFeedbackSaved = async (
-    sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[]
+    sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[], artworkImageUrl: string, artworkName: string, artworkDescription: string
   ) => {
     const res = await fetch(`/api/admin/sessions/${sessionId}/feedback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ studentId, feedback, rating: rating || undefined, videoUrl, imageUrls }),
+      body: JSON.stringify({ studentId, feedback, rating: rating || undefined, videoUrl, imageUrls, artworkImageUrl, artworkName, artworkDescription }),
     })
     const j = await res.json()
     if (j.success) {
@@ -160,7 +160,7 @@ export default function TeacherEnrollmentStamps({
           s._id !== sessionId ? s : {
             ...s,
             attendance: s.attendance.map((a) =>
-              a.student !== studentId ? a : { ...a, feedback, rating: rating || undefined, videoUrl, imageUrls }
+              a.student !== studentId ? a : { ...a, feedback, rating: rating || undefined, videoUrl, imageUrls, artworkImageUrl, artworkName, artworkDescription }
             ),
           }
         )
@@ -319,7 +319,7 @@ export default function TeacherEnrollmentStamps({
                 const isToday = isSameDay(actualDate, now)
                 const isPast = actualDate < now && !isToday
                 const isCheckedIn = attendance?.checkedIn === true
-                const hasFeedback = !!(attendance?.feedback || attendance?.videoUrl)
+                const hasFeedback = !!(attendance?.feedback || attendance?.videoUrl || attendance?.artworkName || attendance?.artworkImageUrl)
 
                 return (
                   <StampCircle

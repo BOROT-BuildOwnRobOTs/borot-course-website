@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -126,7 +127,7 @@ interface TeacherStampDialogProps {
   studentName: string
   onCheckinToggle: (sessionId: string, studentId: string, checkedIn: boolean) => Promise<void>
   onCheckinRetroactive: (courseId: string, courseName: string, studentId: string, scheduledAt: string, checkedIn: boolean) => Promise<SessionData | null>
-  onFeedbackSaved: (sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[]) => Promise<void>
+  onFeedbackSaved: (sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[], artworkImageUrl: string, artworkName: string, artworkDescription: string) => Promise<void>
   onReschedule?: () => void
 }
 
@@ -157,8 +158,13 @@ export default function TeacherStampDialog({
   const [uploadingVideo, setUploadingVideo] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [lightboxImg, setLightboxImg] = useState<string | null>(null)
+  const [artworkImageUrl, setArtworkImageUrl] = useState("")
+  const [artworkName, setArtworkName] = useState("")
+  const [artworkDescription, setArtworkDescription] = useState("")
+  const [uploadingArtwork, setUploadingArtwork] = useState(false)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
+  const artworkInputRef = useRef<HTMLInputElement>(null)
 
   // ── ANDROID FIX: Use a ref-based "busy lock" ──────────────────────────────
   const busyRef = useRef(false)
@@ -192,6 +198,9 @@ export default function TeacherStampDialog({
       setFeedback(attendee?.feedback ?? "")
       setImages(attendee?.imageUrls ?? [])
       setVideoUrl(attendee?.videoUrl ?? "")
+      setArtworkImageUrl(attendee?.artworkImageUrl ?? "")
+      setArtworkName(attendee?.artworkName ?? "")
+      setArtworkDescription(attendee?.artworkDescription ?? "")
       setUploadError(null)
       busyRef.current = false
       if (cooldownTimer.current) clearTimeout(cooldownTimer.current)
@@ -285,12 +294,35 @@ export default function TeacherStampDialog({
     }
   }
 
+  const handleArtworkImageUpload = async (file: File | null) => {
+    if (!file) {
+      unlockDialog()
+      return
+    }
+    lockDialog()
+    setUploadingArtwork(true)
+    setUploadError(null)
+    try {
+      const compressed = await compressImage(file)
+      const url = await uploadFile(compressed)
+      setArtworkImageUrl(url)
+    } catch (err: any) {
+      const msg = err?.message || "Artwork image upload failed"
+      console.error("Artwork upload error:", msg, err)
+      setUploadError(msg)
+    } finally {
+      setUploadingArtwork(false)
+      unlockDialog()
+      if (artworkInputRef.current) artworkInputRef.current.value = ""
+    }
+  }
+
   const handleSaveFeedback = async () => {
     if (!session) return
     lockDialog()
     setSavingFeedback(true)
     try {
-      await onFeedbackSaved(session._id, studentId, feedback, rating, videoUrl, images)
+      await onFeedbackSaved(session._id, studentId, feedback, rating, videoUrl, images, artworkImageUrl, artworkName, artworkDescription)
       busyRef.current = false
       if (cooldownTimer.current) clearTimeout(cooldownTimer.current)
       onOpenChange(false)
@@ -520,15 +552,92 @@ export default function TeacherStampDialog({
                 </div>
               )}
             </div>
+
+            {/* ── Artwork / Project Section ──────────────────────────────────── */}
+            <div className="border-t pt-5">
+              <Label className="text-sm font-semibold flex items-center gap-1.5 mb-3">
+                🎨 Student Artwork / Project
+              </Label>
+
+              {/* Artwork name */}
+              <div className="mb-3">
+                <Label htmlFor="artwork-name" className="text-xs text-muted-foreground">Artwork Name</Label>
+                <Input
+                  id="artwork-name"
+                  value={artworkName}
+                  onChange={(e) => setArtworkName(e.target.value)}
+                  placeholder="e.g. My Robot Car, LED Blink Project..."
+                  className="mt-1"
+                />
+              </div>
+
+              {/* Artwork description */}
+              <div className="mb-3">
+                <Label htmlFor="artwork-desc" className="text-xs text-muted-foreground">Artwork Description</Label>
+                <Textarea
+                  id="artwork-desc"
+                  value={artworkDescription}
+                  onChange={(e) => setArtworkDescription(e.target.value)}
+                  placeholder="Describe what the student built or created in this session..."
+                  className="mt-1 min-h-[70px] resize-none"
+                />
+              </div>
+
+              {/* Artwork image */}
+              <div>
+                <Label className="text-xs text-muted-foreground">Artwork Photo</Label>
+                <input
+                  ref={artworkInputRef}
+                  id="artwork-image-upload"
+                  type="file"
+                  accept="image/*"
+                  style={{ position: 'absolute', width: 1, height: 1, opacity: 0, overflow: 'hidden', pointerEvents: 'none' }}
+                  tabIndex={-1}
+                  onChange={(e) => { handleArtworkImageUpload(e.target.files?.[0] ?? null); }}
+                />
+                <div className="mt-1.5">
+                  {artworkImageUrl ? (
+                    <div className="relative inline-block">
+                      <img
+                        src={artworkImageUrl}
+                        alt="Artwork"
+                        onClick={() => setLightboxImg(artworkImageUrl)}
+                        className="w-32 h-32 object-cover rounded-lg border cursor-zoom-in"
+                      />
+                      <button
+                        onClick={() => setArtworkImageUrl("")}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : uploadingArtwork ? (
+                    <div className="w-32 h-32 border-2 border-dashed border-purple-300 bg-purple-50 rounded-lg flex flex-col items-center justify-center gap-1 text-purple-500">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span className="text-[9px] font-medium">Uploading...</span>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="artwork-image-upload"
+                      onClick={handleFilePickerOpen}
+                      className="w-32 h-32 border-2 border-dashed border-purple-300 rounded-lg flex flex-col items-center justify-center gap-1 text-purple-400 hover:border-purple-500 hover:text-purple-600 transition-colors cursor-pointer active:bg-purple-50"
+                    >
+                      <ImageIcon className="h-6 w-6" />
+                      <span className="text-[10px] text-center px-1">Add Artwork Photo</span>
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={handleExplicitClose} disabled={savingFeedback || uploadingVideo || uploadingImage}>
+            <Button variant="outline" onClick={handleExplicitClose} disabled={savingFeedback || uploadingVideo || uploadingImage || uploadingArtwork}>
               Cancel
             </Button>
             <Button
               onClick={handleSaveFeedback}
-              disabled={savingFeedback || uploadingVideo || uploadingImage || !session}
+              disabled={savingFeedback || uploadingVideo || uploadingImage || uploadingArtwork || !session}
               className="bg-blue-500 hover:bg-blue-600 text-white"
             >
               {savingFeedback ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Save Feedback"}

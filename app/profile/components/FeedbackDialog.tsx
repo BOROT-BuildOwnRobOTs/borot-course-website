@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { CheckCircle2, ImageIcon, MessageSquare, Star, Video, X } from "lucide-react"
+import { CheckCircle2, ImageIcon, MessageSquare, Palette, Star, Video, X } from "lucide-react"
 import { AttendanceEntry } from "../types"
 
 interface Props {
@@ -103,8 +103,34 @@ export default function FeedbackDialog({ open, onClose, entry, sessionInfo }: Pr
                 </div>
               )}
 
+              {/* Artwork / Project */}
+              {(entry.artworkName || entry.artworkDescription || entry.artworkImageUrl) && (
+                <div className="border-t pt-4">
+                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                    <Palette className="h-3.5 w-3.5" />Student Artwork / Project
+                  </p>
+                  <div className="bg-purple-50 border border-purple-100 rounded-lg p-3 space-y-2">
+                    {entry.artworkName && (
+                      <p className="text-sm font-semibold text-purple-800">{entry.artworkName}</p>
+                    )}
+                    {entry.artworkDescription && (
+                      <p className="text-sm text-gray-700">{entry.artworkDescription}</p>
+                    )}
+                    {entry.artworkImageUrl && (
+                      <img
+                        src={entry.artworkImageUrl}
+                        alt={entry.artworkName || "Artwork"}
+                        onClick={() => setLightboxImg(entry.artworkImageUrl!)}
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                        className="w-full max-h-60 object-contain rounded-lg border cursor-zoom-in hover:opacity-90 transition-opacity"
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* No feedback message */}
-              {!entry.feedback && !entry.videoUrl && !(entry.imageUrls && entry.imageUrls.length > 0) && !(entry.rating && entry.rating > 0) && (
+              {!entry.feedback && !entry.videoUrl && !(entry.imageUrls && entry.imageUrls.length > 0) && !(entry.rating && entry.rating > 0) && !entry.artworkName && !entry.artworkImageUrl && (
                 <div className="text-center py-4 text-muted-foreground">
                   <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">No feedback from teacher yet</p>

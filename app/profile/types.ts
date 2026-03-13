@@ -31,6 +31,9 @@ export interface AttendanceEntry {
   rating?: number
   videoUrl?: string
   imageUrls?: string[]
+  artworkImageUrl?: string
+  artworkName?: string
+  artworkDescription?: string
 }
 
 export interface SessionData {

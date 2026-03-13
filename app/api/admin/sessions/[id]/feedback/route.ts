@@ -7,7 +7,7 @@ import Session from '@/models/Session'
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     await connectDB()
-    const { studentId, feedback, rating, videoUrl, imageUrls } = await req.json()
+    const { studentId, feedback, rating, videoUrl, imageUrls, artworkImageUrl, artworkName, artworkDescription } = await req.json()
 
     if (!studentId) {
       return NextResponse.json({ success: false, error: 'studentId is required' }, { status: 400 })
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!session) return NextResponse.json({ success: false, error: 'Session not found' }, { status: 404 })
 
     const attendanceEntry = session.attendance.find(
-      (a) => a.student.toString() === studentId
+      (a: any) => a.student.toString() === studentId
     )
 
     if (!attendanceEntry) {
@@ -28,6 +28,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (rating !== undefined) attendanceEntry.rating = rating
     if (videoUrl !== undefined) attendanceEntry.videoUrl = videoUrl
     if (imageUrls !== undefined) attendanceEntry.imageUrls = imageUrls
+    if (artworkImageUrl !== undefined) attendanceEntry.artworkImageUrl = artworkImageUrl
+    if (artworkName !== undefined) attendanceEntry.artworkName = artworkName
+    if (artworkDescription !== undefined) attendanceEntry.artworkDescription = artworkDescription
 
     await session.save()
     return NextResponse.json({ success: true, data: session })
