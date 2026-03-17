@@ -46,10 +46,10 @@ const questions: Question[] = [
     th: "บุตรหลานของท่านเคยมีประสบการณ์ด้านใดมาก่อน?",
     en: "Does your child have any prior experience in the following?",
     options: [
-      { th: "เคยเรียนหรือเล่นหุ่นยนต์ / Lego Robotics", en: "Has learned or played with robots / Lego Robotics", scores: [2, 3, 1, 2] },
-      { th: "เคยลองเขียนโปรแกรมหรือ Coding (เช่น Scratch, Block coding)", en: "Has tried programming / coding (e.g., Scratch, Block coding)", scores: [1, 3, 1, 3] },
-      { th: "เคยใช้โปรแกรม 3D หรือออกแบบดิจิทัล", en: "Has used 3D software or digital design tools", scores: [0, 1, 3, 2] },
-      { th: "ยังไม่เคยมีประสบการณ์ — เริ่มต้นใหม่เลย!", en: "No prior experience — starting fresh!", scores: [3, 0, 2, 2] },
+      { th: "เคยเรียนหรือเล่นหุ่นยนต์ / Lego Robotics", en: "Has learned or played with robots / Lego Robotics", scores: [1, 4, 1, 2] },
+      { th: "เคยลองเขียนโปรแกรมหรือ Coding (เช่น Scratch, Block coding)", en: "Has tried programming / coding (e.g., Scratch, Block coding)", scores: [0, 4, 0, 3] },
+      { th: "เคยใช้โปรแกรม 3D หรือออกแบบดิจิทัล", en: "Has used 3D software or digital design tools", scores: [0, 1, 4, 2] },
+      { th: "ยังไม่เคยมีประสบการณ์ — เริ่มต้นใหม่เลย!", en: "No prior experience — starting fresh!", scores: [4, 0, 2, 1] },
     ],
   },
   {
@@ -120,6 +120,7 @@ interface CareerPath {
 }
 
 const careerPaths: CareerPath[] = [
+  // ── PRIMARY: rj_basic (index 0) — เมื่อ Track RoboJourney พื้นฐาน ชนะ อาชีพนี้จะขึ้นอันดับ 1 ──
   {
     key: "robotics_engineer",
     emoji: "🤖",
@@ -129,8 +130,9 @@ const careerPaths: CareerPath[] = [
       en: "Design and build robots, automation systems, and intelligent machines",
     },
     color: "#E5690D",
-    weights: [3, 2, 0, 1],
+    weights: [5, 1, 0, 0],
   },
+  // ── PRIMARY: rj_advanced (index 1) — เมื่อ Track RoboJourney ขั้นสูง ชนะ ──
   {
     key: "ai_developer",
     emoji: "🧠",
@@ -140,51 +142,7 @@ const careerPaths: CareerPath[] = [
       en: "Build artificial intelligence systems that learn and make decisions",
     },
     color: "#C2410C",
-    weights: [0, 3, 0, 1],
-  },
-  {
-    key: "programmer",
-    emoji: "💻",
-    name: { th: "โปรแกรมเมอร์ / Software Developer", en: "Programmer / Software Developer" },
-    description: {
-      th: "เขียนโค้ดสร้างแอป เว็บ และซอฟต์แวร์ที่ใช้ในชีวิตประจำวัน",
-      en: "Write code to build apps, websites, and everyday software",
-    },
-    color: "#6366F1",
-    weights: [0, 2, 0, 3],
-  },
-  {
-    key: "game_developer",
-    emoji: "🎮",
-    name: { th: "นักพัฒนาเกม", en: "Game Developer" },
-    description: {
-      th: "ออกแบบและสร้างเกม ผสมผสานศิลปะ เทคนิค และ Coding",
-      en: "Design and create games, combining art, mechanics, and coding",
-    },
-    color: "#8B5CF6",
-    weights: [0, 1, 2, 3],
-  },
-  {
-    key: "product_designer",
-    emoji: "🎨",
-    name: { th: "นักออกแบบผลิตภัณฑ์ / 3D Designer", en: "Product / 3D Designer" },
-    description: {
-      th: "ออกแบบสิ่งของ ผลิตภัณฑ์ และงาน 3D ที่สวยงามและใช้งานได้จริง",
-      en: "Design products, objects, and 3D creations that are beautiful and functional",
-    },
-    color: "#0D9488",
-    weights: [0, 0, 3, 1],
-  },
-  {
-    key: "architect",
-    emoji: "🏗️",
-    name: { th: "สถาปนิก / วิศวกรโครงสร้าง", en: "Architect / Structural Engineer" },
-    description: {
-      th: "ออกแบบอาคาร โครงสร้าง และสิ่งก่อสร้างที่สร้างสรรค์",
-      en: "Design buildings, structures, and creative constructions",
-    },
-    color: "#059669",
-    weights: [1, 0, 3, 1],
+    weights: [0, 5, 0, 0],
   },
   {
     key: "iot_smart",
@@ -195,7 +153,53 @@ const careerPaths: CareerPath[] = [
       en: "Build smart systems, smart homes, and internet-connected devices",
     },
     color: "#2563EB",
-    weights: [0, 3, 0, 2],
+    weights: [0, 4, 0, 1],
+  },
+  // ── PRIMARY: inventors3d (index 2) — เมื่อ Track Little 3D Inventors ชนะ ──
+  {
+    key: "product_designer",
+    emoji: "🎨",
+    name: { th: "นักออกแบบผลิตภัณฑ์ / 3D Designer", en: "Product / 3D Designer" },
+    description: {
+      th: "ออกแบบสิ่งของ ผลิตภัณฑ์ และงาน 3D ที่สวยงามและใช้งานได้จริง",
+      en: "Design products, objects, and 3D creations that are beautiful and functional",
+    },
+    color: "#0D9488",
+    weights: [0, 0, 5, 0],
+  },
+  {
+    key: "architect",
+    emoji: "🏗️",
+    name: { th: "สถาปนิก / วิศวกรโครงสร้าง", en: "Architect / Structural Engineer" },
+    description: {
+      th: "ออกแบบอาคาร โครงสร้าง และสิ่งก่อสร้างที่สร้างสรรค์",
+      en: "Design buildings, structures, and creative constructions",
+    },
+    color: "#059669",
+    weights: [0, 0, 4, 1],
+  },
+  // ── PRIMARY: robogenesis (index 3) — เมื่อ Track Robogenesis ชนะ ──
+  {
+    key: "programmer",
+    emoji: "💻",
+    name: { th: "โปรแกรมเมอร์ / Software Developer", en: "Programmer / Software Developer" },
+    description: {
+      th: "เขียนโค้ดสร้างแอป เว็บ และซอฟต์แวร์ที่ใช้ในชีวิตประจำวัน",
+      en: "Write code to build apps, websites, and everyday software",
+    },
+    color: "#6366F1",
+    weights: [0, 1, 0, 5],
+  },
+  {
+    key: "game_developer",
+    emoji: "🎮",
+    name: { th: "นักพัฒนาเกม", en: "Game Developer" },
+    description: {
+      th: "ออกแบบและสร้างเกม ผสมผสานศิลปะ เทคนิค และ Coding",
+      en: "Design and create games, combining art, mechanics, and coding",
+    },
+    color: "#8B5CF6",
+    weights: [0, 0, 2, 4],
   },
   {
     key: "inventor",
@@ -206,7 +210,7 @@ const careerPaths: CareerPath[] = [
       en: "Invent new things, combining multiple disciplines to solve world problems",
     },
     color: "#D97706",
-    weights: [2, 1, 1, 3],
+    weights: [1, 1, 1, 4],
   },
 ]
 
@@ -313,6 +317,116 @@ export function PretestModal({ isOpen, onClose }: PretestModalProps) {
     setCurrentStep(0)
     setShowResult(false)
   }, [])
+
+  // Dynamic recommendation based on age + experience answers
+  const getRecommendedLevel = useCallback((trackKey: string): { th: string; en: string } => {
+    const ageAnswer = answers["age"] ?? -1       // 0=4-6, 1=7-8, 2=9-10, 3=11-12, 4=13+
+    const expAnswer = answers["experience"] ?? -1 // 0=lego, 1=coding, 2=3d, 3=no experience
+
+    const hasLegoExp = expAnswer === 0
+    const hasCodingExp = expAnswer === 1
+    const has3DExp = expAnswer === 2
+    const noExp = expAnswer === 3 || expAnswer === -1
+
+    const isYoung = ageAnswer <= 1   // 4-8
+    const isMid = ageAnswer === 2    // 9-10
+    const isOlder = ageAnswer >= 3   // 11+
+
+    switch (trackKey) {
+      case "rj_basic":
+        if (hasLegoExp && isOlder)
+          return {
+            th: "แนะนำ: Master Mission (Level 4) หรือข้ามไป RoboJourney ขั้นสูง",
+            en: "Recommended: Master Mission (Level 4) or skip to RoboJourney Advanced",
+          }
+        if (hasLegoExp && isMid)
+          return {
+            th: "แนะนำ: Master Adventure (Level 3) — มีพื้นฐานและอายุเหมาะสม",
+            en: "Recommended: Master Adventure (Level 3) — has experience and suitable age",
+          }
+        if (hasLegoExp && isYoung)
+          return {
+            th: "แนะนำ: Junior Challenge (Level 2) — มีพื้นฐาน Lego แล้ว",
+            en: "Recommended: Junior Challenge (Level 2) — already has Lego experience",
+          }
+        if (hasCodingExp && isOlder)
+          return {
+            th: "แนะนำ: Master Adventure (Level 3) — มีพื้นฐาน Coding",
+            en: "Recommended: Master Adventure (Level 3) — has coding background",
+          }
+        if (hasCodingExp)
+          return {
+            th: "แนะนำ: Junior Challenge (Level 2) — มีพื้นฐาน Coding",
+            en: "Recommended: Junior Challenge (Level 2) — has coding background",
+          }
+        if (noExp && isOlder)
+          return {
+            th: "แนะนำ: Junior Challenge (Level 2) หรือ Master Adventure (Level 3)",
+            en: "Recommended: Junior Challenge (Level 2) or Master Adventure (Level 3)",
+          }
+        // Default: no experience + young
+        return {
+          th: "แนะนำ: Junior Discovery (Level 1) สำหรับเริ่มต้น",
+          en: "Recommended: Junior Discovery (Level 1) to start",
+        }
+
+      case "rj_advanced":
+        if (hasLegoExp && hasCodingExp)
+          return {
+            th: "แนะนำ: Waste Sorting AI (Level 6) — มีพื้นฐานพร้อมสำหรับ AI",
+            en: "Recommended: Waste Sorting AI (Level 6) — ready for AI projects",
+          }
+        if (hasLegoExp)
+          return {
+            th: "แนะนำ: IoT Smart House (Level 5) — พร้อมก้าวสู่ AI & IoT",
+            en: "Recommended: IoT Smart House (Level 5) — ready for AI & IoT",
+          }
+        if (hasCodingExp)
+          return {
+            th: "แนะนำ: IoT Smart House (Level 5) — มีพื้นฐาน Coding พร้อมต่อยอด",
+            en: "Recommended: IoT Smart House (Level 5) — coding background ready to advance",
+          }
+        return {
+          th: "แนะนำ: IoT Smart House (Level 5) เพื่อเข้าสู่โลก AI & IoT",
+          en: "Recommended: IoT Smart House (Level 5) to enter the world of AI & IoT",
+        }
+
+      case "inventors3d":
+        if (has3DExp && isOlder)
+          return {
+            th: "แนะนำ: 3D Inventors Advanced (Level 3) — มีพื้นฐาน 3D แล้ว",
+            en: "Recommended: 3D Inventors Advanced (Level 3) — already has 3D experience",
+          }
+        if (has3DExp)
+          return {
+            th: "แนะนำ: 3D Inventors Pro (Level 2) — มีพื้นฐาน 3D แล้ว",
+            en: "Recommended: 3D Inventors Pro (Level 2) — already has 3D experience",
+          }
+        return {
+          th: "แนะนำ: 3D Inventors Basic (Level 1) — เริ่มจากออกแบบพวงกุญแจ!",
+          en: "Recommended: 3D Inventors Basic (Level 1) — start by designing a keychain!",
+        }
+
+      case "robogenesis":
+        if (has3DExp)
+          return {
+            th: "แนะนำ: Power — Circuits (Step 2) — มีพื้นฐาน 3D แล้ว",
+            en: "Recommended: Power — Circuits (Step 2) — already has 3D experience",
+          }
+        if (hasCodingExp)
+          return {
+            th: "แนะนำ: Basic Create — Design 3D (Step 1) — เริ่มเรียนรู้ 3D ก่อน",
+            en: "Recommended: Basic Create — Design 3D (Step 1) — start with 3D first",
+          }
+        return {
+          th: "แนะนำ: Basic Create — Design 3D (Step 1) เป็นจุดเริ่มต้น",
+          en: "Recommended: Basic Create — Design 3D (Step 1) as a starting point",
+        }
+
+      default:
+        return { th: "", en: "" }
+    }
+  }, [answers])
 
   const getTrackScores = useCallback((): [number, number, number, number] => {
     const scores: [number, number, number, number] = [0, 0, 0, 0]
@@ -677,7 +791,10 @@ export function PretestModal({ isOpen, onClose }: PretestModalProps) {
                           style={{ color: track.color }}
                         >
                           <ChevronRight className="w-3.5 h-3.5" />
-                          {lang === "th" ? track.recommended.th : track.recommended.en}
+                          {(() => {
+                            const rec = getRecommendedLevel(track.key)
+                            return lang === "th" ? rec.th : rec.en
+                          })()}
                         </div>
                       </div>
                     </div>
