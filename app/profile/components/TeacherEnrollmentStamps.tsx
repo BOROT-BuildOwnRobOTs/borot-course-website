@@ -155,15 +155,43 @@ export default function TeacherEnrollmentStamps({
     })
     const j = await res.json()
     if (j.success) {
+      // The feedback API auto-sets checkedIn = true on the backend,
+      // so we also update the local state to reflect this.
       onSessionsUpdate((prev) =>
         prev.map((s) =>
           s._id !== sessionId ? s : {
             ...s,
             attendance: s.attendance.map((a) =>
-              a.student !== studentId ? a : { ...a, feedback, rating: rating || undefined, videoUrl, imageUrls, artworkImageUrl, artworkName, artworkDescription }
+              a.student !== studentId ? a : {
+                ...a,
+                feedback,
+                rating: rating || undefined,
+                videoUrl,
+                imageUrls,
+                artworkImageUrl,
+                artworkName,
+                artworkDescription,
+                checkedIn: true,
+                checkedInAt: a.checkedInAt || new Date().toISOString(),
+              }
             ),
           }
         )
+      )
+      // Also update the selected attendee so the dialog reflects the check-in
+      setSelectedAttendee((prev) =>
+        prev ? {
+          ...prev,
+          feedback,
+          rating: rating || undefined,
+          videoUrl,
+          imageUrls,
+          artworkImageUrl,
+          artworkName,
+          artworkDescription,
+          checkedIn: true,
+          checkedInAt: prev.checkedInAt || new Date().toISOString(),
+        } : prev
       )
     }
   }

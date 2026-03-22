@@ -32,6 +32,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (artworkName !== undefined) attendanceEntry.artworkName = artworkName
     if (artworkDescription !== undefined) attendanceEntry.artworkDescription = artworkDescription
 
+    // Auto check-in when saving feedback (if not already checked in)
+    // This handles the case where a teacher fills feedback from "All Students"
+    // cross-teacher view without explicitly clicking "Check In" first.
+    if (!attendanceEntry.checkedIn) {
+      attendanceEntry.checkedIn = true
+      attendanceEntry.checkedInAt = new Date()
+    }
+
     await session.save()
     return NextResponse.json({ success: true, data: session })
   } catch (error) {

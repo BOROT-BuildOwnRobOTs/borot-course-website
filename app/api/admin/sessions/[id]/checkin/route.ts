@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!session) return NextResponse.json({ success: false, error: 'Session not found' }, { status: 404 })
 
     const attendanceEntry = session.attendance.find(
-      (a) => a.student.toString() === studentId
+      (a: any) => a.student.toString() === studentId
     )
 
     if (!attendanceEntry) {
