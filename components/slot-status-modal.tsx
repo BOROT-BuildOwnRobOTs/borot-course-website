@@ -49,7 +49,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/admin/slots")
+      const res = await fetch("/api/admin/slots", { cache: "no-store" })
       const json = await res.json()
       if (json.success) {
         setSlots(json.data)

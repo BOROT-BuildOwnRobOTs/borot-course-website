@@ -3,6 +3,10 @@ import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
 import { SLOTS, MAX_PER_SLOT } from '@/lib/slots'
 
+// Force dynamic — never cache this route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // GET /api/admin/slots
 // Returns seat count per slot across ALL courses (shared classroom capacity)
 // Also returns list of students (nickname, name, courseName) per slot for display
@@ -65,7 +69,9 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    return NextResponse.json({ success: true, data: result })
+    const response = NextResponse.json({ success: true, data: result })
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+    return response
   } catch (error) {
     console.error(error)
     return NextResponse.json({ success: false, error: 'Failed to fetch slot availability' }, { status: 500 })
