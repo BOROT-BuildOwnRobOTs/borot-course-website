@@ -713,7 +713,7 @@ export default function ParentsTab() {
                   className="mt-1"
                 />
                 <p className="text-[11px] text-gray-400 mt-1">
-                  * Should be a {enrollSlotDay === 'saturday' ? 'Saturday' : 'Sunday'}
+                  * Should be a {SLOTS.find(s => s.day === enrollSlotDay)?.dayLabel || enrollSlotDay}
                 </p>
               </div>
             )}

@@ -187,7 +187,7 @@ export default function SessionsTab() {
   // When slot day changes, auto-set a matching scheduledAt date
   const handleSlotDayChange = (day: string) => {
     setForm(f => {
-      const dayNum = day === 'saturday' ? 6 : 0
+      const dayNum = day === 'tuesday' ? 2 : day === 'saturday' ? 6 : 0
       const today = new Date()
       const current = today.getDay()
       let diff = (dayNum - current + 7) % 7

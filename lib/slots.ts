@@ -1,5 +1,8 @@
 // ── Slot definitions ─────────────────────────────────────────────────────────
 export const SLOTS = [
+  { id: 'tue-1000', day: 'tuesday',  dayLabel: 'Tuesday',   time: '10:00-12:00', startHour: 10, startMin: 0 },
+  { id: 'tue-1300', day: 'tuesday',  dayLabel: 'Tuesday',   time: '13:00-15:00', startHour: 13, startMin: 0 },
+  { id: 'tue-1530', day: 'tuesday',  dayLabel: 'Tuesday',   time: '15:30-17:30', startHour: 15, startMin: 30 },
   { id: 'sat-1000', day: 'saturday', dayLabel: 'Saturday',  time: '10:00-12:00', startHour: 10, startMin: 0 },
   { id: 'sat-1300', day: 'saturday', dayLabel: 'Saturday',  time: '13:00-15:00', startHour: 13, startMin: 0 },
   { id: 'sat-1530', day: 'saturday', dayLabel: 'Saturday',  time: '15:30-17:30', startHour: 15, startMin: 30 },
@@ -10,7 +13,7 @@ export const SLOTS = [
 
 export const MAX_PER_SLOT = 8
 
-export type SlotDay = 'saturday' | 'sunday'
+export type SlotDay = 'tuesday' | 'saturday' | 'sunday'
 export type SlotTime = '10:00-12:00' | '13:00-15:00' | '15:30-17:30'
 
 export interface SlotInfo {
@@ -34,8 +37,10 @@ export function getSlotLabel(slot: SlotInfo | null | undefined): string {
 }
 
 export function getSlotDayOfWeek(day: string): number {
-  // JS: 0=Sun, 6=Sat
-  return day === 'saturday' ? 6 : 0
+  // JS: 0=Sun, 2=Tue, 6=Sat
+  if (day === 'tuesday') return 2
+  if (day === 'saturday') return 6
+  return 0 // sunday
 }
 
 /** Generate all stamp dates for an enrollment */
@@ -57,7 +62,7 @@ export function generateStampDates(
   })
 }
 
-/** Get the next upcoming Saturday or Sunday date string (YYYY-MM-DD) */
+/** Get the next upcoming slot date string (YYYY-MM-DD) */
 export function getNextSlotDateStr(slotDay: string): string {
   const target = getSlotDayOfWeek(slotDay)
   const today = new Date()
