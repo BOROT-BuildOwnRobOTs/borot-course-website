@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
-import { SLOTS, MAX_PER_SLOT } from '@/lib/slots'
+import { SLOTS, MAX_PER_SLOT, generateStampDates } from '@/lib/slots'
 
 // Force dynamic — never cache this route
 export const dynamic = 'force-dynamic'
@@ -35,12 +35,52 @@ export async function GET(req: NextRequest) {
       slotStudentList[`${s.day}|${s.time}`] = []
     })
 
+    const now = new Date()
+
     for (const student of students as any[]) {
       const studentId = (student._id as any).toString()
       for (const enrollment of student.enrollments) {
         if (!['active', 'pending'].includes(enrollment.status)) continue
         if (!enrollment.slot?.day || !enrollment.slot?.time) continue
-        const key = `${enrollment.slot.day}|${enrollment.slot.time}`
+
+        // Determine the effective slot for the next upcoming session,
+        // taking reschedules into account.
+        let effectiveSlot = { day: enrollment.slot.day, time: enrollment.slot.time }
+
+        if (
+          enrollment.reschedules &&
+          enrollment.reschedules.length > 0 &&
+          enrollment.startDate &&
+          enrollment.courseDurationWeeks
+        ) {
+          // Generate all stamp dates for this enrollment
+          const stamps = generateStampDates(
+            enrollment.startDate,
+            enrollment.courseDurationWeeks,
+            enrollment.slot
+          )
+
+          // Find the next upcoming stamp date (>= today)
+          const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          const nextStamp = stamps.find((d: Date) => d >= todayStart)
+
+          if (nextStamp) {
+            // Check if this stamp date has been rescheduled
+            const nextStampStr = nextStamp.toDateString()
+            const reschedule = enrollment.reschedules.find(
+              (r: any) => new Date(r.originalDate).toDateString() === nextStampStr
+            )
+            if (reschedule?.newSlot?.day && reschedule?.newSlot?.time) {
+              effectiveSlot = { day: reschedule.newSlot.day, time: reschedule.newSlot.time }
+            }
+          } else {
+            // All stamps are in the past — check if the last stamp was rescheduled
+            // (enrollment may still be marked active but course is finished)
+            // Just use the original slot in this case
+          }
+        }
+
+        const key = `${effectiveSlot.day}|${effectiveSlot.time}`
         if (slotStudentSets[key] !== undefined) {
           slotStudentSets[key].add(studentId)
           slotStudentList[key].push({

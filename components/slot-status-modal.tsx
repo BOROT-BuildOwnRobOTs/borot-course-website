@@ -78,7 +78,21 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const sundaySlots = slots.filter((s) => s.day === "sunday")
 
   const totalStudents = slots.reduce((sum, s) => sum + s.count, 0)
-  const totalCapacity = slots.reduce((sum, s) => sum + s.max, 0)
+
+  // Aggregate course popularity from all students across all slots
+  const courseCountMap = new Map<string, number>()
+  slots.forEach((slot) => {
+    slot.students?.forEach((student) => {
+      const key = student.courseName || "Unknown"
+      courseCountMap.set(key, (courseCountMap.get(key) || 0) + 1)
+    })
+  })
+  const popularCourses = Array.from(courseCountMap.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3)
+
+  const rankMedals = ["🥇", "🥈", "🥉"]
 
   const toggleSlot = (slotId: string) => {
     setExpandedSlots((prev) => {
@@ -237,21 +251,31 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
 
           {/* Summary Stats */}
           {!loading && slots.length > 0 && (
-            <div className="mt-4 bg-white/15 rounded-xl p-3 flex items-center justify-between">
-              <div className="text-center flex-1">
-                <p className="text-white/80 text-xs">Total Students</p>
-                <p className="text-white font-bold text-xl">{totalStudents}</p>
+            <div className="mt-3 bg-white/12 rounded-xl px-3.5 py-2.5">
+              {/* Top row: student count + popular */}
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-white/90 text-xs font-medium">
+                  👦 <span className="font-bold text-white">{totalStudents}</span> students already joined
+                </p>
+                <span className="text-[10px] font-semibold text-white/80">🔥 Popular class this week</span>
               </div>
-              <div className="w-px h-8 bg-white/30" />
-              <div className="text-center flex-1">
-                <p className="text-white/80 text-xs">Total Capacity</p>
-                <p className="text-white font-bold text-xl">{totalCapacity}</p>
-              </div>
-              <div className="w-px h-8 bg-white/30" />
-              <div className="text-center flex-1">
-                <p className="text-white/80 text-xs">Seats Available</p>
-                <p className="text-white font-bold text-xl">{totalCapacity - totalStudents}</p>
-              </div>
+              {/* Compact ranking row */}
+              {popularCourses.length > 0 && (
+                <div className="flex gap-1.5">
+                  {popularCourses.map((course, idx) => (
+                    <div
+                      key={course.name}
+                      className="flex-1 bg-white/10 rounded-lg px-2 py-1.5 min-w-0"
+                    >
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <span className="text-xs">{rankMedals[idx]}</span>
+                        <span className="text-white/70 font-bold text-[10px]">{course.count}</span>
+                      </div>
+                      <p className="text-white text-[10px] font-medium truncate leading-tight">{course.name}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
