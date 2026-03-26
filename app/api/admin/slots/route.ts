@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
-import { SLOTS, MAX_PER_SLOT, generateStampDates } from '@/lib/slots'
+import { SLOTS, MAX_PER_SLOT, TRIAL_SLOTS, MAX_PER_TRIAL_SLOT, generateStampDates } from '@/lib/slots'
 
 // Force dynamic — never cache this route
 export const dynamic = 'force-dynamic'
@@ -109,7 +109,16 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    const response = NextResponse.json({ success: true, data: result })
+    // Build trial slot data (currently no bookings — ready for future integration)
+    const trialSlots = TRIAL_SLOTS.map((ts) => ({
+      id: ts.id,
+      time: ts.time,
+      count: 0,
+      max: MAX_PER_TRIAL_SLOT,
+      available: true,
+    }))
+
+    const response = NextResponse.json({ success: true, data: result, trialSlots })
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     return response
   } catch (error) {

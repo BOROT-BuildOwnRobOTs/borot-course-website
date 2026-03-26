@@ -1,4 +1,24 @@
-// ── Slot definitions ─────────────────────────────────────────────────────────
+// ── Trial slot definitions ───────────────────────────────────────────────────
+// 20-minute trial sessions, spaced every 30 minutes, lunch break 12:00–13:00
+export const TRIAL_SLOTS = [
+  { id: 'trial-1000', time: '10:00-10:20', startHour: 10, startMin: 0 },
+  { id: 'trial-1030', time: '10:30-10:50', startHour: 10, startMin: 30 },
+  { id: 'trial-1100', time: '11:00-11:20', startHour: 11, startMin: 0 },
+  { id: 'trial-1130', time: '11:30-11:50', startHour: 11, startMin: 30 },
+  // ── Lunch break 12:00–13:00 ──
+  { id: 'trial-1300', time: '13:00-13:20', startHour: 13, startMin: 0 },
+  { id: 'trial-1330', time: '13:30-13:50', startHour: 13, startMin: 30 },
+  { id: 'trial-1400', time: '14:00-14:20', startHour: 14, startMin: 0 },
+  { id: 'trial-1430', time: '14:30-14:50', startHour: 14, startMin: 30 },
+  { id: 'trial-1500', time: '15:00-15:20', startHour: 15, startMin: 0 },
+  { id: 'trial-1530', time: '15:30-15:50', startHour: 15, startMin: 30 },
+  { id: 'trial-1600', time: '16:00-16:20', startHour: 16, startMin: 0 },
+  { id: 'trial-1630', time: '16:30-16:50', startHour: 16, startMin: 30 },
+] as const
+
+export const MAX_PER_TRIAL_SLOT = 3
+
+// ── Regular slot definitions ─────────────────────────────────────────────────
 export const SLOTS = [
   { id: 'tue-1000', day: 'tuesday',  dayLabel: 'Tuesday',   time: '10:00-12:00', startHour: 10, startMin: 0 },
   { id: 'tue-1300', day: 'tuesday',  dayLabel: 'Tuesday',   time: '13:00-15:00', startHour: 13, startMin: 0 },

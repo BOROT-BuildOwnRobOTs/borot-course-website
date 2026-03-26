@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { X, Users, Clock, Calendar, RefreshCw, Loader2, ChevronDown, ChevronUp, BookOpen } from "lucide-react"
+import { X, Users, Clock, Calendar, RefreshCw, Loader2, ChevronDown, ChevronUp, BookOpen, Coffee } from "lucide-react"
 
 interface StudentEntry {
   id: string
@@ -22,6 +22,16 @@ interface SlotData {
   students: StudentEntry[]
 }
 
+interface TrialSlotData {
+  id: string
+  time: string
+  count: number
+  max: number
+  available: boolean
+}
+
+type ActiveTab = "regular" | "trial"
+
 interface SlotStatusModalProps {
   isOpen: boolean
   onClose: () => void
@@ -40,10 +50,12 @@ function getDisplayName(entry: StudentEntry): string {
 
 export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const [slots, setSlots] = useState<SlotData[]>([])
+  const [trialSlots, setTrialSlots] = useState<TrialSlotData[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set())
+  const [activeTab, setActiveTab] = useState<ActiveTab>("regular")
 
   const fetchSlots = async () => {
     setLoading(true)
@@ -53,6 +65,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
       const json = await res.json()
       if (json.success) {
         setSlots(json.data)
+        setTrialSlots(json.trialSlots || [])
         setLastUpdated(new Date())
       } else {
         setError("Unable to load data")
@@ -108,6 +121,14 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
     if (ratio >= 1) return { bg: "bg-red-100", text: "text-red-600", bar: "bg-red-500", badge: "Full", badgeBg: "bg-red-100 text-red-600" }
     if (ratio >= 0.75) return { bg: "bg-orange-50", text: "text-orange-600", bar: "bg-orange-500", badge: "Almost Full", badgeBg: "bg-orange-100 text-orange-600" }
     return { bg: "bg-green-50", text: "text-green-600", bar: "bg-green-500", badge: "Available", badgeBg: "bg-green-100 text-green-600" }
+  }
+
+  // Trial-specific status (blue theme)
+  const getTrialStatusColor = (count: number, max: number) => {
+    const ratio = count / max
+    if (ratio >= 1) return { bg: "bg-red-50", text: "text-red-600", bar: "bg-red-500", badge: "Full", badgeBg: "bg-red-100 text-red-600" }
+    if (ratio >= 0.67) return { bg: "bg-amber-50", text: "text-amber-600", bar: "bg-amber-500", badge: "Almost Full", badgeBg: "bg-amber-100 text-amber-600" }
+    return { bg: "bg-blue-50", text: "text-blue-600", bar: "bg-blue-500", badge: "Available", badgeBg: "bg-blue-100 text-blue-600" }
   }
 
   const SlotCard = ({ slot }: { slot: SlotData }) => {
@@ -172,11 +193,9 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           <div className="bg-white/80 border-t border-gray-100 divide-y divide-gray-100/80">
             {slot.students.map((student, idx) => (
               <div key={`${student.id}-${idx}`} className="flex items-center gap-2 px-4 py-2">
-                {/* Nickname badge (bordered tag) */}
                 <span className="text-xs font-semibold text-orange-600 border border-orange-300 bg-orange-50 rounded-md px-2 py-0.5 shrink-0 max-w-[96px] truncate" title={getDisplayName(student)}>
                   {getDisplayName(student)}
                 </span>
-                {/* Course name pill */}
                 <span
                   className="flex items-center gap-1 text-[10px] text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-2 py-0.5 min-w-0 truncate"
                   title={student.courseName}
@@ -184,7 +203,6 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                   <BookOpen className="w-2.5 h-2.5 shrink-0" />
                   <span className="truncate">{truncateCourse(student.courseName)}</span>
                 </span>
-                {/* Level badge — always show, fallback to "—" */}
                 <span
                   className="text-[10px] font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-full px-2 py-0.5 shrink-0 max-w-[110px] truncate"
                   title={student.courseLevel || "No level specified"}
@@ -213,6 +231,55 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
     </div>
   )
 
+  // Split trial slots into morning / afternoon
+  const morningTrialSlots = trialSlots.filter((ts) => parseInt(ts.time.split(":")[0]) < 12)
+  const afternoonTrialSlots = trialSlots.filter((ts) => parseInt(ts.time.split(":")[0]) >= 13)
+
+  const TrialSlotCard = ({ ts }: { ts: TrialSlotData }) => {
+    const status = getTrialStatusColor(ts.count, ts.max)
+    const seatsLeft = ts.max - ts.count
+    const pct = Math.min((ts.count / ts.max) * 100, 100)
+    return (
+      <div
+        className={`rounded-lg border ${status.bg} ${
+          ts.available ? "border-blue-200" : "border-red-200"
+        } px-3 py-2 transition-all`}
+      >
+        <div className="flex items-center gap-3">
+          {/* Time */}
+          <div className="flex items-center gap-1.5 shrink-0 w-[105px]">
+            <Clock className="w-3.5 h-3.5 text-blue-400" />
+            <span className="text-sm font-bold text-gray-800">{ts.time}</span>
+          </div>
+
+          {/* Progress bar — takes remaining space */}
+          <div className="flex-1 bg-blue-100 rounded-full h-2 overflow-hidden">
+            <div
+              className={`h-2 rounded-full transition-all duration-500 ${status.bar}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+
+          {/* Count */}
+          <div className="flex items-center gap-1 shrink-0">
+            <Users className="w-3 h-3 text-blue-400" />
+            <span className={`text-xs font-bold ${status.text}`}>{ts.count}/{ts.max}</span>
+          </div>
+
+          {/* Badge */}
+          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${status.badgeBg}`}>
+            {seatsLeft > 0 ? `${seatsLeft} left` : "Full"}
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  // Dynamic header based on active tab
+  const headerGradient = activeTab === "trial"
+    ? "linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)"
+    : "linear-gradient(135deg, #E5690D 0%, #FF8C00 100%)"
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-4">
       {/* Backdrop */}
@@ -225,8 +292,8 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
       <div className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
         {/* Header */}
         <div
-          className="px-6 pt-6 pb-5"
-          style={{ background: "linear-gradient(135deg, #E5690D 0%, #FF8C00 100%)" }}
+          className="px-6 pt-6 pb-4 transition-all duration-300"
+          style={{ background: headerGradient }}
         >
           {/* Drag indicator (mobile) */}
           <div className="sm:hidden w-10 h-1 bg-white/40 rounded-full mx-auto mb-4" />
@@ -234,12 +301,14 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-2xl">🎓</span>
+                <span className="text-2xl">{activeTab === "trial" ? "🧪" : "🎓"}</span>
                 <h2 className="text-white font-bold text-xl leading-tight">
-                  Current Enrollment Status
+                  {activeTab === "trial" ? "Trial Class Schedule" : "Current Enrollment Status"}
                 </h2>
               </div>
-              <p className="text-orange-100 text-sm">Seats available per class slot</p>
+              <p className={`text-sm ${activeTab === "trial" ? "text-blue-100" : "text-orange-100"}`}>
+                {activeTab === "trial" ? "Free 20-min trial · max 3 students per slot" : "Seats available per class slot"}
+              </p>
             </div>
             <button
               onClick={onClose}
@@ -249,17 +318,15 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
             </button>
           </div>
 
-          {/* Summary Stats */}
-          {!loading && slots.length > 0 && (
+          {/* Summary Stats — only on regular tab */}
+          {activeTab === "regular" && !loading && slots.length > 0 && (
             <div className="mt-3 bg-white/12 rounded-xl px-3.5 py-2.5">
-              {/* Top row: student count + popular */}
               <div className="flex items-center justify-between mb-2">
                 <p className="text-white/90 text-xs font-medium">
                   👦 <span className="font-bold text-white">{totalStudents}</span> students already joined
                 </p>
                 <span className="text-[10px] font-semibold text-white/80">🔥 Popular class this week</span>
               </div>
-              {/* Compact ranking row */}
               {popularCourses.length > 0 && (
                 <div className="flex gap-1.5">
                   {popularCourses.map((course, idx) => (
@@ -278,13 +345,59 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
               )}
             </div>
           )}
+
+          {/* Trial tab summary */}
+          {activeTab === "trial" && !loading && (
+            <div className="mt-3 bg-white/12 rounded-xl px-3.5 py-2.5">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-white/70" />
+                  <span className="text-white/90 text-xs font-medium">
+                    <span className="font-bold text-white">{trialSlots.length}</span> time slots
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-white/70" />
+                  <span className="text-white/90 text-xs font-medium">
+                    <span className="font-bold text-white">{trialSlots.filter(s => s.available).length}</span> slots available
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab Switcher */}
+          <div className="flex mt-4 bg-white/15 rounded-xl p-1 gap-1">
+            <button
+              onClick={() => setActiveTab("regular")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                activeTab === "regular"
+                  ? "bg-white text-gray-800 shadow-sm"
+                  : "text-white/80 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <span className="text-sm">📅</span>
+              Regular Class
+            </button>
+            <button
+              onClick={() => setActiveTab("trial")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                activeTab === "trial"
+                  ? "bg-white text-gray-800 shadow-sm"
+                  : "text-white/80 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <span className="text-sm">🧪</span>
+              Trial Class
+            </button>
+          </div>
         </div>
 
         {/* Body */}
         <div className="px-6 py-5 max-h-[70vh] sm:max-h-[60vh] overflow-y-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-              <Loader2 className="w-8 h-8 animate-spin mb-3 text-orange-400" />
+              <Loader2 className={`w-8 h-8 animate-spin mb-3 ${activeTab === "trial" ? "text-blue-400" : "text-orange-400"}`} />
               <p className="text-sm">Loading...</p>
             </div>
           ) : error ? (
@@ -292,18 +405,67 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
               <p className="text-sm mb-3">{error}</p>
               <button
                 onClick={fetchSlots}
-                className="text-xs text-orange-500 hover:text-orange-700 underline"
+                className={`text-xs underline ${activeTab === "trial" ? "text-blue-500 hover:text-blue-700" : "text-orange-500 hover:text-orange-700"}`}
               >
                 Try again
               </button>
             </div>
-          ) : (
+          ) : activeTab === "regular" ? (
+            /* ── Regular Class Content ── */
             <div className="space-y-6">
               <DaySection label="Tuesday" icon="📅" slotList={tuesdaySlots} />
               <div className="border-t border-gray-100" />
               <DaySection label="Saturday" icon="📅" slotList={saturdaySlots} />
               <div className="border-t border-gray-100" />
               <DaySection label="Sunday" icon="📅" slotList={sundaySlots} />
+            </div>
+          ) : (
+            /* ── Trial Class Content ── */
+            <div className="space-y-4">
+              {/* Info banner */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  <span className="font-semibold">📌 Free Trial Class</span> — Pick a convenient time slot. Each session is 20 minutes, limited to 3 students per slot, spaced 30 minutes apart.
+                </p>
+              </div>
+
+              {/* Morning slots */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-2.5 ml-0.5">
+                  <span className="text-base">🌅</span>
+                  <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Morning</span>
+                  <span className="text-[10px] text-gray-400 font-medium">10:00 – 11:50</span>
+                </div>
+                <div className="space-y-1.5">
+                  {morningTrialSlots.map((ts) => (
+                    <TrialSlotCard key={ts.id} ts={ts} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Lunch break divider */}
+              <div className="flex items-center gap-2 my-1">
+                <div className="flex-1 border-t border-dashed border-amber-300" />
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 rounded-full">
+                  <Coffee className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="text-[11px] font-semibold text-amber-600">Lunch Break 12:00 – 13:00</span>
+                </div>
+                <div className="flex-1 border-t border-dashed border-amber-300" />
+              </div>
+
+              {/* Afternoon slots */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-2.5 ml-0.5">
+                  <span className="text-base">☀️</span>
+                  <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Afternoon</span>
+                  <span className="text-[10px] text-gray-400 font-medium">13:00 – 16:50</span>
+                </div>
+                <div className="space-y-1.5">
+                  {afternoonTrialSlots.map((ts) => (
+                    <TrialSlotCard key={ts.id} ts={ts} />
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -321,7 +483,11 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           <button
             onClick={fetchSlots}
             disabled={loading}
-            className="flex items-center gap-1.5 text-xs text-orange-500 hover:text-orange-700 font-medium disabled:opacity-50 transition-colors"
+            className={`flex items-center gap-1.5 text-xs font-medium disabled:opacity-50 transition-colors ${
+              activeTab === "trial"
+                ? "text-blue-500 hover:text-blue-700"
+                : "text-orange-500 hover:text-orange-700"
+            }`}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
