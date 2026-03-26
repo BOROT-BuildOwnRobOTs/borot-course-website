@@ -7,11 +7,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { Loader2 } from 'lucide-react'
 import {
   MessageSquare, Star, Video, CheckCircle2, AlertTriangle, RefreshCw,
   ChevronDown, ChevronUp, Search, Filter, Clock, Image as ImageIcon,
   BarChart3, GraduationCap, BookOpen, CalendarDays, Users,
 } from 'lucide-react'
+import { SLOTS, MAX_PER_SLOT, getNextSlotDateStr } from '@/lib/slots'
 
 /* ── Types ── */
 interface StampData {
@@ -34,7 +38,18 @@ interface StampData {
   sessionTopic: string
 }
 
+interface SlotAvailability {
+  id: string
+  day: string
+  dayLabel: string
+  time: string
+  count: number
+  max: number
+  available: boolean
+}
+
 interface EnrollmentData {
+  enrollmentIndex: number
   courseId: string
   courseName: string
   status: string
@@ -117,6 +132,21 @@ export default function FeedbackTab() {
   const [selectedStamp, setSelectedStamp] = useState<StampData | null>(null)
   const [selectedStudentName, setSelectedStudentName] = useState('')
   const [selectedCourseName, setSelectedCourseName] = useState('')
+  const [selectedStudentId, setSelectedStudentId] = useState('')
+  const [selectedEnrollmentIndex, setSelectedEnrollmentIndex] = useState<number>(-1)
+  const [selectedCourseId, setSelectedCourseId] = useState('')
+
+  // Reschedule dialog state
+  const [reschedDialogOpen, setReschedDialogOpen] = useState(false)
+  const [reschedSlotAvailability, setReschedSlotAvailability] = useState<SlotAvailability[]>([])
+  const [loadingReschedSlots, setLoadingReschedSlots] = useState(false)
+  const [reschedNewSlotDay, setReschedNewSlotDay] = useState('')
+  const [reschedNewSlotTime, setReschedNewSlotTime] = useState('')
+  const [reschedNewDate, setReschedNewDate] = useState('')
+  const [reschedReason, setReschedReason] = useState('')
+  const [savingResched, setSavingResched] = useState(false)
+  const [cancellingResched, setCancellingResched] = useState(false)
+  const [reschedRemaining, setReschedRemaining] = useState(false)
 
   const fetchData = async () => {
     setLoading(true)
@@ -259,12 +289,87 @@ export default function FeedbackTab() {
     })
   }
 
-  const handleStampClick = (stamp: StampData, studentName: string, courseName: string) => {
+  const handleStampClick = (stamp: StampData, studentName: string, courseName: string, studentId: string, enrollmentIndex: number, courseId: string) => {
     setSelectedStamp(stamp)
     setSelectedStudentName(studentName)
     setSelectedCourseName(courseName)
+    setSelectedStudentId(studentId)
+    setSelectedEnrollmentIndex(enrollmentIndex)
+    setSelectedCourseId(courseId)
     setDialogOpen(true)
   }
+
+  // ── Reschedule handlers ──
+  const openRescheduleDialog = () => {
+    if (!selectedStamp) return
+    setDialogOpen(false)
+    setReschedNewSlotDay('')
+    setReschedNewSlotTime('')
+    setReschedNewDate('')
+    setReschedReason('')
+    setReschedSlotAvailability([])
+    setReschedRemaining(false)
+    setReschedDialogOpen(true)
+
+    // Fetch slot availability
+    setLoadingReschedSlots(true)
+    fetch(`/api/admin/slots?courseId=${selectedCourseId}`)
+      .then((r) => r.json())
+      .then((j) => { if (j.success) setReschedSlotAvailability(j.data) })
+      .finally(() => setLoadingReschedSlots(false))
+  }
+
+  const handleRescheduleSave = async () => {
+    if (!selectedStamp || !selectedStudentId || selectedEnrollmentIndex < 0 || !reschedNewSlotDay || !reschedNewSlotTime || !reschedNewDate) return
+    setSavingResched(true)
+    try {
+      const res = await fetch(`/api/students/${selectedStudentId}/reschedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enrollmentIndex: selectedEnrollmentIndex,
+          originalDate: selectedStamp.originalDate,
+          newSlot: { day: reschedNewSlotDay, time: reschedNewSlotTime },
+          newDate: new Date(reschedNewDate).toISOString(),
+          reason: reschedReason,
+          rescheduleRemaining: reschedRemaining,
+        }),
+      })
+      const j = await res.json()
+      if (j.success) {
+        setReschedDialogOpen(false)
+        fetchData() // refresh all data
+      }
+    } finally {
+      setSavingResched(false)
+    }
+  }
+
+  const handleCancelReschedule = async () => {
+    if (!selectedStamp || !selectedStudentId || selectedEnrollmentIndex < 0) return
+    setCancellingResched(true)
+    try {
+      const res = await fetch(`/api/students/${selectedStudentId}/reschedule`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enrollmentIndex: selectedEnrollmentIndex,
+          originalDate: selectedStamp.originalDate,
+        }),
+      })
+      const j = await res.json()
+      if (j.success) {
+        setDialogOpen(false)
+        fetchData() // refresh all data
+      }
+    } finally {
+      setCancellingResched(false)
+    }
+  }
+
+  const reschedSlotList = reschedSlotAvailability.length > 0
+    ? reschedSlotAvailability
+    : SLOTS.map((s) => ({ id: s.id, day: s.day, dayLabel: s.dayLabel, time: s.time, count: 0, max: MAX_PER_SLOT, available: true }))
 
   const getCompletionColor = (filled: number, total: number) => {
     if (total === 0) return 'text-gray-400'
@@ -572,19 +677,19 @@ export default function FeedbackTab() {
                                               <div key={stamp.stampNumber} className="flex flex-col items-center gap-1">
                                                 <div className="relative">
                                                   <button
-                                                    onClick={() => handleStampClick(stamp, `${student.studentName}${student.studentNickname ? ` (${student.studentNickname})` : ''}`, enrollment.courseName)}
+                                                    onClick={() => handleStampClick(stamp, `${student.studentName}${student.studentNickname ? ` (${student.studentNickname})` : ''}`, enrollment.courseName, student.studentId, enrollment.enrollmentIndex, enrollment.courseId)}
                                                     className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm transition-all hover:scale-110 cursor-pointer ${getStampCircleStyle(stamp)} ${stamp.isRescheduled ? 'ring-2 ring-orange-400 ring-offset-1' : ''}`}
                                                     title={`${stamp.sessionTopic || `Session ${stamp.stampNumber}`}\n${formatDateFull(stamp.date)}\n${stamp.isCheckedIn ? 'เข้าเรียน' : stamp.isPast ? 'ขาดเรียน' : 'ยังไม่ถึง'}`}
                                                   >
                                                     {stamp.stampNumber}
                                                   </button>
                                                   {hasFeedbackBadge && (
-                                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center shadow-sm">
+                                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center shadow-sm z-10">
                                                       <MessageSquare className="h-2.5 w-2.5 text-white" />
                                                     </span>
                                                   )}
                                                   {stamp.isRescheduled && (
-                                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-400 rounded-full flex items-center justify-center shadow-sm">
+                                                    <span className={`absolute -top-1 w-4 h-4 bg-orange-400 rounded-full flex items-center justify-center shadow-sm ${hasFeedbackBadge ? '-left-1' : '-right-1'}`}>
                                                       <RefreshCw className="h-2.5 w-2.5 text-white" />
                                                     </span>
                                                   )}
@@ -731,8 +836,167 @@ export default function FeedbackTab() {
                     {!selectedStamp.isCheckedIn && selectedStamp.isPast && (
                       <p className="text-xs text-red-400 text-center py-2">นักเรียนไม่ได้เข้าเรียน session นี้</p>
                     )}
+
+                    {/* Reschedule actions */}
+                    {!selectedStamp.isCheckedIn && (
+                      <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                        <Button
+                          size="sm"
+                          onClick={openRescheduleDialog}
+                          className="bg-orange-500 hover:bg-orange-600 text-white text-xs flex-1"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                          {selectedStamp.isRescheduled ? 'เลื่อนใหม่' : 'เลื่อน Session'}
+                        </Button>
+                        {selectedStamp.isRescheduled && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleCancelReschedule}
+                            disabled={cancellingResched}
+                            className="text-xs border-red-300 text-red-500 hover:bg-red-50"
+                          >
+                            {cancellingResched ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'ยกเลิกเลื่อน'}
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* ── Reschedule Dialog ── */}
+          <Dialog open={reschedDialogOpen} onOpenChange={setReschedDialogOpen}>
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-base flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-orange-500" />
+                  Reschedule Session
+                </DialogTitle>
+              </DialogHeader>
+              {selectedStamp && (
+                <div className="space-y-4">
+                  {/* Info */}
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm space-y-1">
+                    <p className="font-medium text-orange-700">{selectedStudentName}</p>
+                    <p className="text-xs text-orange-600">{selectedCourseName} · Session {selectedStamp.stampNumber}</p>
+                    <p className="text-xs text-orange-500">
+                      Original: {formatDateFull(selectedStamp.originalDate)}
+                      {selectedStamp.isRescheduled && (
+                        <span className="ml-1">→ {formatDateFull(selectedStamp.date)}</span>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Slot selection */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <Label className="text-sm font-medium">เลือก Slot ใหม่</Label>
+                      {loadingReschedSlots && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {reschedSlotList.map((slot) => {
+                        const isSelected = reschedNewSlotDay === slot.day && reschedNewSlotTime === slot.time
+                        const remaining = slot.max - slot.count
+                        const isFull = remaining <= 0
+                        return (
+                          <button
+                            key={slot.id}
+                            type="button"
+                            onClick={() => {
+                              setReschedNewSlotDay(slot.day)
+                              setReschedNewSlotTime(slot.time)
+                              setReschedNewDate(getNextSlotDateStr(slot.day))
+                            }}
+                            className={`relative text-center px-2 py-2.5 rounded-lg border text-xs transition-all ${
+                              isSelected
+                                ? 'bg-orange-500 text-white border-orange-500'
+                                : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50'
+                            }`}
+                          >
+                            <div className="font-semibold">{slot.dayLabel}</div>
+                            <div className="text-[10px] mt-0.5 opacity-80">{slot.time}</div>
+                            {reschedSlotAvailability.length > 0 && (
+                              <div className={`flex items-center justify-center gap-0.5 mt-1 text-[10px] font-medium ${
+                                isSelected ? 'text-white/80' : isFull ? 'text-red-500' : slot.count >= 5 ? 'text-orange-500' : 'text-green-600'
+                              }`}>
+                                <Users className="h-2.5 w-2.5" />
+                                <span>{slot.count}/{slot.max}</span>
+                              </div>
+                            )}
+                            {isFull && reschedSlotAvailability.length > 0 && (
+                              <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Date picker */}
+                  <div>
+                    <Label className="text-sm font-medium">วันที่ใหม่</Label>
+                    <Input
+                      type="date"
+                      value={reschedNewDate}
+                      onChange={(e) => setReschedNewDate(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  {/* Reason */}
+                  <div>
+                    <Label className="text-sm font-medium">เหตุผล (ไม่บังคับ)</Label>
+                    <Input
+                      value={reschedReason}
+                      onChange={(e) => setReschedReason(e.target.value)}
+                      placeholder="เช่น ป่วย / ติดธุระ"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  {/* Reschedule remaining checkbox */}
+                  <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <Checkbox
+                      id="reschedRemaining"
+                      checked={reschedRemaining}
+                      onCheckedChange={(checked) => setReschedRemaining(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <label htmlFor="reschedRemaining" className="text-sm font-medium text-blue-700 cursor-pointer">
+                        เลื่อนทั้งหมดที่เหลือ
+                      </label>
+                      <p className="text-[11px] text-blue-500 mt-0.5">
+                        เลื่อน session ที่เหลือทั้งหมดตั้งแต่ Session {selectedStamp.stampNumber} เป็นต้นไป ไปยัง Slot ใหม่
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setReschedDialogOpen(false)}
+                      className="flex-1"
+                    >
+                      ยกเลิก
+                    </Button>
+                    <Button
+                      onClick={handleRescheduleSave}
+                      disabled={savingResched || !reschedNewSlotDay || !reschedNewDate}
+                      className="bg-orange-500 hover:bg-orange-600 text-white flex-1"
+                    >
+                      {savingResched ? (
+                        <><Loader2 className="h-4 w-4 animate-spin mr-2" />กำลังบันทึก...</>
+                      ) : (
+                        <><RefreshCw className="h-4 w-4 mr-2" />ยืนยันเลื่อน</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               )}
             </DialogContent>
           </Dialog>

@@ -442,15 +442,15 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                                       >
                                         {stampIdx + 1}
                                       </button>
-                                      {/* Feedback badge */}
+                                      {/* Feedback badge — always top-right */}
                                       {isCheckedIn && hasFeedback && (
-                                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center shadow-sm">
+                                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center shadow-sm z-10">
                                           <MessageSquare className="h-2.5 w-2.5 text-white" />
                                         </span>
                                       )}
-                                      {/* Reschedule badge */}
+                                      {/* Reschedule badge — move to top-left when feedback badge is also shown */}
                                       {reschedule && (
-                                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-400 rounded-full flex items-center justify-center shadow-sm">
+                                        <span className={`absolute -top-1 w-4 h-4 bg-orange-400 rounded-full flex items-center justify-center shadow-sm ${isCheckedIn && hasFeedback ? '-left-1' : '-right-1'}`}>
                                           <RefreshCw className="h-2.5 w-2.5 text-white" />
                                         </span>
                                       )}

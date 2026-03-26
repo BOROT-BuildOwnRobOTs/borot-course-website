@@ -42,7 +42,9 @@ export async function GET() {
     }>()
 
     for (const student of allStudents as any[]) {
-      for (const enrollment of student.enrollments || []) {
+      const studentEnrollments = student.enrollments || []
+      for (let enrollIdx = 0; enrollIdx < studentEnrollments.length; enrollIdx++) {
+        const enrollment = studentEnrollments[enrollIdx]
         const teacherId = enrollment.teacher?.toString()
         if (!teacherId) continue
 
@@ -76,13 +78,16 @@ export async function GET() {
           const actualDate = reschedule ? new Date(reschedule.newDate) : stampDate
 
           // Find matching session (skip already-used sessions to prevent duplicate counting)
+          // For rescheduled stamps, ONLY match on the actualDate (new date).
+          // For non-rescheduled stamps, match on the original stampDate.
+          // This prevents a rescheduled stamp from "stealing" a session that
+          // belongs to another stamp whose original date coincides.
+          const targetDate = reschedule ? actualDate : stampDate
           const session = courseSessions.find((s: any) => {
             const sid = s._id?.toString()
             if (sid && usedSessionIds.has(sid)) return false
             const sessionDate = new Date(s.scheduledAt)
-            const matchOriginal = isSameDay(sessionDate, stampDate)
-            const matchActual = reschedule ? isSameDay(sessionDate, actualDate) : false
-            if (!matchOriginal && !matchActual) return false
+            if (!isSameDay(sessionDate, targetDate)) return false
             return (s.attendance || []).some((a: any) => a.student?.toString() === student._id.toString())
           })
 
@@ -140,6 +145,7 @@ export async function GET() {
           : null
 
         studentEntry.enrollments.push({
+          enrollmentIndex: enrollIdx,
           courseId,
           courseName: enrollment.courseName || '',
           status: enrollment.status || 'pending',
