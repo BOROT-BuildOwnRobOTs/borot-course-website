@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
+import TrialRegistration from '@/models/TrialRegistration'
 import { SLOTS, MAX_PER_SLOT, TRIAL_SLOTS, MAX_PER_TRIAL_SLOT, generateStampDates } from '@/lib/slots'
 
 // Force dynamic — never cache this route
@@ -109,14 +110,33 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    // Build trial slot data (currently no bookings — ready for future integration)
-    const trialSlots = TRIAL_SLOTS.map((ts) => ({
-      id: ts.id,
-      time: ts.time,
-      count: 0,
-      max: MAX_PER_TRIAL_SLOT,
-      available: true,
-    }))
+    // Build trial slot data from actual registrations in DB
+    // Fetch full documents so we can return student names & ages
+    const trialRegs = await TrialRegistration.find({
+      status: { $in: ['pending', 'confirmed'] },
+    })
+      .select('slotId studentName age')
+      .lean()
+
+    // Group registrations by slotId
+    const trialSlotStudents: Record<string, { studentName: string; age: number }[]> = {}
+    for (const r of trialRegs as any[]) {
+      const sid = r.slotId as string
+      if (!trialSlotStudents[sid]) trialSlotStudents[sid] = []
+      trialSlotStudents[sid].push({ studentName: r.studentName, age: r.age })
+    }
+
+    const trialSlots = TRIAL_SLOTS.map((ts) => {
+      const students = trialSlotStudents[ts.id] || []
+      return {
+        id: ts.id,
+        time: ts.time,
+        count: students.length,
+        max: MAX_PER_TRIAL_SLOT,
+        available: students.length < MAX_PER_TRIAL_SLOT,
+        students,
+      }
+    })
 
     const response = NextResponse.json({ success: true, data: result, trialSlots })
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')

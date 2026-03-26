@@ -1,7 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { X, Users, Clock, Calendar, RefreshCw, Loader2, ChevronDown, ChevronUp, BookOpen, Coffee } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { X, Users, Clock, Calendar, RefreshCw, Loader2, ChevronDown, ChevronUp, BookOpen, Coffee, ArrowLeft, CheckCircle2, User, Phone, Baby, GraduationCap, Upload, ImageIcon, Trash2 } from "lucide-react"
+
+// ── Trial-eligible courses ──
+const TRIAL_COURSES = [
+  { name: "Lego Robot", levels: ["Level 1", "Level 2", "Level 3", "Level 4"] },
+  { name: "3D Inventor", levels: ["Level 1", "Level 2", "Level 3", "Level 4"] },
+]
 
 interface StudentEntry {
   id: string
@@ -22,12 +28,18 @@ interface SlotData {
   students: StudentEntry[]
 }
 
+interface TrialStudentEntry {
+  studentName: string
+  age: number
+}
+
 interface TrialSlotData {
   id: string
   time: string
   count: number
   max: number
   available: boolean
+  students: TrialStudentEntry[]
 }
 
 type ActiveTab = "regular" | "trial"
@@ -55,7 +67,22 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set())
+  const [expandedTrialSlots, setExpandedTrialSlots] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<ActiveTab>("regular")
+
+  // ── Trial Registration State ──
+  const [selectedTrialSlot, setSelectedTrialSlot] = useState<TrialSlotData | null>(null)
+  const [regForm, setRegForm] = useState({ studentName: "", age: "", phone: "", courseName: "", courseLevel: "" })
+  const [regSubmitting, setRegSubmitting] = useState(false)
+  const [regError, setRegError] = useState<string | null>(null)
+  const [regSuccess, setRegSuccess] = useState(false)
+
+  // ── Slip Upload State ──
+  const [slipFile, setSlipFile] = useState<File | null>(null)
+  const [slipPreview, setSlipPreview] = useState<string | null>(null)
+  const [slipUploading, setSlipUploading] = useState(false)
+  const [slipUrl, setSlipUrl] = useState<string | null>(null)
+  const slipInputRef = useRef<HTMLInputElement>(null)
 
   const fetchSlots = async () => {
     setLoading(true)
@@ -81,6 +108,15 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
     if (isOpen) {
       fetchSlots()
       setExpandedSlots(new Set())
+      setExpandedTrialSlots(new Set())
+      setSelectedTrialSlot(null)
+      setRegForm({ studentName: "", age: "", phone: "", courseName: "", courseLevel: "" })
+      setRegError(null)
+      setRegSuccess(false)
+      setSlipFile(null)
+      setSlipPreview(null)
+      setSlipUrl(null)
+      setSlipUploading(false)
     }
   }, [isOpen])
 
@@ -235,42 +271,215 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const morningTrialSlots = trialSlots.filter((ts) => parseInt(ts.time.split(":")[0]) < 12)
   const afternoonTrialSlots = trialSlots.filter((ts) => parseInt(ts.time.split(":")[0]) >= 13)
 
+  // ── Trial Registration Handlers ──
+  const handleSelectTrialSlot = (ts: TrialSlotData) => {
+    if (!ts.available) return
+    setSelectedTrialSlot(ts)
+    setRegForm({ studentName: "", age: "", phone: "", courseName: "", courseLevel: "" })
+    setRegError(null)
+    setRegSuccess(false)
+    setSlipFile(null)
+    setSlipPreview(null)
+    setSlipUrl(null)
+  }
+
+  const handleBackToSlots = () => {
+    setSelectedTrialSlot(null)
+    setRegForm({ studentName: "", age: "", phone: "", courseName: "", courseLevel: "" })
+    setRegError(null)
+    setRegSuccess(false)
+    setSlipFile(null)
+    setSlipPreview(null)
+    setSlipUrl(null)
+  }
+
+  // ── Slip Upload Handlers ──
+  const handleSlipSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type (images only)
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"]
+    if (!allowed.includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|webp|heic|heif)$/i)) {
+      setRegError("Please upload an image file (JPG, PNG, WebP).")
+      return
+    }
+
+    // Max 10 MB
+    if (file.size > 10 * 1024 * 1024) {
+      setRegError("Slip image must be under 10 MB.")
+      return
+    }
+
+    setSlipFile(file)
+    setSlipPreview(URL.createObjectURL(file))
+    setSlipUrl(null)
+    setRegError(null)
+
+    // Upload immediately
+    setSlipUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      const json = await res.json()
+      if (json.success && json.url) {
+        setSlipUrl(json.url)
+      } else {
+        setRegError(json.error || "Failed to upload slip. Please try again.")
+        setSlipFile(null)
+        setSlipPreview(null)
+      }
+    } catch {
+      setRegError("Failed to upload slip. Please try again.")
+      setSlipFile(null)
+      setSlipPreview(null)
+    } finally {
+      setSlipUploading(false)
+    }
+  }
+
+  const handleRemoveSlip = () => {
+    setSlipFile(null)
+    setSlipPreview(null)
+    setSlipUrl(null)
+    if (slipInputRef.current) slipInputRef.current.value = ""
+  }
+
+  const handleRegSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedTrialSlot) return
+
+    setRegSubmitting(true)
+    setRegError(null)
+
+    try {
+      const res = await fetch("/api/trial-register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentName: regForm.studentName,
+          age: regForm.age,
+          phone: regForm.phone,
+          courseName: `${regForm.courseName} — ${regForm.courseLevel}`,
+          slipUrl: slipUrl,
+          slotId: selectedTrialSlot.id,
+        }),
+      })
+      const json = await res.json()
+
+      if (json.success) {
+        setRegSuccess(true)
+        // Refresh slot data to reflect new count
+        fetchSlots()
+      } else {
+        setRegError(json.error || "Something went wrong. Please try again.")
+      }
+    } catch {
+      setRegError("Connection failed. Please try again.")
+    } finally {
+      setRegSubmitting(false)
+    }
+  }
+
+  const toggleTrialSlot = (slotId: string) => {
+    setExpandedTrialSlots((prev) => {
+      const next = new Set(prev)
+      if (next.has(slotId)) next.delete(slotId)
+      else next.add(slotId)
+      return next
+    })
+  }
+
   const TrialSlotCard = ({ ts }: { ts: TrialSlotData }) => {
     const status = getTrialStatusColor(ts.count, ts.max)
     const seatsLeft = ts.max - ts.count
     const pct = Math.min((ts.count / ts.max) * 100, 100)
+    const isExpanded = expandedTrialSlots.has(ts.id)
+    const hasStudents = ts.students && ts.students.length > 0
+
     return (
-      <div
-        className={`rounded-lg border ${status.bg} ${
-          ts.available ? "border-blue-200" : "border-red-200"
-        } px-3 py-2 transition-all`}
-      >
-        <div className="flex items-center gap-3">
-          {/* Time */}
-          <div className="flex items-center gap-1.5 shrink-0 w-[105px]">
-            <Clock className="w-3.5 h-3.5 text-blue-400" />
-            <span className="text-sm font-bold text-gray-800">{ts.time}</span>
-          </div>
+      <div className={`rounded-lg border overflow-hidden transition-all duration-200 ${status.bg} ${
+        ts.available ? "border-blue-200" : "border-red-200 opacity-60"
+      }`}>
+        {/* Main clickable area — register for slot */}
+        <button
+          type="button"
+          onClick={() => handleSelectTrialSlot(ts)}
+          disabled={!ts.available}
+          className={`w-full px-3 py-2 text-left transition-all duration-200 ${
+            ts.available
+              ? "hover:bg-blue-100/50 cursor-pointer"
+              : "cursor-not-allowed"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {/* Time */}
+            <div className="flex items-center gap-1.5 shrink-0 w-[105px]">
+              <Clock className="w-3.5 h-3.5 text-blue-400" />
+              <span className="text-sm font-bold text-gray-800">{ts.time}</span>
+            </div>
 
-          {/* Progress bar — takes remaining space */}
-          <div className="flex-1 bg-blue-100 rounded-full h-2 overflow-hidden">
-            <div
-              className={`h-2 rounded-full transition-all duration-500 ${status.bar}`}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
+            {/* Progress bar — takes remaining space */}
+            <div className="flex-1 bg-blue-100 rounded-full h-2 overflow-hidden">
+              <div
+                className={`h-2 rounded-full transition-all duration-500 ${status.bar}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
 
-          {/* Count */}
-          <div className="flex items-center gap-1 shrink-0">
-            <Users className="w-3 h-3 text-blue-400" />
-            <span className={`text-xs font-bold ${status.text}`}>{ts.count}/{ts.max}</span>
-          </div>
+            {/* Count */}
+            <div className="flex items-center gap-1 shrink-0">
+              <Users className="w-3 h-3 text-blue-400" />
+              <span className={`text-xs font-bold ${status.text}`}>{ts.count}/{ts.max}</span>
+            </div>
 
-          {/* Badge */}
-          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${status.badgeBg}`}>
-            {seatsLeft > 0 ? `${seatsLeft} left` : "Full"}
-          </span>
-        </div>
+            {/* Badge */}
+            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${status.badgeBg}`}>
+              {seatsLeft > 0 ? `${seatsLeft} left` : "Full"}
+            </span>
+          </div>
+        </button>
+
+        {/* Toggle button — only show if there are registered students */}
+        {hasStudents && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleTrialSlot(ts.id)
+            }}
+            className={`w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium transition-colors border-t border-blue-200/60
+              ${isExpanded ? "bg-white/70 text-blue-600" : "bg-white/40 text-blue-500 hover:bg-white/60"}`}
+          >
+            <span className="flex items-center gap-1.5">
+              <Users className="w-3 h-3" />
+              View registered students ({ts.students.length})
+            </span>
+            {isExpanded ? (
+              <ChevronUp className="w-3 h-3" />
+            ) : (
+              <ChevronDown className="w-3 h-3" />
+            )}
+          </button>
+        )}
+
+        {/* Expanded student list */}
+        {isExpanded && hasStudents && (
+          <div className="bg-white/80 border-t border-blue-100 divide-y divide-blue-50">
+            {ts.students.map((student, idx) => (
+              <div key={`${ts.id}-student-${idx}`} className="flex items-center gap-2 px-3 py-2">
+                <span className="text-xs font-semibold text-blue-700 border border-blue-300 bg-blue-50 rounded-md px-2 py-0.5 shrink-0 max-w-[120px] truncate" title={student.studentName}>
+                  👦 {student.studentName}
+                </span>
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-full px-2 py-0.5 shrink-0">
+                  <Baby className="w-2.5 h-2.5 shrink-0" />
+                  {student.age} yrs
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     )
   }
@@ -419,13 +628,282 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
               <div className="border-t border-gray-100" />
               <DaySection label="Sunday" icon="📅" slotList={sundaySlots} />
             </div>
+          ) : selectedTrialSlot ? (
+            /* ── Trial Registration Form ── */
+            <div className="space-y-4">
+              {/* Back button + Selected slot info */}
+              <button
+                type="button"
+                onClick={handleBackToSlots}
+                className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Choose another slot
+              </button>
+
+              {/* Selected slot badge */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-blue-900">🧪 Trial Class</p>
+                  <p className="text-xs text-blue-600 font-medium">Time {selectedTrialSlot.time} · {selectedTrialSlot.max - selectedTrialSlot.count} seats left</p>
+                </div>
+              </div>
+
+              {regSuccess ? (
+                /* ── Success State ── */
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                    <CheckCircle2 className="w-9 h-9 text-green-500" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-1">Registration Successful! 🎉</h3>
+                  <p className="text-sm text-gray-500 mb-1">
+                    Thank you for signing up for the Trial Class
+                  </p>
+                  <p className="text-xs text-blue-600 font-medium mb-5">
+                    Time: {selectedTrialSlot.time}
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handleBackToSlots}
+                      className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors"
+                    >
+                      View all slots
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* ── Registration Form ── */
+                <form onSubmit={handleRegSubmit} className="space-y-4">
+                  <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-100 rounded-xl p-4 space-y-3.5">
+                    <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                      <span className="text-base">📝</span>
+                      Registration Details
+                    </h4>
+
+                    {/* Student Name */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1.5">
+                        <User className="w-3.5 h-3.5 text-blue-500" />
+                        Student Name <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. John"
+                        value={regForm.studentName}
+                        onChange={(e) => setRegForm((prev) => ({ ...prev, studentName: e.target.value }))}
+                        className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-200 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all placeholder:text-gray-300"
+                      />
+                    </div>
+
+                    {/* Age */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1.5">
+                        <Baby className="w-3.5 h-3.5 text-blue-500" />
+                        Age (years) <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        min={3}
+                        max={18}
+                        placeholder="e.g. 8"
+                        value={regForm.age}
+                        onChange={(e) => setRegForm((prev) => ({ ...prev, age: e.target.value }))}
+                        className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-200 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all placeholder:text-gray-300"
+                      />
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1.5">
+                        <Phone className="w-3.5 h-3.5 text-blue-500" />
+                        Contact Phone <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="e.g. 0812345678"
+                        value={regForm.phone}
+                        onChange={(e) => setRegForm((prev) => ({ ...prev, phone: e.target.value }))}
+                        className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-200 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all placeholder:text-gray-300"
+                      />
+                    </div>
+
+                    {/* Course Selection */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1.5">
+                        <GraduationCap className="w-3.5 h-3.5 text-blue-500" />
+                        Course <span className="text-red-400">*</span>
+                      </label>
+                      <select
+                        required
+                        value={regForm.courseName}
+                        onChange={(e) => setRegForm((prev) => ({ ...prev, courseName: e.target.value, courseLevel: "" }))}
+                        className={`w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-200 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${
+                          regForm.courseName ? "text-gray-800" : "text-gray-300"
+                        }`}
+                      >
+                        <option value="" disabled>— Select a course —</option>
+                        {TRIAL_COURSES.map((course) => (
+                          <option key={course.name} value={course.name}>{course.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Level Selection — only show after course is selected */}
+                    {regForm.courseName && (
+                      <div>
+                        <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1.5">
+                          <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+                          Level <span className="text-red-400">*</span>
+                        </label>
+                        <select
+                          required
+                          value={regForm.courseLevel}
+                          onChange={(e) => setRegForm((prev) => ({ ...prev, courseLevel: e.target.value }))}
+                          className={`w-full px-3.5 py-2.5 text-sm rounded-lg border border-gray-200 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${
+                            regForm.courseLevel ? "text-gray-800" : "text-gray-300"
+                          }`}
+                        >
+                          <option value="" disabled>— Select a level —</option>
+                          {TRIAL_COURSES.find((c) => c.name === regForm.courseName)?.levels.map((level) => (
+                            <option key={level} value={level}>{level}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Payment Info + Slip Upload */}
+                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">💳</span>
+                      <h4 className="text-sm font-bold text-gray-700">Payment</h4>
+                    </div>
+                    <div className="bg-white/80 rounded-lg px-3.5 py-2.5 border border-emerald-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Trial Class Fee</span>
+                        <span className="text-base font-bold text-emerald-700">฿500</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-1">Please transfer and upload your payment slip below.</p>
+                    </div>
+
+                    {/* Slip Upload */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1.5">
+                        <Upload className="w-3.5 h-3.5 text-emerald-500" />
+                        Payment Slip <span className="text-red-400">*</span>
+                      </label>
+
+                      {slipPreview ? (
+                        /* Preview uploaded slip */
+                        <div className="relative rounded-lg border border-emerald-200 overflow-hidden bg-white">
+                          <img
+                            src={slipPreview}
+                            alt="Payment slip"
+                            className="w-full max-h-48 object-contain"
+                          />
+                          {/* Uploading overlay */}
+                          {slipUploading && (
+                            <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                              <div className="flex items-center gap-2">
+                                <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                                <span className="text-xs font-medium text-blue-600">Uploading...</span>
+                              </div>
+                            </div>
+                          )}
+                          {/* Upload success indicator */}
+                          {slipUrl && !slipUploading && (
+                            <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                          {/* Remove button */}
+                          <button
+                            type="button"
+                            onClick={handleRemoveSlip}
+                            disabled={slipUploading}
+                            className="absolute top-2 left-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors disabled:opacity-50"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        /* Upload drop zone */
+                        <button
+                          type="button"
+                          onClick={() => slipInputRef.current?.click()}
+                          className="w-full rounded-lg border-2 border-dashed border-emerald-300 hover:border-emerald-400 bg-white hover:bg-emerald-50/50 py-6 flex flex-col items-center gap-2 transition-all"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <ImageIcon className="w-5 h-5 text-emerald-500" />
+                          </div>
+                          <span className="text-xs font-medium text-gray-500">Tap to upload payment slip</span>
+                          <span className="text-[10px] text-gray-400">JPG, PNG, WebP · Max 10 MB</span>
+                        </button>
+                      )}
+
+                      <input
+                        ref={slipInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleSlipSelect}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Error message */}
+                  {regError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5 flex items-center gap-2">
+                      <span className="text-sm">⚠️</span>
+                      <p className="text-xs text-red-600 font-medium">{regError}</p>
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={regSubmitting || slipUploading || !regForm.studentName || !regForm.age || !regForm.phone || !regForm.courseName || !regForm.courseLevel || !slipUrl}
+                    className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    style={{
+                      background: "linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)",
+                    }}
+                  >
+                    {regSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Registering...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        Register for Trial Class
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+            </div>
           ) : (
-            /* ── Trial Class Content ── */
+            /* ── Trial Class Slot List ── */
             <div className="space-y-4">
               {/* Info banner */}
               <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
                 <p className="text-xs text-blue-700 leading-relaxed">
-                  <span className="font-semibold">📌 Free Trial Class</span> — Pick a convenient time slot. Each session is 20 minutes, limited to 3 students per slot, spaced 30 minutes apart.
+                  <span className="font-semibold">📌 Free Trial Class</span> — Tap a slot to register! Each session is 20 minutes, max 3 students per slot.
                 </p>
               </div>
 

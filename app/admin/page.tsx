@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
-import { Users, GraduationCap, BookOpen, CalendarDays, Shield, LogOut, Eye, EyeOff, MessageSquare } from 'lucide-react'
+import { Users, GraduationCap, BookOpen, CalendarDays, Shield, LogOut, Eye, EyeOff, MessageSquare, FlaskConical } from 'lucide-react'
 import Image from 'next/image'
 import ParentsTab from './components/ParentsTab'
 import TeachersTab from './components/TeachersTab'
 import CoursesTab from './components/CoursesTab'
 import SessionsTab from './components/SessionsTab'
 import FeedbackTab from './components/FeedbackTab'
+import TrialClassTab from './components/TrialClassTab'
 
 interface Stats {
   parents: number
@@ -287,6 +288,13 @@ export default function AdminPage() {
               <MessageSquare className="w-4 h-4 mr-1.5" />
               Feedback Overview
             </TabsTrigger>
+            <TabsTrigger
+              value="trial-class"
+              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white rounded-md px-4 py-2 text-sm font-medium text-gray-600 transition-all"
+            >
+              <FlaskConical className="w-4 h-4 mr-1.5" />
+              Trial Class
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="parents" className="mt-0">
@@ -307,6 +315,10 @@ export default function AdminPage() {
 
           <TabsContent value="feedback" className="mt-0">
             <FeedbackTab />
+          </TabsContent>
+
+          <TabsContent value="trial-class" className="mt-0">
+            <TrialClassTab />
           </TabsContent>
         </Tabs>
       </div>
