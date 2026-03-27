@@ -313,6 +313,21 @@ export default function ParentsTab() {
     fetchAll()
   }
 
+  const handleUpdateEnrollmentTeacher = async (student: Student, enrollmentIdx: number, teacherId: string) => {
+    const teacher = teachers.find(t => t._id === teacherId)
+    const updated = student.enrollments.map((e, i) =>
+      i === enrollmentIdx
+        ? { ...e, teacher: teacherId || undefined, teacherName: teacher?.name || '' }
+        : e
+    )
+    await fetch(`/api/admin/students/${student._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enrollments: updated }),
+    })
+    fetchAll()
+  }
+
   const handleRemoveEnrollment = async (student: Student, enrollmentIdx: number) => {
     if (!confirm('Remove this enrollment?')) return
     const updated = student.enrollments.filter((_, i) => i !== enrollmentIdx)
@@ -473,11 +488,22 @@ export default function ParentsTab() {
                                           {e.courseLevel && (
                                             <span className="text-[10px] text-orange-500 truncate">{e.courseLevel}</span>
                                           )}
-                                          {e.teacherName && (
-                                            <span className="text-[10px] text-blue-500 flex items-center gap-0.5">
-                                              👨‍🏫 {e.teacherName}
-                                            </span>
-                                          )}
+                                          <Select
+                                            value={e.teacher || '__none__'}
+                                            onValueChange={(val) => handleUpdateEnrollmentTeacher(s, idx, val === '__none__' ? '' : val)}
+                                          >
+                                            <SelectTrigger className="h-auto w-auto border-0 p-0 text-xs focus:ring-0 shadow-none shrink-0 gap-0.5">
+                                              <span className={`text-[10px] flex items-center gap-0.5 ${e.teacherName ? 'text-blue-500' : 'text-gray-400'}`}>
+                                                👨‍🏫 {e.teacherName || 'No teacher'}
+                                              </span>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="__none__" className="text-xs text-gray-400">No teacher</SelectItem>
+                                              {teachers.map(t => (
+                                                <SelectItem key={t._id} value={t._id} className="text-xs">{t.name}</SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
                                           {e.slot?.day && e.slot?.time && (
                                             <span className="text-[10px] text-purple-600 flex items-center gap-0.5 bg-purple-50 px-1 rounded">
                                               📅 {SLOTS.find(s => s.day === e.slot!.day && s.time === e.slot!.time)?.dayLabel ?? e.slot.day} {e.slot.time}
