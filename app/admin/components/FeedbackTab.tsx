@@ -869,7 +869,11 @@ export default function FeedbackTab() {
 
           {/* ── Reschedule Dialog ── */}
           <Dialog open={reschedDialogOpen} onOpenChange={setReschedDialogOpen}>
-            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogContent
+              className="sm:max-w-md max-h-[90vh] overflow-y-auto"
+              onPointerDownOutside={(e) => e.preventDefault()}
+              onInteractOutside={(e) => e.preventDefault()}
+            >
               <DialogHeader>
                 <DialogTitle className="text-base flex items-center gap-2">
                   <RefreshCw className="w-5 h-5 text-orange-500" />
