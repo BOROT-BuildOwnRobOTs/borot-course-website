@@ -123,6 +123,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   if (!isOpen) return null
 
   const tuesdaySlots = slots.filter((s) => s.day === "tuesday")
+  const fridaySlots = slots.filter((s) => s.day === "friday")
   const saturdaySlots = slots.filter((s) => s.day === "saturday")
   const sundaySlots = slots.filter((s) => s.day === "sunday")
 
@@ -623,6 +624,8 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
             /* ── Regular Class Content ── */
             <div className="space-y-6">
               <DaySection label="Tuesday" icon="📅" slotList={tuesdaySlots} />
+              <div className="border-t border-gray-100" />
+              <DaySection label="Friday" icon="📅" slotList={fridaySlots} />
               <div className="border-t border-gray-100" />
               <DaySection label="Saturday" icon="📅" slotList={saturdaySlots} />
               <div className="border-t border-gray-100" />
