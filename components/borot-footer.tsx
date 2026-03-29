@@ -63,12 +63,12 @@ export function BorotFooter() {
 
             {/* Borot contact */}
             <div className="flex flex-col gap-2">
-              <a href="tel:095-901-7395" className="flex items-center gap-2 text-sm transition-colors" style={{ color: "#9CA3AF" }}
+              <a href="tel:086-393-2415" className="flex items-center gap-2 text-sm transition-colors" style={{ color: "#9CA3AF" }}
                 onMouseEnter={e => (e.currentTarget.style.color = "#F97316")}
                 onMouseLeave={e => (e.currentTarget.style.color = "#9CA3AF")}
               >
                 <Phone className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#F97316" }} />
-                095-901-7395
+                086-393-2415
               </a>
               <a href="mailto:contact.borot@gmail.com" className="flex items-center gap-2 text-sm transition-colors" style={{ color: "#9CA3AF" }}
                 onMouseEnter={e => (e.currentTarget.style.color = "#F97316")}
