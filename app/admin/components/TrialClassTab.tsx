@@ -24,6 +24,7 @@ interface TrialRegistration {
   slipUrl: string
   slotId: string
   slotTime: string
+  trialDate: string          // YYYY-MM-DD
   status: 'pending' | 'confirmed' | 'cancelled'
   createdAt: string
   updatedAt: string
@@ -47,6 +48,7 @@ export default function TrialClassTab() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all')
   const [slotFilter, setSlotFilter] = useState<string>('all')
+  const [dateFilter, setDateFilter] = useState<string>('')
 
   // Edit dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -57,6 +59,7 @@ export default function TrialClassTab() {
     phone: '',
     courseName: '',
     slotId: '',
+    trialDate: '',
     status: 'pending' as string,
   })
   const [saving, setSaving] = useState(false)
@@ -95,6 +98,7 @@ export default function TrialClassTab() {
   const filtered = registrations.filter((r) => {
     if (statusFilter !== 'all' && r.status !== statusFilter) return false
     if (slotFilter !== 'all' && r.slotId !== slotFilter) return false
+    if (dateFilter && r.trialDate !== dateFilter) return false
     if (search) {
       const q = search.toLowerCase()
       return (
@@ -127,6 +131,7 @@ export default function TrialClassTab() {
       phone: r.phone,
       courseName: r.courseName,
       slotId: r.slotId,
+      trialDate: r.trialDate || '',
       status: r.status,
     })
     setEditDialogOpen(true)
@@ -147,6 +152,7 @@ export default function TrialClassTab() {
           courseName: editForm.courseName,
           slotId: editForm.slotId,
           slotTime: slot?.time || editItem.slotTime,
+          trialDate: editForm.trialDate,
           status: editForm.status,
         }),
       })
@@ -235,10 +241,15 @@ export default function TrialClassTab() {
           <span className="flex items-center gap-1 text-xs text-purple-600">
             <Clock className="w-3 h-3" /> {r.slotTime}
           </span>
+          {r.trialDate && (
+            <span className="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-full font-medium">
+              📅 {new Date(r.trialDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 mt-1.5">
           <span className="text-[10px] text-gray-400">
-            สมัครเมื่อ: {new Date(r.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            Registered: {new Date(r.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </span>
           {r.slipUrl && (
             <button
@@ -400,6 +411,23 @@ export default function TrialClassTab() {
             </button>
           ))}
         </div>
+
+        {/* Date filter */}
+        <Input
+          type="date"
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          className="h-9 w-auto min-w-[150px] text-xs"
+          placeholder="เลือกวันที่"
+        />
+        {dateFilter && (
+          <button
+            onClick={() => setDateFilter('')}
+            className="text-xs text-red-500 hover:text-red-700 font-medium whitespace-nowrap"
+          >
+            ✕ ล้างวันที่
+          </button>
+        )}
 
         {/* Slot filter */}
         <Select value={slotFilter} onValueChange={setSlotFilter}>
@@ -588,6 +616,14 @@ export default function TrialClassTab() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label>Trial Date</Label>
+              <Input
+                type="date"
+                value={editForm.trialDate}
+                onChange={(e) => setEditForm({ ...editForm, trialDate: e.target.value })}
+              />
             </div>
             <div>
               <Label>สถานะ</Label>

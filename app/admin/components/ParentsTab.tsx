@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Plus, Pencil, Trash2, Mail, Phone, Users, ChevronDown, ChevronUp,
-  UserPlus, BookOpen, X, Eye, EyeOff, CalendarDays, Loader2,
+  UserPlus, BookOpen, X, Eye, EyeOff, CalendarDays, Loader2, Search,
 } from 'lucide-react'
 import { SLOTS, MAX_PER_SLOT, getNextSlotDateStr, getSlotDayOfWeek } from '@/lib/slots'
 
@@ -90,6 +90,7 @@ export default function ParentsTab() {
   const [loading, setLoading] = useState(true)
   const [expandedParent, setExpandedParent] = useState<string | null>(null)
   const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState<'active' | 'completed' | 'all'>('active')
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Parent dialog
   const [parentDialogOpen, setParentDialogOpen] = useState(false)
@@ -339,6 +340,24 @@ export default function ParentsTab() {
     fetchAll()
   }
 
+  // ===== Search / Filter =====
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const filteredParents = normalizedQuery
+    ? parents.filter((p) => {
+        // Match parent fields
+        if (p.name.toLowerCase().includes(normalizedQuery)) return true
+        if (p.email.toLowerCase().includes(normalizedQuery)) return true
+        if (p.phone?.toLowerCase().includes(normalizedQuery)) return true
+        // Match children name / nickname
+        const children = studentsMap[p._id] || []
+        return children.some(
+          (s) =>
+            s.name.toLowerCase().includes(normalizedQuery) ||
+            (s.nickname && s.nickname.toLowerCase().includes(normalizedQuery))
+        )
+      })
+    : parents
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -348,6 +367,32 @@ export default function ParentsTab() {
         </Button>
       </div>
 
+      {/* Search Filter */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by parent name, email, phone, or student name..."
+          className="pl-9 pr-9 h-10 border-gray-200 focus-visible:ring-orange-400"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Search result count */}
+      {normalizedQuery && (
+        <p className="text-xs text-gray-500">
+          Found <span className="font-semibold text-gray-700">{filteredParents.length}</span> of {parents.length} parents
+        </p>
+      )}
+
       {loading ? (
         <div className="text-center py-8 text-gray-400">Loading...</div>
       ) : parents.length === 0 ? (
@@ -355,9 +400,17 @@ export default function ParentsTab() {
           <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p>No parents yet</p>
         </div>
+      ) : filteredParents.length === 0 ? (
+        <div className="text-center py-12 text-gray-400">
+          <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No results for &ldquo;{searchQuery}&rdquo;</p>
+          <button onClick={() => setSearchQuery('')} className="text-xs text-orange-500 hover:underline mt-1">
+            Clear search
+          </button>
+        </div>
       ) : (
         <div className="space-y-3">
-          {parents.map((p) => {
+          {filteredParents.map((p) => {
             const children = studentsMap[p._id] || []
             const isExpanded = expandedParent === p._id
             const totalEnrollments = children.reduce((sum, s) => sum + (s.enrollments?.length || 0), 0)

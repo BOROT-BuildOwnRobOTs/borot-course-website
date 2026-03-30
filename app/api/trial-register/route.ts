@@ -12,12 +12,20 @@ export async function POST(req: NextRequest) {
     await connectDB()
 
     const body = await req.json()
-    const { studentName, age, phone, slotId, courseName, slipUrl } = body
+    const { studentName, age, phone, slotId, courseName, slipUrl, trialDate } = body
 
     // Validate required fields
-    if (!studentName || !age || !phone || !slotId || !courseName || !slipUrl) {
+    if (!studentName || !age || !phone || !slotId || !courseName || !slipUrl || !trialDate) {
       return NextResponse.json(
         { success: false, error: 'Please fill in all required fields.' },
+        { status: 400 }
+      )
+    }
+
+    // Validate trialDate format (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(trialDate)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid date format.' },
         { status: 400 }
       )
     }
@@ -49,9 +57,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check slot capacity
+    // Check slot capacity — scoped to the specific date
     const currentCount = await TrialRegistration.countDocuments({
       slotId,
+      trialDate,
       status: { $in: ['pending', 'confirmed'] },
     })
 
@@ -71,6 +80,7 @@ export async function POST(req: NextRequest) {
       slipUrl: slipUrl || '',
       slotId,
       slotTime: slot.time,
+      trialDate,
       status: 'pending',
     })
 

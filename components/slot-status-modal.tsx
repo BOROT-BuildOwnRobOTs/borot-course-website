@@ -70,6 +70,12 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const [expandedTrialSlots, setExpandedTrialSlots] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<ActiveTab>("regular")
 
+  // ── Trial Date State ──
+  const [trialDate, setTrialDate] = useState<string>(() => {
+    const now = new Date()
+    return now.toISOString().split("T")[0] // default to today YYYY-MM-DD
+  })
+
   // ── Trial Registration State ──
   const [selectedTrialSlot, setSelectedTrialSlot] = useState<TrialSlotData | null>(null)
   const [regForm, setRegForm] = useState({ studentName: "", age: "", phone: "", courseName: "", courseLevel: "" })
@@ -84,11 +90,12 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const [slipUrl, setSlipUrl] = useState<string | null>(null)
   const slipInputRef = useRef<HTMLInputElement>(null)
 
-  const fetchSlots = async () => {
+  const fetchSlots = async (dateOverride?: string) => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/admin/slots", { cache: "no-store" })
+      const dateParam = dateOverride ?? trialDate
+      const res = await fetch(`/api/admin/slots?trialDate=${dateParam}`, { cache: "no-store" })
       const json = await res.json()
       if (json.success) {
         setSlots(json.data)
@@ -102,6 +109,14 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Refetch trial slot availability when date changes
+  const handleTrialDateChange = (newDate: string) => {
+    setTrialDate(newDate)
+    setSelectedTrialSlot(null)
+    setRegSuccess(false)
+    fetchSlots(newDate)
   }
 
   // ── Lock body scroll when modal is open (prevent background scrolling on mobile) ──
@@ -383,6 +398,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           courseName: `${regForm.courseName} — ${regForm.courseLevel}`,
           slipUrl: slipUrl,
           slotId: selectedTrialSlot.id,
+          trialDate,
         }),
       })
       const json = await res.json()
@@ -632,7 +648,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
             <div className="flex flex-col items-center justify-center py-10 text-red-400">
               <p className="text-sm mb-3">{error}</p>
               <button
-                onClick={fetchSlots}
+                onClick={() => fetchSlots()}
                 className={`text-xs underline ${activeTab === "trial" ? "text-blue-500 hover:text-blue-700" : "text-orange-500 hover:text-orange-700"}`}
               >
                 Try again
@@ -669,7 +685,9 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-blue-900">🧪 Trial Class</p>
-                  <p className="text-xs text-blue-600 font-medium">Time {selectedTrialSlot.time} · {selectedTrialSlot.max - selectedTrialSlot.count} seats left</p>
+                  <p className="text-xs text-blue-600 font-medium">
+                    📅 {new Date(trialDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} · {selectedTrialSlot.time} · {selectedTrialSlot.max - selectedTrialSlot.count} seats left
+                  </p>
                 </div>
               </div>
 
@@ -684,7 +702,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                     Thank you for signing up for the Trial Class
                   </p>
                   <p className="text-xs text-blue-600 font-medium mb-5">
-                    Time: {selectedTrialSlot.time}
+                    📅 {new Date(trialDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} · Time: {selectedTrialSlot.time}
                   </p>
                   <div className="flex gap-3">
                     <button
@@ -921,10 +939,22 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           ) : (
             /* ── Trial Class Slot List ── */
             <div className="space-y-4">
-              {/* Info banner */}
-              <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-                <p className="text-xs text-blue-700 leading-relaxed">
-                  <span className="font-semibold">📌 Free Trial Class</span> — Tap a slot to register! Each session is 20 minutes, max 3 students per slot.
+
+              {/* Date Picker */}
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-2">
+                  <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                  Select Date
+                </label>
+                <input
+                  type="date"
+                  value={trialDate}
+                  onChange={(e) => handleTrialDateChange(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-blue-200 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-gray-800 font-medium"
+                />
+                <p className="text-[10px] text-blue-500 mt-1.5 font-medium">
+                  📅 Showing slots for: {new Date(trialDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                 </p>
               </div>
 
@@ -980,7 +1010,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
             )}
           </div>
           <button
-            onClick={fetchSlots}
+            onClick={() => fetchSlots()}
             disabled={loading}
             className={`flex items-center gap-1.5 text-xs font-medium disabled:opacity-50 transition-colors ${
               activeTab === "trial"

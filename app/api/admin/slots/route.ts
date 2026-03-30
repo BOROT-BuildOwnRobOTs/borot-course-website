@@ -111,11 +111,17 @@ export async function GET(req: NextRequest) {
     })
 
     // Build trial slot data from actual registrations in DB
-    // Fetch full documents so we can return student names & ages
-    const trialRegs = await TrialRegistration.find({
+    // If a `trialDate` query param is provided, filter by that date only
+    const trialDateParam = req.nextUrl.searchParams.get('trialDate') // YYYY-MM-DD
+    const trialFilter: Record<string, unknown> = {
       status: { $in: ['pending', 'confirmed'] },
-    })
-      .select('slotId studentName age')
+    }
+    if (trialDateParam) {
+      trialFilter.trialDate = trialDateParam
+    }
+
+    const trialRegs = await TrialRegistration.find(trialFilter)
+      .select('slotId studentName age trialDate')
       .lean()
 
     // Group registrations by slotId

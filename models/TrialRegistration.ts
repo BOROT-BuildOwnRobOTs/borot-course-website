@@ -8,6 +8,7 @@ export interface ITrialRegistration extends Document {
   slipUrl: string
   slotId: string
   slotTime: string
+  trialDate: string          // YYYY-MM-DD — the specific date for the trial
   status: 'pending' | 'confirmed' | 'cancelled'
   createdAt: Date
   updatedAt: Date
@@ -22,6 +23,7 @@ const TrialRegistrationSchema = new Schema<ITrialRegistration>(
     slipUrl: { type: String, default: '' },
     slotId: { type: String, required: true },
     slotTime: { type: String, required: true },
+    trialDate: { type: String, required: true },   // YYYY-MM-DD
     status: {
       type: String,
       enum: ['pending', 'confirmed', 'cancelled'],
@@ -31,8 +33,8 @@ const TrialRegistrationSchema = new Schema<ITrialRegistration>(
   { timestamps: true }
 )
 
-// Index for quick slot-based queries
-TrialRegistrationSchema.index({ slotId: 1, status: 1 })
+// Index for quick slot-based queries (now includes date)
+TrialRegistrationSchema.index({ slotId: 1, trialDate: 1, status: 1 })
 
 export default mongoose.models.TrialRegistration ||
   mongoose.model<ITrialRegistration>('TrialRegistration', TrialRegistrationSchema)

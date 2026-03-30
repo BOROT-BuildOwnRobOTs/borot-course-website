@@ -41,7 +41,7 @@ export async function PUT(
     await connectDB()
 
     const body = await req.json()
-    const { studentName, age, phone, courseName, slotId, slotTime, status } = body
+    const { studentName, age, phone, courseName, slotId, slotTime, trialDate, status } = body
 
     const updateData: Record<string, unknown> = {}
     if (studentName !== undefined) updateData.studentName = studentName
@@ -50,6 +50,7 @@ export async function PUT(
     if (courseName !== undefined) updateData.courseName = courseName
     if (slotId !== undefined) updateData.slotId = slotId
     if (slotTime !== undefined) updateData.slotTime = slotTime
+    if (trialDate !== undefined) updateData.trialDate = trialDate
     if (status !== undefined) updateData.status = status
 
     const registration = await TrialRegistration.findByIdAndUpdate(
