@@ -104,6 +104,24 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
     }
   }
 
+  // ── Lock body scroll when modal is open (prevent background scrolling on mobile) ──
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY
+      const originalStyle = document.body.style.cssText
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.left = '0'
+      document.body.style.right = '0'
+      document.body.style.overflow = 'hidden'
+
+      return () => {
+        document.body.style.cssText = originalStyle
+        window.scrollTo(0, scrollY)
+      }
+    }
+  }, [isOpen])
+
   useEffect(() => {
     if (isOpen) {
       fetchSlots()
@@ -494,7 +512,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm touch-none"
         onClick={onClose}
       />
 
@@ -604,7 +622,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 max-h-[70vh] sm:max-h-[60vh] overflow-y-auto">
+        <div className="px-6 py-5 max-h-[70vh] sm:max-h-[60vh] overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
               <Loader2 className={`w-8 h-8 animate-spin mb-3 ${activeTab === "trial" ? "text-blue-400" : "text-orange-400"}`} />
