@@ -22,6 +22,7 @@ interface TrialRegistration {
   phone: string
   courseName: string
   slipUrl: string
+  paymentMethod?: 'cash' | 'transfer'
   slotId: string
   slotTime: string
   trialDate: string          // YYYY-MM-DD
@@ -167,7 +168,7 @@ export default function TrialClassTab() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('ลบการลงทะเบียน Trial Class นี้?')) return
+    if (!confirm('Delete this Trial Class registration?')) return
     try {
       await fetch(`/api/admin/trial-registrations/${id}`, { method: 'DELETE' })
       fetchRegistrations()
@@ -251,12 +252,19 @@ export default function TrialClassTab() {
           <span className="text-[10px] text-gray-400">
             Registered: {new Date(r.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </span>
+          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
+            r.paymentMethod === 'cash'
+              ? 'bg-amber-50 text-amber-600 border-amber-200'
+              : 'bg-blue-50 text-blue-600 border-blue-200'
+          }`}>
+            {r.paymentMethod === 'cash' ? '💵 Cash' : '🏦 Transfer'}
+          </span>
           {r.slipUrl && (
             <button
               onClick={() => setSlipPreviewUrl(r.slipUrl)}
               className="flex items-center gap-1 text-[10px] text-emerald-600 hover:text-emerald-800 font-medium transition-colors"
             >
-              <ImageIcon className="w-3 h-3" /> ดูสลิป
+              <ImageIcon className="w-3 h-3" /> View Slip
             </button>
           )}
         </div>
@@ -321,7 +329,7 @@ export default function TrialClassTab() {
             className="h-8 text-xs border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
           >
             <Trash2 className="w-3.5 h-3.5 mr-1" />
-            ล้างข้อมูลทั้งหมด
+            Clear All Data
           </Button>
         </div>
       </div>
@@ -380,7 +388,7 @@ export default function TrialClassTab() {
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="ค้นหาชื่อ, เบอร์โทร, คอร์ส..."
+            placeholder="Search name, phone, course..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-9 text-sm"
@@ -391,7 +399,7 @@ export default function TrialClassTab() {
         <div className="flex items-center gap-1">
           {(
             [
-              { value: 'all', label: 'ทั้งหมด', activeClass: 'bg-gray-600 text-white border-gray-600' },
+              { value: 'all', label: 'All', activeClass: 'bg-gray-600 text-white border-gray-600' },
               { value: 'pending', label: '⏳ Pending', activeClass: 'bg-yellow-500 text-white border-yellow-500' },
               { value: 'confirmed', label: '✅ Confirmed', activeClass: 'bg-green-500 text-white border-green-500' },
               { value: 'cancelled', label: '❌ Cancelled', activeClass: 'bg-red-500 text-white border-red-500' },
@@ -418,24 +426,24 @@ export default function TrialClassTab() {
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
           className="h-9 w-auto min-w-[150px] text-xs"
-          placeholder="เลือกวันที่"
+          placeholder="Select date"
         />
         {dateFilter && (
           <button
             onClick={() => setDateFilter('')}
             className="text-xs text-red-500 hover:text-red-700 font-medium whitespace-nowrap"
           >
-            ✕ ล้างวันที่
+            ✕ Clear date
           </button>
         )}
 
         {/* Slot filter */}
         <Select value={slotFilter} onValueChange={setSlotFilter}>
           <SelectTrigger className="h-9 w-auto min-w-[140px] text-xs">
-            <SelectValue placeholder="เลือก Slot" />
+            <SelectValue placeholder="Select Slot" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-xs">ทุก Slot</SelectItem>
+            <SelectItem value="all" className="text-xs">All Slots</SelectItem>
             {TRIAL_SLOTS.map((slot) => (
               <SelectItem key={slot.id} value={slot.id} className="text-xs">
                 🕐 {slot.time}
@@ -469,13 +477,13 @@ export default function TrialClassTab() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-12 text-gray-400">
           <Loader2 className="w-8 h-8 animate-spin text-blue-400 mb-3" />
-          <p className="text-sm">กำลังโหลดข้อมูล...</p>
+          <p className="text-sm">Loading data...</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <FlaskConical className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p className="text-sm">
-            {totalCount === 0 ? 'ยังไม่มีการลงทะเบียน Trial Class' : 'ไม่พบข้อมูลที่ตรงกับการค้นหา'}
+            {totalCount === 0 ? 'No Trial Class registrations yet' : 'No results matching your search'}
           </p>
         </div>
       ) : viewMode === 'bySlot' ? (
@@ -484,11 +492,11 @@ export default function TrialClassTab() {
           {/* Expand/Collapse all buttons */}
           <div className="flex items-center gap-2 justify-end">
             <button onClick={expandAll} className="text-xs text-blue-500 hover:text-blue-700 font-medium">
-              เปิดทั้งหมด
+              Expand All
             </button>
             <span className="text-gray-300">|</span>
             <button onClick={collapseAll} className="text-xs text-blue-500 hover:text-blue-700 font-medium">
-              ปิดทั้งหมด
+              Collapse All
             </button>
           </div>
 
@@ -511,7 +519,7 @@ export default function TrialClassTab() {
                     <div className="text-left">
                       <p className="text-sm font-bold text-gray-800">🧪 Slot {group.time}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] text-gray-500">{group.items.length} คน</span>
+                        <span className="text-[10px] text-gray-500">{group.items.length} students</span>
                         {pendingInSlot > 0 && (
                           <span className="text-[10px] text-yellow-600 bg-yellow-50 px-1.5 rounded-full border border-yellow-200">
                             ⏳ {pendingInSlot} pending
@@ -562,31 +570,31 @@ export default function TrialClassTab() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>แก้ไขข้อมูล Trial Registration</DialogTitle>
+            <DialogTitle>Edit Trial Registration</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>ชื่อนักเรียน *</Label>
+              <Label>Student Name *</Label>
               <Input
                 value={editForm.studentName}
                 onChange={(e) => setEditForm({ ...editForm, studentName: e.target.value })}
-                placeholder="ชื่อนักเรียน"
+                placeholder="Student name"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>อายุ *</Label>
+                <Label>Age *</Label>
                 <Input
                   type="number"
                   min={3}
                   max={18}
                   value={editForm.age}
                   onChange={(e) => setEditForm({ ...editForm, age: e.target.value })}
-                  placeholder="อายุ"
+                  placeholder="Age"
                 />
               </div>
               <div>
-                <Label>เบอร์โทร *</Label>
+                <Label>Phone *</Label>
                 <Input
                   value={editForm.phone}
                   onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
@@ -595,18 +603,18 @@ export default function TrialClassTab() {
               </div>
             </div>
             <div>
-              <Label>คอร์ส</Label>
+              <Label>Course</Label>
               <Input
                 value={editForm.courseName}
                 onChange={(e) => setEditForm({ ...editForm, courseName: e.target.value })}
-                placeholder="เช่น Lego Robot — Level 1"
+                placeholder="e.g. Lego Robot — Level 1"
               />
             </div>
             <div>
-              <Label>Slot เวลาเรียน</Label>
+              <Label>Class Time Slot</Label>
               <Select value={editForm.slotId} onValueChange={(val) => setEditForm({ ...editForm, slotId: val })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="เลือก Slot" />
+                  <SelectValue placeholder="Select Slot" />
                 </SelectTrigger>
                 <SelectContent>
                   {TRIAL_SLOTS.map((slot) => (
@@ -626,7 +634,7 @@ export default function TrialClassTab() {
               />
             </div>
             <div>
-              <Label>สถานะ</Label>
+              <Label>Status</Label>
               <Select value={editForm.status} onValueChange={(val) => setEditForm({ ...editForm, status: val })}>
                 <SelectTrigger>
                   <SelectValue />
@@ -641,14 +649,14 @@ export default function TrialClassTab() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              ยกเลิก
+              Cancel
             </Button>
             <Button
               onClick={handleSaveEdit}
               disabled={saving || !editForm.studentName.trim()}
               className="bg-blue-500 hover:bg-blue-600 text-white"
             >
-              {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+              {saving ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -660,22 +668,22 @@ export default function TrialClassTab() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertTriangle className="w-5 h-5" />
-              ล้างข้อมูลทั้งหมด
+              Clear All Data
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-gray-600">
-              คุณแน่ใจหรือไม่ที่จะลบข้อมูล Trial Class Registration ทั้งหมด?
+              Are you sure you want to delete all Trial Class Registration data?
             </p>
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
               <p className="text-xs text-red-600 font-medium">
-                ⚠️ การดำเนินการนี้ไม่สามารถย้อนกลับได้ ข้อมูลทั้งหมด ({totalCount} รายการ) จะถูกลบถาวร
+                ⚠️ This action cannot be undone. All data ({totalCount} records) will be permanently deleted.
               </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setClearDialogOpen(false)}>
-              ยกเลิก
+              Cancel
             </Button>
             <Button
               onClick={handleClearAll}
@@ -685,12 +693,12 @@ export default function TrialClassTab() {
               {clearing ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                  กำลังลบ...
+                  Deleting...
                 </>
               ) : (
                 <>
                   <Trash2 className="w-4 h-4 mr-1" />
-                  ลบทั้งหมด
+                  Delete All
                 </>
               )}
             </Button>
@@ -702,7 +710,7 @@ export default function TrialClassTab() {
       <Dialog open={!!slipPreviewUrl} onOpenChange={() => setSlipPreviewUrl(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>สลิปการชำระเงิน</DialogTitle>
+            <DialogTitle>Payment Slip</DialogTitle>
           </DialogHeader>
           {slipPreviewUrl && (
             <div className="flex justify-center">

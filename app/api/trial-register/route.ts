@@ -12,12 +12,24 @@ export async function POST(req: NextRequest) {
     await connectDB()
 
     const body = await req.json()
-    const { studentName, age, phone, slotId, courseName, slipUrl, trialDate } = body
+    const { studentName, age, phone, slotId, courseName, slipUrl, paymentMethod, trialDate } = body
 
-    // Validate required fields
-    if (!studentName || !age || !phone || !slotId || !courseName || !slipUrl || !trialDate) {
+    // Validate required fields (slipUrl only required for transfer)
+    if (!studentName || !age || !phone || !slotId || !courseName || !trialDate) {
       return NextResponse.json(
         { success: false, error: 'Please fill in all required fields.' },
+        { status: 400 }
+      )
+    }
+
+    // Validate paymentMethod
+    const validPaymentMethods = ['cash', 'transfer']
+    const resolvedPaymentMethod = validPaymentMethods.includes(paymentMethod) ? paymentMethod : 'transfer'
+
+    // If transfer, slipUrl is required
+    if (resolvedPaymentMethod === 'transfer' && !slipUrl) {
+      return NextResponse.json(
+        { success: false, error: 'Please upload a payment slip for bank transfer.' },
         { status: 400 }
       )
     }
@@ -78,6 +90,7 @@ export async function POST(req: NextRequest) {
       phone: phoneStr,
       courseName: courseName.trim(),
       slipUrl: slipUrl || '',
+      paymentMethod: resolvedPaymentMethod,
       slotId,
       slotTime: slot.time,
       trialDate,

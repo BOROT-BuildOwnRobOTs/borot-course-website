@@ -6,6 +6,7 @@ export interface ITrialRegistration extends Document {
   phone: string
   courseName: string
   slipUrl: string
+  paymentMethod: 'cash' | 'transfer'
   slotId: string
   slotTime: string
   trialDate: string          // YYYY-MM-DD — the specific date for the trial
@@ -21,6 +22,11 @@ const TrialRegistrationSchema = new Schema<ITrialRegistration>(
     phone: { type: String, required: true },
     courseName: { type: String, required: true },
     slipUrl: { type: String, default: '' },
+    paymentMethod: {
+      type: String,
+      enum: ['cash', 'transfer'],
+      default: 'transfer',
+    },
     slotId: { type: String, required: true },
     slotTime: { type: String, required: true },
     trialDate: { type: String, required: true },   // YYYY-MM-DD
