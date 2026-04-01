@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/teacher/all-students
 // Returns ALL students with their enrollments (across all teachers)
 // This allows a teacher to see and manage students from other teachers too.

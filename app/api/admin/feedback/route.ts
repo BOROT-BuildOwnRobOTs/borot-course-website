@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
+
+// Force dynamic — never cache this route on Vercel
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 import Session from '@/models/Session'
 import Student from '@/models/Student'
 import Teacher from '@/models/Teacher'
@@ -202,9 +206,15 @@ export async function GET() {
       return a.teacherName.localeCompare(b.teacherName)
     })
 
-    return NextResponse.json({ success: true, data })
+    const response = NextResponse.json({ success: true, data })
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('CDN-Cache-Control', 'no-store')
+    response.headers.set('Vercel-CDN-Cache-Control', 'no-store')
+    return response
   } catch (error) {
     console.error('Admin feedback API error:', error)
-    return NextResponse.json({ success: false, error: 'Failed to fetch feedback overview' }, { status: 500 })
+    const errorResponse = NextResponse.json({ success: false, error: 'Failed to fetch feedback overview' }, { status: 500 })
+    errorResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return errorResponse
   }
 }

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Session from '@/models/Session'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/parent/sessions?studentIds=id1,id2
 // Returns all sessions where any of the given students appear in attendance
 export async function GET(req: NextRequest) {

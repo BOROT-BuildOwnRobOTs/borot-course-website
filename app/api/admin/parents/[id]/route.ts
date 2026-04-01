@@ -4,6 +4,8 @@ import Parent from '@/models/Parent'
 import Student from '@/models/Student'
 import bcrypt from 'bcryptjs'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     await connectDB()

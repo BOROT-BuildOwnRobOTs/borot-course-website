@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/teacher/stats
 // Returns system-wide student stats (same for all teachers)
 export async function GET(req: NextRequest) {

@@ -3,6 +3,8 @@ import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
 import { generateStampDates } from '@/lib/slots'
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/students/[id]/reschedule
 // Body: { enrollmentIndex, originalDate, newSlot: { day, time }, newDate, reason?, rescheduleRemaining?: boolean }
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {

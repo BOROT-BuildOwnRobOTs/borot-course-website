@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Session from '@/models/Session'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/teacher/all-sessions
 // Returns ALL sessions across all teachers
 // This allows a teacher to see and manage sessions from other teachers too.

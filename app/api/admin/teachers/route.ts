@@ -3,6 +3,8 @@ import connectDB from '@/lib/mongodb'
 import Teacher from '@/models/Teacher'
 import bcrypt from 'bcryptjs'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     await connectDB()

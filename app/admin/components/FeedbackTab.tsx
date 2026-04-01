@@ -151,7 +151,10 @@ export default function FeedbackTab() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/feedback')
+      const res = await fetch('/api/admin/feedback', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      })
       const json = await res.json()
       if (json.success) setTeachers(json.data)
     } catch {

@@ -4,6 +4,8 @@ import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
 import Session from '@/models/Session'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/teacher/students?teacherId=xxx
 // Returns all students related to this teacher via:
 //   1) enrollments.teacher === teacherId  (direct enrollment assignment)

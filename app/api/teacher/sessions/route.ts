@@ -4,6 +4,8 @@ import connectDB from '@/lib/mongodb'
 import Session from '@/models/Session'
 import Student from '@/models/Student'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/teacher/sessions?teacherId=xxx
 export async function GET(req: NextRequest) {
   try {

@@ -4,6 +4,8 @@ import Session from '@/models/Session'
 import Student from '@/models/Student'
 import Teacher from '@/models/Teacher'
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/teacher/checkin
 // Body: { courseId, courseName, teacherId, studentId, scheduledAt, checkedIn }
 // This API finds or creates a session for the given date, then checks in the student.

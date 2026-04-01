@@ -6,6 +6,8 @@ import Student from '@/models/Student'
 import Course from '@/models/Course'
 import bcrypt from 'bcryptjs'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   try {
     await connectDB()

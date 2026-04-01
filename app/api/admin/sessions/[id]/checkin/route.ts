@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Session from '@/models/Session'
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/admin/sessions/[id]/checkin
 // Body: { studentId, checkedIn: true/false }
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
