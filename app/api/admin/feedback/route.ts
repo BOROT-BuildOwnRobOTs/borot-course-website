@@ -73,7 +73,10 @@ export async function GET() {
           : []
 
         // Build stamps - track used sessions to prevent duplicates
-        const usedSessionIds = new Set<string>()
+        // Only non-rescheduled (original date) stamps exclusively claim a session.
+        // Rescheduled stamps may share a session when multiple stamps are moved
+        // to the same date (e.g. make-up double class on the same day).
+        const usedByOriginalStamps = new Set<string>()
         const stamps = stampDates.map((stampDate, idx) => {
           // Check for reschedule
           const reschedule = (enrollment.reschedules || []).find(
@@ -81,23 +84,27 @@ export async function GET() {
           )
           const actualDate = reschedule ? new Date(reschedule.newDate) : stampDate
 
-          // Find matching session (skip already-used sessions to prevent duplicate counting)
           // For rescheduled stamps, ONLY match on the actualDate (new date).
           // For non-rescheduled stamps, match on the original stampDate.
           // This prevents a rescheduled stamp from "stealing" a session that
           // belongs to another stamp whose original date coincides.
+          //
+          // Sessions claimed by non-rescheduled stamps are exclusive — no other
+          // stamp may reuse them.  Rescheduled stamps do NOT exclusively claim
+          // sessions, so multiple rescheduled stamps on the same actual date can
+          // share a single session record.
           const targetDate = reschedule ? actualDate : stampDate
           const session = courseSessions.find((s: any) => {
             const sid = s._id?.toString()
-            if (sid && usedSessionIds.has(sid)) return false
+            if (sid && usedByOriginalStamps.has(sid)) return false
             const sessionDate = new Date(s.scheduledAt)
             if (!isSameDay(sessionDate, targetDate)) return false
             return (s.attendance || []).some((a: any) => a.student?.toString() === student._id.toString())
           })
 
-          // Mark session as used
-          if (session?._id) {
-            usedSessionIds.add(session._id.toString())
+          // Only non-rescheduled stamps exclusively claim the session
+          if (session?._id && !reschedule) {
+            usedByOriginalStamps.add(session._id.toString())
           }
 
           const attendance = session?.attendance?.find(
