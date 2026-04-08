@@ -4,12 +4,16 @@ import { Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Home } from "lucide-react"
+import { useClerk } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
 import { useProfileData } from "./hooks/useProfileData"
 import ProfileHeader from "./components/ProfileHeader"
 import TeacherView from "./components/TeacherView"
 import ParentView from "./components/ParentView"
 
 export default function ProfilePage() {
+  const { signOut } = useClerk()
+  const router = useRouter()
   const {
     user,
     setUser,
@@ -20,6 +24,16 @@ export default function ProfilePage() {
     setTierSessionCount,
     handleLogout,
   } = useProfileData()
+
+  const handleFullLogout = async () => {
+    handleLogout()
+    try {
+      await signOut()
+    } catch {
+      // Clerk sign out may fail if not signed in via Clerk — ignore
+    }
+    router.push("/")
+  }
 
   // ── Loading ──────────────────────────────────────────────────────────────
   if (loading || !user) {
@@ -49,7 +63,7 @@ export default function ProfilePage() {
         <ProfileHeader
           user={user}
           tierSessionCount={tierSessionCount}
-          onLogout={handleLogout}
+          onLogout={handleFullLogout}
         />
 
         {/* Teacher view */}

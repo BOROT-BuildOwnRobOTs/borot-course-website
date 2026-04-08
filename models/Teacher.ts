@@ -6,6 +6,7 @@ export interface ITeacher extends Document {
   password: string
   phone?: string
   specialization?: string
+  userId?: string       // Clerk user ID (e.g. user_xxx) — links Clerk account to this teacher
   createdAt: Date
   updatedAt: Date
 }
@@ -17,6 +18,7 @@ const TeacherSchema = new Schema<ITeacher>(
     password: { type: String, required: true },
     phone: { type: String, default: '' },
     specialization: { type: String, default: '' },
+    userId: { type: String, default: null, sparse: true },  // Clerk user ID
   },
   { timestamps: true }
 )

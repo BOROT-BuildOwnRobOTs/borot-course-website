@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Plus, Pencil, Trash2, Mail, Phone, Users, ChevronDown, ChevronUp,
   UserPlus, BookOpen, X, Eye, EyeOff, CalendarDays, Loader2, Search,
+  Link2, Unlink, CheckCircle2,
 } from 'lucide-react'
 import { SLOTS, MAX_PER_SLOT, getNextSlotDateStr, getSlotDayOfWeek } from '@/lib/slots'
 
@@ -60,11 +61,20 @@ interface Student {
   enrollments: Enrollment[]
 }
 
+interface ClerkUser {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  imageUrl: string
+}
+
 interface Parent {
   _id: string
   name: string
   email: string
   phone: string
+  userId?: string | null   // Clerk user ID
   createdAt: string
 }
 
@@ -119,6 +129,15 @@ export default function ParentsTab() {
   const [slotAvailability, setSlotAvailability] = useState<SlotAvailability[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [savingEnroll, setSavingEnroll] = useState(false)
+
+  // Link user dialog
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false)
+  const [linkParent, setLinkParent] = useState<Parent | null>(null)
+  const [linkSearchEmail, setLinkSearchEmail] = useState('')
+  const [linkSearchResults, setLinkSearchResults] = useState<ClerkUser[]>([])
+  const [linkSearching, setLinkSearching] = useState(false)
+  const [linkSaving, setLinkSaving] = useState(false)
+  const [linkError, setLinkError] = useState('')
 
   const fetchAll = async () => {
     setLoading(true)
@@ -340,6 +359,67 @@ export default function ParentsTab() {
     fetchAll()
   }
 
+  // ===== Link User =====
+  const openLinkDialog = (p: Parent) => {
+    setLinkParent(p)
+    setLinkSearchEmail(p.email) // pre-fill with parent email
+    setLinkSearchResults([])
+    setLinkError('')
+    setLinkDialogOpen(true)
+  }
+
+  const handleSearchClerkUsers = async () => {
+    if (!linkSearchEmail.trim()) return
+    setLinkSearching(true)
+    setLinkError('')
+    setLinkSearchResults([])
+    try {
+      const res = await fetch(`/api/admin/clerk-users?search=${encodeURIComponent(linkSearchEmail.trim())}`)
+      const json = await res.json()
+      if (json.success) {
+        setLinkSearchResults(json.data)
+        if (json.data.length === 0) setLinkError('ไม่พบ user จาก Clerk ที่ตรงกับอีเมลนี้')
+      } else {
+        setLinkError(json.error || 'เกิดข้อผิดพลาด')
+      }
+    } catch {
+      setLinkError('เกิดข้อผิดพลาดในการค้นหา')
+    } finally {
+      setLinkSearching(false)
+    }
+  }
+
+  const handleLinkUser = async (clerkUserId: string) => {
+    if (!linkParent) return
+    setLinkSaving(true)
+    try {
+      const res = await fetch(`/api/admin/parents/${linkParent._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: clerkUserId }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setLinkDialogOpen(false)
+        fetchAll()
+      } else {
+        setLinkError(json.error || 'ไม่สามารถผูก user ได้')
+      }
+    } finally {
+      setLinkSaving(false)
+    }
+  }
+
+  const handleUnlinkUser = async (parentId: string) => {
+    if (!confirm('ยกเลิกการผูก Clerk user ออกจากผู้ปกครองนี้?')) return
+    await fetch(`/api/admin/parents/${parentId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: '' }),
+    })
+    fetchAll()
+  }
+
   // ===== Search / Filter =====
   const normalizedQuery = searchQuery.trim().toLowerCase()
   const filteredParents = normalizedQuery
@@ -437,6 +517,30 @@ export default function ParentsTab() {
                               <span className="flex items-center gap-1 text-xs text-gray-500">
                                 <Phone className="w-3 h-3" />{p.phone}
                               </span>
+                            )}
+                          </div>
+                          {/* Clerk User Link Status */}
+                          <div className="flex items-center gap-1.5 mt-1">
+                            {p.userId ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] bg-green-50 text-green-600 border border-green-200 rounded-full px-2 py-0.5">
+                                <CheckCircle2 className="w-3 h-3" />
+                                ผูกบัญชีแล้ว
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleUnlinkUser(p._id) }}
+                                  className="ml-0.5 text-red-400 hover:text-red-600 transition-colors"
+                                  title="ยกเลิกการผูกบัญชี"
+                                >
+                                  <Unlink className="w-3 h-3" />
+                                </button>
+                              </span>
+                            ) : (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); openLinkDialog(p) }}
+                                className="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-600 border border-amber-200 rounded-full px-2 py-0.5 hover:bg-amber-100 transition-colors"
+                              >
+                                <Link2 className="w-3 h-3" />
+                                ผูกบัญชี Clerk
+                              </button>
                             )}
                           </div>
                         </div>
@@ -831,6 +935,121 @@ export default function ParentsTab() {
             <Button onClick={handleAddEnrollment} disabled={savingEnroll || !enrollCourseId} className="bg-orange-500 hover:bg-orange-600 text-white">
               {savingEnroll ? 'Saving...' : 'Enroll'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Clerk User Dialog */}
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="w-5 h-5 text-orange-500" />
+              ผูกบัญชี Clerk — {linkParent?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">
+              ค้นหา Clerk user ด้วยอีเมล แล้วเลือกเพื่อผูกกับผู้ปกครองนี้
+            </p>
+
+            {linkError && (
+              <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded">{linkError}</p>
+            )}
+
+            {/* Search input */}
+            <div className="flex gap-2">
+              <Input
+                value={linkSearchEmail}
+                onChange={(e) => setLinkSearchEmail(e.target.value)}
+                placeholder="ค้นหาด้วยอีเมล..."
+                className="flex-1"
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSearchClerkUsers() }}
+              />
+              <Button
+                onClick={handleSearchClerkUsers}
+                disabled={linkSearching || !linkSearchEmail.trim()}
+                className="bg-orange-500 hover:bg-orange-600 text-white shrink-0"
+              >
+                {linkSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              </Button>
+            </div>
+
+            {/* Search results */}
+            {linkSearchResults.length > 0 && (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                <p className="text-xs text-gray-400">พบ {linkSearchResults.length} ผลลัพธ์</p>
+                {linkSearchResults.map((u) => (
+                  <div
+                    key={u.id}
+                    className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50/50 transition-all"
+                  >
+                    {/* User avatar */}
+                    {u.imageUrl ? (
+                      <img src={u.imageUrl} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <Avatar className="w-9 h-9 shrink-0">
+                        <AvatarFallback className="bg-blue-100 text-blue-600 text-xs font-bold">
+                          {(u.firstName || u.email).charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    {/* User info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {u.firstName} {u.lastName}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                      <p className="text-[10px] text-gray-400 font-mono truncate">{u.id}</p>
+                    </div>
+                    {/* Link button */}
+                    <Button
+                      size="sm"
+                      onClick={() => handleLinkUser(u.id)}
+                      disabled={linkSaving}
+                      className="bg-green-500 hover:bg-green-600 text-white shrink-0 h-8 px-3 text-xs"
+                    >
+                      {linkSaving ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          <Link2 className="w-3.5 h-3.5 mr-1" />
+                          ผูกบัญชี
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Manual input option */}
+            {linkSearchResults.length === 0 && !linkSearching && (
+              <div className="border-t border-gray-100 pt-3">
+                <p className="text-xs text-gray-400 mb-2">หรือใส่ Clerk User ID โดยตรง:</p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="user_xxxxxxxxxxxxx"
+                    className="flex-1 font-mono text-sm"
+                    id="manual-clerk-id"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const input = document.getElementById('manual-clerk-id') as HTMLInputElement
+                      if (input?.value.trim()) handleLinkUser(input.value.trim())
+                    }}
+                    disabled={linkSaving}
+                    className="bg-green-500 hover:bg-green-600 text-white shrink-0"
+                  >
+                    {linkSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'ผูก'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>ปิด</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

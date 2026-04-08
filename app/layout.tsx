@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
+import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 import { BorotFooter } from "@/components/borot-footer"
 
@@ -42,9 +43,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        {children}
-        <Analytics />
-        <BorotFooter />
+        <ClerkProvider>
+          {children}
+          <Analytics />
+          <BorotFooter />
+        </ClerkProvider>
       </body>
     </html>
   )

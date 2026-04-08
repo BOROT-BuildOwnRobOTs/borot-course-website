@@ -22,14 +22,18 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   try {
     await connectDB()
     const body = await req.json()
-    const { name, email, password, phone } = body
+    const { name, email, password, phone, userId } = body
 
-    const updateData: Record<string, string> = {}
+    const updateData: Record<string, any> = {}
     if (name) updateData.name = name
     if (email) updateData.email = email.toLowerCase()
     if (phone !== undefined) updateData.phone = phone
     if (password) {
       updateData.password = await bcrypt.hash(password, 10)
+    }
+    // Allow linking/unlinking Clerk user ID
+    if (userId !== undefined) {
+      updateData.userId = userId || null
     }
 
     const parent = await Parent.findByIdAndUpdate(params.id, updateData, { new: true }).select('-password')
