@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-  BookOpen, CalendarDays, Loader2, Users, Trophy, Clock, FilterX, Globe, Search,
+  BookOpen, CalendarDays, Loader2, Users, Trophy, Clock, FilterX, Globe, Search, Phone,
 } from "lucide-react"
 import TeacherEnrollmentStamps from "./TeacherEnrollmentStamps"
 import type { UserData, TeacherStudentData, SessionData } from "../types"
@@ -507,6 +507,15 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
                             </span>
                           )}
                         </p>
+                        {student.parentPhone && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <Phone className="h-3 w-3 text-green-600" />
+                            <span className="text-green-700 font-medium">
+                              {student.parentName && `${student.parentName}: `}
+                              <a href={`tel:${student.parentPhone}`} className="hover:underline">{student.parentPhone}</a>
+                            </span>
+                          </p>
+                        )}
                       </div>
                     </div>
                     <Badge variant="secondary">{total} courses</Badge>

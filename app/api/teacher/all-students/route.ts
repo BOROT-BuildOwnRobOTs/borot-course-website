@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
+import Parent from '@/models/Parent'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,11 +15,22 @@ export async function GET(req: NextRequest) {
 
     const allStudents = await Student.find({}).lean()
 
+    // Fetch parent info for phone numbers
+    const parentIds = [...new Set(allStudents.map((s: any) => s.parent?.toString()).filter(Boolean))]
+    const parents = parentIds.length > 0
+      ? await Parent.find({ _id: { $in: parentIds.map(id => new mongoose.Types.ObjectId(id)) } }, 'name phone').lean()
+      : []
+    const parentMap = new Map(parents.map((p: any) => [p._id.toString(), { name: p.name, phone: p.phone }]))
+
     // Normalize ObjectId fields to plain strings for consistent frontend comparison
-    const normalized = allStudents.map((s: any) => ({
+    const normalized = allStudents.map((s: any) => {
+      const parentInfo = parentMap.get(s.parent?.toString())
+      return {
       ...s,
       _id: s._id?.toString(),
       parent: s.parent?.toString(),
+      parentPhone: parentInfo?.phone || '',
+      parentName: parentInfo?.name || '',
       enrollments: (s.enrollments || []).map((e: any) => ({
         ...e,
         _id: e._id?.toString(),
@@ -32,7 +45,7 @@ export async function GET(req: NextRequest) {
           newDate: r.newDate ? new Date(r.newDate).toISOString() : undefined,
         })),
       })),
-    }))
+    }})
 
     return NextResponse.json({ success: true, data: normalized })
   } catch (error) {

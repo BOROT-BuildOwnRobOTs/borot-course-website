@@ -90,6 +90,8 @@ export interface TeacherStudentData {
   name: string
   nickname?: string
   age?: number
+  parentPhone?: string
+  parentName?: string
   enrollments: TeacherStudentEnrollment[]
 }
 
