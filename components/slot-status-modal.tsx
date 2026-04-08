@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { X, Users, Clock, Calendar, RefreshCw, Loader2, ChevronDown, ChevronUp, BookOpen, Coffee, ArrowLeft, CheckCircle2, User, Phone, Baby, GraduationCap, Upload, ImageIcon, Trash2 } from "lucide-react"
+import { X, Users, Clock, Calendar, RefreshCw, Loader2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, BookOpen, Coffee, ArrowLeft, CheckCircle2, User, Phone, Baby, GraduationCap, Upload, ImageIcon, Trash2 } from "lucide-react"
 
 // ── Trial-eligible courses ──
 const TRIAL_COURSES = [
@@ -26,6 +26,7 @@ interface SlotData {
   max: number
   available: boolean
   students: StudentEntry[]
+  targetDate?: string | null // YYYY-MM-DD from backend
 }
 
 interface TrialStudentEntry {
@@ -60,6 +61,38 @@ function getDisplayName(entry: StudentEntry): string {
   return entry.nickname ? entry.nickname : entry.name.split(" ")[0]
 }
 
+/** Get the next upcoming date for a given day of week (includes today if it matches) */
+function getUpcomingDateForDay(day: string): Date {
+  const dayMap: Record<string, number> = {
+    tuesday: 2,
+    friday: 5,
+    saturday: 6,
+    sunday: 0,
+  }
+  const target = dayMap[day] ?? 0
+  const today = new Date()
+  const current = today.getDay()
+  let diff = (target - current + 7) % 7
+  // If diff === 0, it's today — keep it as today (don't skip to next week)
+  const result = new Date(today)
+  result.setDate(today.getDate() + diff)
+  return result
+}
+
+/** Format a Date as local YYYY-MM-DD (avoids UTC shift from toISOString) */
+function toLocalDateStr(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+}
+
+/** Format a Date as "d MMM yyyy" (e.g. "8 Apr 2026") */
+function formatShortDate(date: Date): string {
+  return date.toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
+}
+
 export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const [slots, setSlots] = useState<SlotData[]>([])
   const [trialSlots, setTrialSlots] = useState<TrialSlotData[]>([])
@@ -70,10 +103,13 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const [expandedTrialSlots, setExpandedTrialSlots] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<ActiveTab>("regular")
 
+  // ── Week Navigation State (for regular class tab) ──
+  const [weekOffset, setWeekOffset] = useState(0)
+
   // ── Trial Date State ──
   const [trialDate, setTrialDate] = useState<string>(() => {
     const now = new Date()
-    return now.toISOString().split("T")[0] // default to today YYYY-MM-DD
+    return toLocalDateStr(now) // default to today YYYY-MM-DD
   })
 
   // ── Trial Registration State ──
@@ -93,12 +129,13 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const [slipUrl, setSlipUrl] = useState<string | null>(null)
   const slipInputRef = useRef<HTMLInputElement>(null)
 
-  const fetchSlots = async (dateOverride?: string) => {
+  const fetchSlots = async (dateOverride?: string, weekOffsetOverride?: number) => {
     setLoading(true)
     setError(null)
     try {
       const dateParam = dateOverride ?? trialDate
-      const res = await fetch(`/api/admin/slots?trialDate=${dateParam}`, { cache: "no-store" })
+      const wo = weekOffsetOverride ?? weekOffset
+      const res = await fetch(`/api/admin/slots?trialDate=${dateParam}&weekOffset=${wo}`, { cache: "no-store" })
       const json = await res.json()
       if (json.success) {
         setSlots(json.data)
@@ -140,9 +177,26 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
     }
   }, [isOpen])
 
+  // ── Week Navigation Handler ──
+  const handleWeekChange = (newOffset: number) => {
+    setWeekOffset(newOffset)
+    setExpandedSlots(new Set())
+    fetchSlots(undefined, newOffset)
+  }
+
+  /** Get week label based on offset */
+  const getWeekLabel = (offset: number): string => {
+    if (offset === 0) return "This Week"
+    if (offset === 1) return "Next Week"
+    if (offset === -1) return "Last Week"
+    if (offset > 1) return `+${offset} Weeks`
+    return `${offset} Weeks`
+  }
+
   useEffect(() => {
     if (isOpen) {
-      fetchSlots()
+      setWeekOffset(0)
+      fetchSlots(undefined, 0)
       setExpandedSlots(new Set())
       setExpandedTrialSlots(new Set())
       setSelectedTrialSlot(null)
@@ -290,19 +344,38 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
     )
   }
 
-  const DaySection = ({ label, icon, slotList }: { label: string; icon: string; slotList: SlotData[] }) => (
-    <div>
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-xl">{icon}</span>
-        <h3 className="font-bold text-gray-700 text-base">{label}</h3>
+  const DaySection = ({ label, icon, slotList, day }: { label: string; icon: string; slotList: SlotData[]; day: string }) => {
+    // Prefer backend-provided targetDate for sync, fallback to local computation
+    const backendDate = slotList[0]?.targetDate
+    const dateObj = backendDate ? new Date(backendDate + "T00:00:00") : getUpcomingDateForDay(day)
+    const dateStr = formatShortDate(dateObj)
+    const isToday = new Date().toDateString() === dateObj.toDateString()
+
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xl">{icon}</span>
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-gray-700 text-base">{label}</h3>
+            <span className="text-xs font-medium text-gray-400">·</span>
+            <span className="text-xs font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5">
+              {dateStr}
+            </span>
+            {isToday && (
+              <span className="text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 rounded-full px-1.5 py-0.5">
+                Today
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="space-y-3">
+          {slotList.map((slot) => (
+            <SlotCard key={slot.id} slot={slot} />
+          ))}
+        </div>
       </div>
-      <div className="space-y-3">
-        {slotList.map((slot) => (
-          <SlotCard key={slot.id} slot={slot} />
-        ))}
-      </div>
-    </div>
-  )
+    )
+  }
 
   // Split trial slots into morning / afternoon
   const morningTrialSlots = trialSlots.filter((ts) => parseInt(ts.time.split(":")[0]) < 12)
@@ -568,33 +641,6 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
             </button>
           </div>
 
-          {/* Summary Stats — only on regular tab */}
-          {activeTab === "regular" && !loading && slots.length > 0 && (
-            <div className="mt-3 bg-white/12 rounded-xl px-3.5 py-2.5">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-white/90 text-xs font-medium">
-                  👦 <span className="font-bold text-white">{totalStudents}</span> students already joined
-                </p>
-                <span className="text-[10px] font-semibold text-white/80">🔥 Popular class this week</span>
-              </div>
-              {popularCourses.length > 0 && (
-                <div className="flex gap-1.5">
-                  {popularCourses.map((course, idx) => (
-                    <div
-                      key={course.name}
-                      className="flex-1 bg-white/10 rounded-lg px-2 py-1.5 min-w-0"
-                    >
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <span className="text-xs">{rankMedals[idx]}</span>
-                        <span className="text-white/70 font-bold text-[10px]">{course.count}</span>
-                      </div>
-                      <p className="text-white text-[10px] font-medium truncate leading-tight">{course.name}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Trial tab summary */}
           {activeTab === "trial" && !loading && (
@@ -626,7 +672,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                   : "text-white/80 hover:text-white hover:bg-white/10"
               }`}
             >
-              <span className="text-sm">📅</span>
+              <span className="text-sm">🗓️</span>
               Regular Class
             </button>
             <button
@@ -663,13 +709,48 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           ) : activeTab === "regular" ? (
             /* ── Regular Class Content ── */
             <div className="space-y-6">
-              <DaySection label="Tuesday" icon="📅" slotList={tuesdaySlots} />
+              {/* Week Navigation */}
+              <div className="flex items-center justify-between bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl px-3 py-2.5">
+                <button
+                  onClick={() => handleWeekChange(weekOffset - 1)}
+                  disabled={loading}
+                  className="flex items-center gap-1 text-xs font-medium text-orange-600 hover:text-orange-800 disabled:opacity-50 transition-colors px-2 py-1.5 rounded-lg hover:bg-orange-100"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Prev</span>
+                </button>
+
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-sm font-bold text-gray-800">
+                    {getWeekLabel(weekOffset)}
+                  </span>
+                  {weekOffset !== 0 && (
+                    <button
+                      onClick={() => handleWeekChange(0)}
+                      className="text-[10px] text-orange-500 hover:text-orange-700 font-medium underline underline-offset-2 transition-colors"
+                    >
+                      Back to this week
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => handleWeekChange(weekOffset + 1)}
+                  disabled={loading}
+                  className="flex items-center gap-1 text-xs font-medium text-orange-600 hover:text-orange-800 disabled:opacity-50 transition-colors px-2 py-1.5 rounded-lg hover:bg-orange-100"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              <DaySection label="Tuesday" icon="🗓️" slotList={tuesdaySlots} day="tuesday" />
               <div className="border-t border-gray-100" />
-              <DaySection label="Friday" icon="📅" slotList={fridaySlots} />
+              <DaySection label="Friday" icon="🗓️" slotList={fridaySlots} day="friday" />
               <div className="border-t border-gray-100" />
-              <DaySection label="Saturday" icon="📅" slotList={saturdaySlots} />
+              <DaySection label="Saturday" icon="🗓️" slotList={saturdaySlots} day="saturday" />
               <div className="border-t border-gray-100" />
-              <DaySection label="Sunday" icon="📅" slotList={sundaySlots} />
+              <DaySection label="Sunday" icon="🗓️" slotList={sundaySlots} day="sunday" />
             </div>
           ) : selectedTrialSlot ? (
             /* ── Trial Registration Form ── */
@@ -692,7 +773,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                 <div>
                   <p className="text-sm font-bold text-blue-900">🧪 Trial Class</p>
                   <p className="text-xs text-blue-600 font-medium">
-                    📅 {new Date(trialDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} · {selectedTrialSlot.time} · {selectedTrialSlot.max - selectedTrialSlot.count} seats left
+                    🗓️ {new Date(trialDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} · {selectedTrialSlot.time} · {selectedTrialSlot.max - selectedTrialSlot.count} seats left
                   </p>
                 </div>
               </div>
@@ -708,7 +789,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                     Thank you for signing up for the Trial Class
                   </p>
                   <p className="text-xs text-blue-600 font-medium mb-5">
-                    📅 {new Date(trialDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} · Time: {selectedTrialSlot.time}
+                    🗓️ {new Date(trialDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} · Time: {selectedTrialSlot.time}
                   </p>
                   <div className="flex gap-3">
                     <button
@@ -1017,11 +1098,11 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                   type="date"
                   value={trialDate}
                   onChange={(e) => handleTrialDateChange(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
+                  min={toLocalDateStr(new Date())}
                   className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-blue-200 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-gray-800 font-medium"
                 />
                 <p className="text-[10px] text-blue-500 mt-1.5 font-medium">
-                  📅 Showing slots for: {new Date(trialDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                  🗓️ Showing slots for: {new Date(trialDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                 </p>
               </div>
 

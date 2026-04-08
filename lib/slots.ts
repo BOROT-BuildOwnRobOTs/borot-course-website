@@ -97,7 +97,8 @@ export function getNextSlotDateStr(slotDay: string): string {
   if (diff === 0) diff = 7 // always pick a future date
   const next = new Date(today)
   next.setDate(today.getDate() + diff)
-  return next.toISOString().split('T')[0]
+  // Use local date components instead of toISOString() to avoid UTC timezone shift
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`
 }
 
 /** Check if two dates fall on the same calendar day */

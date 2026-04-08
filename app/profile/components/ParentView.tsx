@@ -9,6 +9,72 @@ import {
   ChevronUp, Clock, Loader2, MessageSquare, RefreshCw, Trophy, Users, XCircle,
 } from "lucide-react"
 import { SLOTS, generateStampDates, isSameDay } from "@/lib/slots"
+
+// ── Compute weekly status info from stamps & sessions ─────────────────────────
+function getWeeklyStatus(
+  enroll: Enrollment,
+  stamps: Date[],
+  sessions: SessionData[],
+  studentId: string,
+) {
+  if (enroll.status === "completed") return { label: "Completed", sub: null }
+  if (enroll.status === "dropped") return { label: "Dropped", sub: null }
+  if (enroll.status === "pending") return { label: "Pending", sub: null }
+  if (stamps.length === 0) return { label: STATUS_LABELS[enroll.status], sub: null }
+
+  const now = new Date()
+  const totalWeeks = stamps.length
+
+  // Count attended weeks (checked-in sessions)
+  let attendedCount = 0
+  let currentWeekIdx = 0
+  let nextSessionDate: Date | null = null
+
+  for (let i = 0; i < stamps.length; i++) {
+    const stampDate = stamps[i]
+    const reschedule = enroll.reschedules?.find(
+      (r) => isSameDay(new Date(r.originalDate), stampDate)
+    )
+    const actualDate = reschedule ? new Date(reschedule.newDate) : stampDate
+
+    // Find matching session
+    const session = sessions.find((s) => {
+      if (s.course !== enroll.course) return false
+      const sessionDate = new Date(s.scheduledAt)
+      if (!isSameDay(sessionDate, actualDate)) return false
+      return s.attendance.some((a) => a.student === studentId)
+    })
+    const isCheckedIn = session?.attendance.find((a) => a.student === studentId)?.checkedIn === true
+
+    if (isCheckedIn) attendedCount++
+
+    // Find which week we're in (first future or today stamp)
+    if (actualDate >= now && !nextSessionDate) {
+      currentWeekIdx = i
+      nextSessionDate = actualDate
+    }
+  }
+
+  // If all stamps are past, we're at the last week
+  if (!nextSessionDate) {
+    currentWeekIdx = stamps.length - 1
+    const lastStamp = stamps[stamps.length - 1]
+    const lastReschedule = enroll.reschedules?.find(
+      (r) => isSameDay(new Date(r.originalDate), lastStamp)
+    )
+    nextSessionDate = lastReschedule ? new Date(lastReschedule.newDate) : lastStamp
+  }
+
+  const weekNum = currentWeekIdx + 1
+  const dateStr = nextSessionDate.toLocaleDateString("en-US", { day: "numeric", month: "short" })
+  const isToday = isSameDay(nextSessionDate, now)
+
+  return {
+    label: `Week ${weekNum}/${totalWeeks}`,
+    sub: isToday ? `Today · ${dateStr}` : `Next: ${dateStr}`,
+    attended: attendedCount,
+  }
+}
 import {
   UserData, StudentData, SessionData, Enrollment, AttendanceEntry, Reschedule,
 } from "../types"
