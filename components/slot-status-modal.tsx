@@ -106,6 +106,9 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   // ── Week Navigation State (for regular class tab) ──
   const [weekOffset, setWeekOffset] = useState(0)
 
+  // ── Day Selection State (for regular class tab — compact UI) ──
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
+
   // ── Trial Date State ──
   const [trialDate, setTrialDate] = useState<string>(() => {
     const now = new Date()
@@ -196,6 +199,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   useEffect(() => {
     if (isOpen) {
       setWeekOffset(0)
+      setSelectedDay(null)
       fetchSlots(undefined, 0)
       setExpandedSlots(new Set())
       setExpandedTrialSlots(new Set())
@@ -707,12 +711,12 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
               </button>
             </div>
           ) : activeTab === "regular" ? (
-            /* ── Regular Class Content ── */
-            <div className="space-y-6">
+            /* ── Regular Class Content — Compact: Select day first ── */
+            <div className="space-y-4">
               {/* Week Navigation */}
-              <div className="flex items-center justify-between bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl px-3 py-2.5">
+              <div className="flex items-center justify-between bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl px-3 py-2">
                 <button
-                  onClick={() => handleWeekChange(weekOffset - 1)}
+                  onClick={() => { handleWeekChange(weekOffset - 1); setSelectedDay(null) }}
                   disabled={loading || weekOffset === 0}
                   className="flex items-center gap-1 text-xs font-medium text-orange-600 hover:text-orange-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-2 py-1.5 rounded-lg hover:bg-orange-100"
                 >
@@ -726,7 +730,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                   </span>
                   {weekOffset !== 0 && (
                     <button
-                      onClick={() => handleWeekChange(0)}
+                      onClick={() => { handleWeekChange(0); setSelectedDay(null) }}
                       className="text-[10px] text-orange-500 hover:text-orange-700 font-medium underline underline-offset-2 transition-colors"
                     >
                       Back to this week
@@ -735,7 +739,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                 </div>
 
                 <button
-                  onClick={() => handleWeekChange(weekOffset + 1)}
+                  onClick={() => { handleWeekChange(weekOffset + 1); setSelectedDay(null) }}
                   disabled={loading}
                   className="flex items-center gap-1 text-xs font-medium text-orange-600 hover:text-orange-800 disabled:opacity-50 transition-colors px-2 py-1.5 rounded-lg hover:bg-orange-100"
                 >
@@ -744,13 +748,79 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                 </button>
               </div>
 
-              <DaySection label="Tuesday" icon="🗓️" slotList={tuesdaySlots} day="tuesday" />
-              <div className="border-t border-gray-100" />
-              <DaySection label="Friday" icon="🗓️" slotList={fridaySlots} day="friday" />
-              <div className="border-t border-gray-100" />
-              <DaySection label="Saturday" icon="🗓️" slotList={saturdaySlots} day="saturday" />
-              <div className="border-t border-gray-100" />
-              <DaySection label="Sunday" icon="🗓️" slotList={sundaySlots} day="sunday" />
+              {/* Day Selector Buttons */}
+              {!selectedDay ? (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-gray-500 text-center">Select a day to view</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { key: "tuesday", label: "Tuesday", icon: "🗓️", slots: tuesdaySlots },
+                      { key: "friday", label: "Friday", icon: "🗓️", slots: fridaySlots },
+                      { key: "saturday", label: "Saturday", icon: "🗓️", slots: saturdaySlots },
+                      { key: "sunday", label: "Sunday", icon: "🗓️", slots: sundaySlots },
+                    ] as const).map(({ key, label, icon, slots: daySlots }) => {
+                      const totalInDay = daySlots.reduce((sum, s) => sum + s.count, 0)
+                      const maxInDay = daySlots.reduce((sum, s) => sum + s.max, 0)
+                      const backendDate = daySlots[0]?.targetDate
+                      const dateObj = backendDate ? new Date(backendDate + "T00:00:00") : getUpcomingDateForDay(key)
+                      const dateStr = formatShortDate(dateObj)
+                      const isToday = new Date().toDateString() === dateObj.toDateString()
+
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => { setSelectedDay(key); setExpandedSlots(new Set()) }}
+                          className="relative flex flex-col items-start gap-1.5 px-4 py-3.5 rounded-xl border-2 border-orange-200 bg-white hover:border-orange-400 hover:shadow-md transition-all duration-200 text-left"
+                        >
+                          {isToday && (
+                            <span className="absolute top-2 right-2 text-[9px] font-bold text-green-700 bg-green-50 border border-green-200 rounded-full px-1.5 py-0.5">
+                              Today
+                            </span>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{icon}</span>
+                            <span className="text-sm font-bold text-gray-800">{label}</span>
+                          </div>
+                          <span className="text-[11px] font-medium text-orange-600">{dateStr}</span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <Users className="w-3 h-3 text-gray-400" />
+                            <span className="text-xs font-bold text-gray-700">
+                              {totalInDay} students
+                            </span>
+                            <span className="text-[10px] text-gray-400">({daySlots.length} slots)</span>
+                          </div>
+                          {/* Mini progress bar */}
+                          <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className={`h-1.5 rounded-full transition-all duration-500 ${totalInDay / maxInDay >= 1 ? "bg-red-500" : totalInDay / maxInDay >= 0.75 ? "bg-orange-500" : "bg-green-500"}`}
+                              style={{ width: `${maxInDay > 0 ? Math.min((totalInDay / maxInDay) * 100, 100) : 0}%` }}
+                            />
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                /* Selected Day — Show slots */
+                <div className="space-y-3">
+                  {/* Back to day selection */}
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedDay(null); setExpandedSlots(new Set()) }}
+                    className="flex items-center gap-1.5 text-sm text-orange-600 hover:text-orange-800 font-medium transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Choose another day
+                  </button>
+
+                  {/* Day section for selected day */}
+                  {selectedDay === "tuesday" && <DaySection label="Tuesday" icon="🗓️" slotList={tuesdaySlots} day="tuesday" />}
+                  {selectedDay === "friday" && <DaySection label="Friday" icon="🗓️" slotList={fridaySlots} day="friday" />}
+                  {selectedDay === "saturday" && <DaySection label="Saturday" icon="🗓️" slotList={saturdaySlots} day="saturday" />}
+                  {selectedDay === "sunday" && <DaySection label="Sunday" icon="🗓️" slotList={sundaySlots} day="sunday" />}
+                </div>
+              )}
             </div>
           ) : selectedTrialSlot ? (
             /* ── Trial Registration Form ── */

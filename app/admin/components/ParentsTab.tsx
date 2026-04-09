@@ -13,8 +13,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Plus, Pencil, Trash2, Mail, Phone, Users, ChevronDown, ChevronUp,
   UserPlus, BookOpen, X, Eye, EyeOff, CalendarDays, Loader2, Search,
+  RefreshCw,
 } from 'lucide-react'
-import { SLOTS, MAX_PER_SLOT, getNextSlotDateStr, getSlotDayOfWeek } from '@/lib/slots'
+import { Checkbox } from '@/components/ui/checkbox'
+import { SLOTS, MAX_PER_SLOT, getNextSlotDateStr, getSlotDayOfWeek, generateStampDates } from '@/lib/slots'
 
 interface Course {
   _id: string
@@ -119,6 +121,19 @@ export default function ParentsTab() {
   const [slotAvailability, setSlotAvailability] = useState<SlotAvailability[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [savingEnroll, setSavingEnroll] = useState(false)
+
+  // Reschedule dialog
+  const [reschedDialogOpen, setReschedDialogOpen] = useState(false)
+  const [reschedStudent, setReschedStudent] = useState<Student | null>(null)
+  const [reschedEnrollmentIdx, setReschedEnrollmentIdx] = useState(-1)
+  const [reschedSlotAvailability, setReschedSlotAvailability] = useState<SlotAvailability[]>([])
+  const [loadingReschedSlots, setLoadingReschedSlots] = useState(false)
+  const [reschedNewSlotDay, setReschedNewSlotDay] = useState('')
+  const [reschedNewSlotTime, setReschedNewSlotTime] = useState('')
+  const [reschedNewDate, setReschedNewDate] = useState('')
+  const [reschedReason, setReschedReason] = useState('')
+  const [reschedRemaining, setReschedRemaining] = useState(true)
+  const [savingResched, setSavingResched] = useState(false)
 
   const fetchAll = async () => {
     setLoading(true)
@@ -340,6 +355,92 @@ export default function ParentsTab() {
     fetchAll()
   }
 
+  // ===== Reschedule =====
+  const openReschedule = (student: Student, enrollmentIdx: number) => {
+    const enrollment = student.enrollments[enrollmentIdx]
+    setReschedStudent(student)
+    setReschedEnrollmentIdx(enrollmentIdx)
+    setReschedNewSlotDay('')
+    setReschedNewSlotTime('')
+    setReschedNewDate('')
+    setReschedReason('')
+    setReschedRemaining(true)
+    setReschedSlotAvailability([])
+    setReschedDialogOpen(true)
+
+    // Fetch slot availability
+    if (enrollment.course) {
+      setLoadingReschedSlots(true)
+      fetch(`/api/admin/slots?courseId=${enrollment.course}`)
+        .then(r => r.json())
+        .then(j => { if (j.success) setReschedSlotAvailability(j.data) })
+        .finally(() => setLoadingReschedSlots(false))
+    }
+  }
+
+  const handleRescheduleSave = async () => {
+    if (!reschedStudent || reschedEnrollmentIdx < 0 || !reschedNewSlotDay || !reschedNewSlotTime || !reschedNewDate) return
+
+    const enrollment = reschedStudent.enrollments[reschedEnrollmentIdx]
+    const hasScheduleInfo = enrollment.startDate && enrollment.slot && enrollment.courseDurationWeeks
+
+    setSavingResched(true)
+    try {
+      if (hasScheduleInfo && reschedRemaining) {
+        // Use reschedule API to move remaining sessions
+        const stamps = generateStampDates(enrollment.startDate!, enrollment.courseDurationWeeks!, enrollment.slot!)
+        const now = new Date()
+        now.setHours(0, 0, 0, 0)
+        const nextStamp = stamps.find(d => d >= now)
+        const originalDate = nextStamp
+          ? nextStamp.toISOString()
+          : stamps[stamps.length - 1]?.toISOString() || new Date().toISOString()
+
+        const res = await fetch(`/api/students/${reschedStudent._id}/reschedule`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            enrollmentIndex: reschedEnrollmentIdx,
+            originalDate,
+            newSlot: { day: reschedNewSlotDay, time: reschedNewSlotTime },
+            newDate: new Date(reschedNewDate).toISOString(),
+            reason: reschedReason,
+            rescheduleRemaining: true,
+          }),
+        })
+        const j = await res.json()
+        if (!j.success) {
+          alert(j.error || 'Failed to reschedule')
+          return
+        }
+      } else {
+        // Directly update the enrollment's slot (no schedule data or single change)
+        const updated = reschedStudent.enrollments.map((e, i) =>
+          i === reschedEnrollmentIdx
+            ? { ...e, slot: { day: reschedNewSlotDay, time: reschedNewSlotTime } }
+            : e
+        )
+        await fetch(`/api/admin/students/${reschedStudent._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enrollments: updated }),
+        })
+      }
+      setReschedDialogOpen(false)
+      fetchAll()
+    } finally {
+      setSavingResched(false)
+    }
+  }
+
+  const reschedSlotList = reschedSlotAvailability.length > 0
+    ? reschedSlotAvailability
+    : SLOTS.map((sl) => ({ id: sl.id, day: sl.day, dayLabel: sl.dayLabel, time: sl.time, count: 0, max: MAX_PER_SLOT, available: true }))
+
+  const reschedEnrollment = reschedStudent && reschedEnrollmentIdx >= 0
+    ? reschedStudent.enrollments[reschedEnrollmentIdx]
+    : null
+
   // ===== Search / Filter =====
   const normalizedQuery = searchQuery.trim().toLowerCase()
   const filteredParents = normalizedQuery
@@ -559,8 +660,24 @@ export default function ParentsTab() {
                                           </Select>
                                           {e.slot?.day && e.slot?.time && (
                                             <span className="text-[10px] text-purple-600 flex items-center gap-0.5 bg-purple-50 px-1 rounded">
-                                              📅 {SLOTS.find(s => s.day === e.slot!.day && s.time === e.slot!.time)?.dayLabel ?? e.slot.day} {e.slot.time}
+                                              📅 {SLOTS.find(sl => sl.day === e.slot!.day && sl.time === e.slot!.time)?.dayLabel ?? e.slot.day} {e.slot.time}
+                                              <button
+                                                onClick={(ev) => { ev.stopPropagation(); openReschedule(s, idx) }}
+                                                className="ml-0.5 text-orange-500 hover:text-orange-700 transition-colors"
+                                                title="เลื่อนเวลาเรียน"
+                                              >
+                                                <RefreshCw className="w-3 h-3" />
+                                              </button>
                                             </span>
+                                          )}
+                                          {!e.slot?.day && (
+                                            <button
+                                              onClick={(ev) => { ev.stopPropagation(); openReschedule(s, idx) }}
+                                              className="text-[10px] text-orange-500 hover:text-orange-700 flex items-center gap-0.5"
+                                              title="ตั้งเวลาเรียน"
+                                            >
+                                              <CalendarDays className="w-3 h-3" /> Set slot
+                                            </button>
                                           )}
                                           {e.startDate && (
                                             <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
@@ -832,6 +949,145 @@ export default function ParentsTab() {
               {savingEnroll ? 'Saving...' : 'Enroll'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reschedule Dialog */}
+      <Dialog open={reschedDialogOpen} onOpenChange={setReschedDialogOpen}>
+        <DialogContent
+          className="sm:max-w-md max-h-[90vh] overflow-y-auto"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-base flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 text-orange-500" />
+              เลื่อนเวลาเรียน
+            </DialogTitle>
+          </DialogHeader>
+          {reschedEnrollment && reschedStudent && (
+            <div className="space-y-4">
+              {/* Info */}
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm space-y-1">
+                <p className="font-medium text-orange-700">{reschedStudent.name}</p>
+                <p className="text-xs text-orange-600">{reschedEnrollment.courseName}</p>
+                {reschedEnrollment.slot && (
+                  <p className="text-xs text-orange-500">
+                    Slot ปัจจุบัน: {SLOTS.find(sl => sl.day === reschedEnrollment.slot!.day && sl.time === reschedEnrollment.slot!.time)?.dayLabel ?? reschedEnrollment.slot.day} {reschedEnrollment.slot.time}
+                  </p>
+                )}
+              </div>
+
+              {/* Slot selection */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label className="text-sm font-medium">เลือก Slot ใหม่</Label>
+                  {loadingReschedSlots && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {reschedSlotList.map((slot) => {
+                    const isSelected = reschedNewSlotDay === slot.day && reschedNewSlotTime === slot.time
+                    const isFull = slot.count >= slot.max
+                    return (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        onClick={() => {
+                          setReschedNewSlotDay(slot.day)
+                          setReschedNewSlotTime(slot.time)
+                          setReschedNewDate(getNextSlotDateStr(slot.day))
+                        }}
+                        className={`relative text-center px-2 py-2.5 rounded-lg border text-xs transition-all ${
+                          isSelected
+                            ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                            : isFull
+                            ? 'border-gray-200 bg-gray-50 text-gray-300'
+                            : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50'
+                        }`}
+                      >
+                        <div className="font-semibold">{slot.dayLabel}</div>
+                        <div className="text-[10px] mt-0.5 opacity-80">{slot.time}</div>
+                        {reschedSlotAvailability.length > 0 && (
+                          <div className={`flex items-center justify-center gap-0.5 mt-1 text-[10px] font-medium ${
+                            isSelected ? 'text-white/80' : isFull ? 'text-red-500' : 'text-green-600'
+                          }`}>
+                            <Users className="h-2.5 w-2.5" />
+                            <span>{slot.count}/{slot.max}</span>
+                          </div>
+                        )}
+                        {isFull && reschedSlotAvailability.length > 0 && !isSelected && (
+                          <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Date picker */}
+              {reschedNewSlotDay && (
+                <div>
+                  <Label className="text-sm font-medium">วันที่เริ่มต้นใหม่</Label>
+                  <Input
+                    type="date"
+                    value={reschedNewDate}
+                    onChange={(e) => setReschedNewDate(e.target.value)}
+                    className="mt-1"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    * ควรเป็นวัน{SLOTS.find(sl => sl.day === reschedNewSlotDay)?.dayLabel || reschedNewSlotDay}
+                  </p>
+                </div>
+              )}
+
+              {/* Reason */}
+              <div>
+                <Label className="text-sm font-medium">เหตุผล (ไม่บังคับ)</Label>
+                <Input
+                  value={reschedReason}
+                  onChange={(e) => setReschedReason(e.target.value)}
+                  placeholder="เช่น เปลี่ยนเวลาเรียน / ติดธุระ"
+                  className="mt-1"
+                />
+              </div>
+
+              {/* Reschedule remaining checkbox */}
+              {reschedEnrollment.startDate && reschedEnrollment.courseDurationWeeks && reschedEnrollment.slot && (
+                <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <Checkbox
+                    id="reschedRemainingParent"
+                    checked={reschedRemaining}
+                    onCheckedChange={(checked) => setReschedRemaining(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <label htmlFor="reschedRemainingParent" className="text-sm font-medium text-blue-700 cursor-pointer">
+                      เลื่อนทั้งหมดที่เหลือ
+                    </label>
+                    <p className="text-[11px] text-blue-500 mt-0.5">
+                      เลื่อน session ที่เหลือทั้งหมดไปยัง Slot ใหม่ (แนะนำ)
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setReschedDialogOpen(false)}>ยกเลิก</Button>
+                <Button
+                  onClick={handleRescheduleSave}
+                  disabled={savingResched || !reschedNewSlotDay || !reschedNewDate}
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  {savingResched ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" />กำลังบันทึก...</>
+                  ) : (
+                    <><RefreshCw className="w-4 h-4 mr-2" />บันทึก</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

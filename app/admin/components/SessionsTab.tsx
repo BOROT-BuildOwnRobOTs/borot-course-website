@@ -16,6 +16,13 @@ import {
 } from 'lucide-react'
 import { SLOTS } from '@/lib/slots'
 
+const ADMIN_DAY_OPTIONS = [
+  { value: "tuesday", label: "Tuesday" },
+  { value: "friday", label: "Friday" },
+  { value: "saturday", label: "Saturday" },
+  { value: "sunday", label: "Sunday" },
+]
+
 interface Course {
   _id: string
   name: string
@@ -75,6 +82,7 @@ export default function SessionsTab() {
   const [feedbackRating, setFeedbackRating] = useState<number>(0)
   const [feedbackVideo, setFeedbackVideo] = useState('')
   const [savingFeedback, setSavingFeedback] = useState(false)
+  const [slotFilterDay, setSlotFilterDay] = useState('')
 
   const fetchAll = async () => {
     setLoading(true)
@@ -217,6 +225,7 @@ export default function SessionsTab() {
           onClick={() => {
             setForm({ courseId: '', teacherId: '', scheduledAt: '', topic: '', notes: '', slotDay: '', slotTime: '' })
             setFormError('')
+            setSlotFilterDay('')
             setAddDialogOpen(true)
           }}
           className="bg-orange-500 hover:bg-orange-600 text-white"
@@ -409,12 +418,39 @@ export default function SessionsTab() {
               </Select>
             </div>
 
-            {/* Slot selection */}
+            {/* Slot selection — Day first, then time */}
             <div>
-              <Label>Slot (optional)</Label>
-              <div className="grid grid-cols-2 gap-2 mt-1.5">
-                <div className="grid grid-cols-3 col-span-2 gap-2">
-                  {SLOTS.map(slot => (
+              <Label>Slot Day (optional)</Label>
+              <div className="relative mt-1.5">
+                <select
+                  value={slotFilterDay}
+                  onChange={(e) => {
+                    const newDay = e.target.value
+                    setSlotFilterDay(newDay)
+                    if (newDay !== form.slotDay) {
+                      setForm(f => ({ ...f, slotDay: '', slotTime: '' }))
+                    }
+                    if (newDay) handleSlotDayChange(newDay)
+                  }}
+                  className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 pr-10 text-sm font-medium focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all cursor-pointer"
+                >
+                  <option value="">— No slot —</option>
+                  {ADMIN_DAY_OPTIONS.map((d) => (
+                    <option key={d.value} value={d.value}>{d.label}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+            </div>
+
+            {/* Time slots for selected day */}
+            {slotFilterDay && (
+              <div>
+                <Label className="mb-2 block">
+                  Select Time — <span className="text-purple-600 font-semibold">{ADMIN_DAY_OPTIONS.find(d => d.value === slotFilterDay)?.label}</span>
+                </Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {SLOTS.filter(slot => slot.day === slotFilterDay).map(slot => (
                     <button
                       key={slot.id}
                       type="button"
@@ -427,19 +463,18 @@ export default function SessionsTab() {
                           setForm(f => ({ ...f, slotDay: slot.day, slotTime: slot.time }))
                         }
                       }}
-                      className={`text-center px-2 py-2 rounded-lg border text-xs transition-all ${
+                      className={`text-center px-2 py-3 rounded-lg border text-xs transition-all ${
                         form.slotDay === slot.day && form.slotTime === slot.time
-                          ? 'bg-purple-500 text-white border-purple-500'
+                          ? 'bg-purple-500 text-white border-purple-500 shadow-md'
                           : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
                       }`}
                     >
-                      <div className="font-medium">{slot.dayLabel}</div>
-                      <div className="text-[10px] mt-0.5 opacity-80">{slot.time}</div>
+                      <div className="font-semibold text-sm">{slot.time}</div>
                     </button>
                   ))}
                 </div>
               </div>
-            </div>
+            )}
 
             <div>
               <Label>Date & Time *</Label>

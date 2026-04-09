@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2 } from "lucide-react"
+import { Loader2, ChevronDown } from "lucide-react"
 import { SLOTS, MAX_PER_SLOT, getNextSlotDateStr } from "@/lib/slots"
 import { StudentData, Enrollment, SlotAvailability } from "../types"
 
@@ -18,6 +18,14 @@ interface Props {
   onSaved: (studentId: string, updatedEnrollments: Enrollment[]) => void
 }
 
+// Unique days in order
+const DAY_OPTIONS = [
+  { value: "tuesday", label: "Tuesday" },
+  { value: "friday", label: "Friday" },
+  { value: "saturday", label: "Saturday" },
+  { value: "sunday", label: "Sunday" },
+]
+
 export default function SlotDialog({ open, onClose, student, enrollIdx, userRole, onSaved }: Props) {
   const [slotAvailability, setSlotAvailability] = useState<SlotAvailability[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
@@ -25,14 +33,17 @@ export default function SlotDialog({ open, onClose, student, enrollIdx, userRole
   const [newSlotTime, setNewSlotTime] = useState("")
   const [newStartDate, setNewStartDate] = useState("")
   const [savingSlot, setSavingSlot] = useState(false)
+  const [selectedDay, setSelectedDay] = useState("")
 
   useEffect(() => {
     if (!open || !student) return
     const enroll = student.enrollments[enrollIdx]
-    setNewSlotDay(enroll.slot?.day || "")
+    const currentDay = enroll.slot?.day || ""
+    setNewSlotDay(currentDay)
     setNewSlotTime(enroll.slot?.time || "")
     setNewStartDate(enroll.startDate ? enroll.startDate.slice(0, 10) : "")
     setSlotAvailability([])
+    setSelectedDay(currentDay || "tuesday")
     // fetch slot availability
     setLoadingSlots(true)
     fetch(`/api/admin/slots?courseId=${enroll.course}`)
@@ -69,54 +80,94 @@ export default function SlotDialog({ open, onClose, student, enrollIdx, userRole
     ? slotAvailability
     : SLOTS.map((s) => ({ id: s.id, day: s.day, dayLabel: s.dayLabel, time: s.time, count: 0, max: MAX_PER_SLOT, available: true }))
 
+  // Filter slots by selected day
+  const filteredSlots = useMemo(() => {
+    if (!selectedDay) return []
+    return slotList.filter((s) => s.day === selectedDay)
+  }, [slotList, selectedDay])
+
+  // Get the label for the selected day
+  const selectedDayLabel = DAY_OPTIONS.find((d) => d.value === selectedDay)?.label || ""
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Select Class Slot</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <Label>Select Slot</Label>
+              <Label>Select Day</Label>
               {loadingSlots && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {slotList.map((slot) => {
-                const isSelected = newSlotDay === slot.day && newSlotTime === slot.time
-                const isFull = slot.count >= slot.max && !isSelected
-                return (
-                  <button
-                    key={slot.id}
-                    type="button"
-                    disabled={isFull}
-                    onClick={() => {
-                      if (isSelected) { setNewSlotDay(""); setNewSlotTime("") }
-                      else {
-                        setNewSlotDay(slot.day)
-                        setNewSlotTime(slot.time)
-                        if (!newStartDate) setNewStartDate(getNextSlotDateStr(slot.day))
-                      }
-                    }}
-                    className={`relative text-center px-2 py-2.5 rounded-lg border text-xs transition-all ${
-                      isSelected
-                        ? "bg-purple-500 text-white border-purple-500"
-                        : isFull
-                        ? "border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed"
-                        : "border-gray-200 hover:border-purple-300 hover:bg-purple-50"
-                    }`}
-                  >
-                    <div className="font-semibold">{slot.dayLabel}</div>
-                    <div className="text-[10px] mt-0.5 opacity-80">{slot.time}</div>
-                    <div className={`text-[10px] mt-1 font-medium ${isSelected ? "text-white/80" : isFull ? "text-red-400" : "text-green-600"}`}>
-                      {slot.count}/{slot.max} seats
-                    </div>
-                    {isFull && <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>}
-                  </button>
-                )
-              })}
+            {/* Day dropdown */}
+            <div className="relative">
+              <select
+                value={selectedDay}
+                onChange={(e) => {
+                  setSelectedDay(e.target.value)
+                  // Clear time selection when changing day (unless same day)
+                  if (e.target.value !== newSlotDay) {
+                    setNewSlotTime("")
+                    setNewSlotDay("")
+                  }
+                }}
+                className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 pr-10 text-sm font-medium focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all cursor-pointer"
+              >
+                {DAY_OPTIONS.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             </div>
           </div>
+
+          {/* Time slots for selected day */}
+          {selectedDay && (
+            <div>
+              <Label className="mb-2 block">
+                Select Time — <span className="text-purple-600 font-semibold">{selectedDayLabel}</span>
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                {filteredSlots.map((slot) => {
+                  const isSelected = newSlotDay === slot.day && newSlotTime === slot.time
+                  const isFull = slot.count >= slot.max && !isSelected
+                  return (
+                    <button
+                      key={slot.id}
+                      type="button"
+                      disabled={isFull}
+                      onClick={() => {
+                        if (isSelected) { setNewSlotDay(""); setNewSlotTime("") }
+                        else {
+                          setNewSlotDay(slot.day)
+                          setNewSlotTime(slot.time)
+                          if (!newStartDate) setNewStartDate(getNextSlotDateStr(slot.day))
+                        }
+                      }}
+                      className={`relative text-center px-2 py-3 rounded-lg border text-xs transition-all ${
+                        isSelected
+                          ? "bg-purple-500 text-white border-purple-500 shadow-md"
+                          : isFull
+                          ? "border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed"
+                          : "border-gray-200 hover:border-purple-300 hover:bg-purple-50"
+                      }`}
+                    >
+                      <div className="font-semibold text-sm">{slot.time}</div>
+                      <div className={`text-[10px] mt-1.5 font-medium ${isSelected ? "text-white/80" : isFull ? "text-red-400" : "text-green-600"}`}>
+                        {slot.count}/{slot.max} seats
+                      </div>
+                      {isFull && <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           <div>
             <Label>First Class Date</Label>
             {userRole === "admin" || userRole === "teacher" ? (
@@ -133,7 +184,7 @@ export default function SlotDialog({ open, onClose, student, enrollIdx, userRole
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={savingSlot || !newSlotDay} className="bg-purple-500 hover:bg-purple-600 text-white">
+          <Button onClick={handleSave} disabled={savingSlot || !newSlotDay || !newSlotTime} className="bg-purple-500 hover:bg-purple-600 text-white">
             {savingSlot ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Save Slot"}
           </Button>
         </DialogFooter>

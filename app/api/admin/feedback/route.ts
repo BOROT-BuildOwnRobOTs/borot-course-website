@@ -135,6 +135,53 @@ export async function GET() {
           }
         })
 
+        // ── Recover orphaned sessions ──
+        // Sessions with checkin/feedback for this student+course that don't
+        // match any generated stamp (e.g. slot was changed directly).
+        const matchedSessionIds = new Set(
+          stamps.filter((s: any) => s.sessionId).map((s: any) => s.sessionId)
+        )
+        const orphanedSessions = courseSessions.filter((s: any) => {
+          const sid = s._id?.toString()
+          if (!sid || matchedSessionIds.has(sid)) return false
+          const att = (s.attendance || []).find(
+            (a: any) => a.student?.toString() === student._id.toString()
+          )
+          return att && (att.checkedIn || (att.feedback && att.feedback.trim()) || (att.rating && att.rating > 0))
+        })
+
+        for (const orphanSession of orphanedSessions) {
+          const att = (orphanSession.attendance || []).find(
+            (a: any) => a.student?.toString() === student._id.toString()
+          )
+          const sessionDate = new Date(orphanSession.scheduledAt)
+          const oIsToday = isSameDay(sessionDate, now)
+          const oIsPast = sessionDate < now && !oIsToday
+          stamps.push({
+            stampNumber: stamps.length + 1,
+            date: sessionDate.toISOString(),
+            originalDate: sessionDate.toISOString(),
+            isToday: oIsToday,
+            isPast: oIsPast,
+            isRescheduled: false,
+            isCheckedIn: !!att?.checkedIn,
+            hasFeedback: !!(att?.feedback && att.feedback.trim()),
+            hasRating: !!(att?.rating && att.rating > 0),
+            hasVideo: !!(att?.videoUrl && att.videoUrl.trim()),
+            hasImages: !!(att?.imageUrls && att.imageUrls.length > 0),
+            feedback: att?.feedback || '',
+            rating: att?.rating || 0,
+            videoUrl: att?.videoUrl || '',
+            imageUrls: att?.imageUrls || [],
+            sessionId: orphanSession._id?.toString() || '',
+            sessionTopic: orphanSession.topic || '',
+          })
+        }
+
+        // Sort stamps by date and re-number
+        stamps.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        stamps.forEach((s: any, i: number) => { s.stampNumber = i + 1 })
+
         // Find or create student entry in teacher's students list
         const teacherEntry = teacherMap.get(teacherId)!
         let studentEntry = teacherEntry.students.find(

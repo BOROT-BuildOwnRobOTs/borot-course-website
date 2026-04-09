@@ -207,10 +207,13 @@ export default function TeacherStampDialog({
     }
   }, [open, attendee])
 
-  // ── Guard: NEVER allow Radix-initiated close ──────────────────────────────
+  // ── Guard: only block Radix-initiated close while busy ─────────────────────
   const handleOpenChange = (o: boolean) => {
     if (o) { onOpenChange(o); return }
-    return
+    // Allow close unless busy (uploading / saving)
+    if (!busyRef.current && !savingFeedback && !uploadingImage && !uploadingVideo && !uploadingArtwork) {
+      handleExplicitClose()
+    }
   }
 
   const handleCheckin = async (checkedIn: boolean) => {
@@ -346,10 +349,10 @@ export default function TeacherStampDialog({
         <DialogContent
           className="sm:max-w-lg max-h-[92vh] overflow-y-auto"
           showCloseButton={false}
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
-          onFocusOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => { if (busyRef.current || savingFeedback || uploadingImage || uploadingVideo || uploadingArtwork) e.preventDefault() }}
+          onInteractOutside={(e) => { if (busyRef.current || savingFeedback || uploadingImage || uploadingVideo || uploadingArtwork) e.preventDefault() }}
+          onFocusOutside={(e) => { if (busyRef.current || savingFeedback || uploadingImage || uploadingVideo || uploadingArtwork) e.preventDefault() }}
+          onEscapeKeyDown={(e) => { if (busyRef.current || savingFeedback || uploadingImage || uploadingVideo || uploadingArtwork) e.preventDefault() }}
         >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">

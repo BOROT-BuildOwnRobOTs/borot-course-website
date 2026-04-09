@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { BookOpen, CalendarDays, ChevronDown, ChevronUp, Clock, AlertCircle } from "lucide-react"
+import { BookOpen, CalendarDays, ChevronDown, ChevronUp, Clock, AlertCircle, Users } from "lucide-react"
 import { generateStampDates, isSameDay, SLOTS, getNextSlotDateStr } from "@/lib/slots"
 import StampCircle from "./StampCircle"
 import StampLegend from "./StampLegend"
@@ -17,6 +17,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
+
+// Day options for reschedule day selector
+const RESCHED_DAY_OPTIONS = [
+  { value: "tuesday", label: "Tuesday" },
+  { value: "friday", label: "Friday" },
+  { value: "saturday", label: "Saturday" },
+  { value: "sunday", label: "Sunday" },
+]
 
 interface Props {
   student: TeacherStudentData
@@ -81,6 +89,7 @@ export default function TeacherEnrollmentStamps({
     id: string; day: string; dayLabel: string; time: string; count: number; max: number; available: boolean
   }[]>([])
   const [loadingReschedSlots, setLoadingReschedSlots] = useState(false)
+  const [reschedSelectedDay, setReschedSelectedDay] = useState("")
 
   const stamps = enrollment.startDate && enrollment.slot && (enrollment.courseDurationWeeks || 0) > 0
     ? generateStampDates(enrollment.startDate, enrollment.courseDurationWeeks!, enrollment.slot)
@@ -205,6 +214,7 @@ export default function TeacherEnrollmentStamps({
     setReschedReason("")
     setRescheduleRemaining(false)
     setReschedSlotAvailability([])
+    setReschedSelectedDay(enrollment.slot?.day || "tuesday")
     setReschedOpen(true)
     // Fetch slot availability
     setLoadingReschedSlots(true)
@@ -402,51 +412,82 @@ export default function TeacherEnrollmentStamps({
               </div>
             )}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <Label>Select New Slot</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Select New Day</Label>
                 {loadingReschedSlots && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {(reschedSlotAvailability.length > 0
-                  ? reschedSlotAvailability
-                  : SLOTS.map((s) => ({ id: s.id, day: s.day, dayLabel: s.dayLabel, time: s.time, count: 0, max: 8, available: true }))
-                ).map((slot) => {
-                  const isSelected = reschedNewSlotDay === slot.day && reschedNewSlotTime === slot.time
-                  const remaining = slot.max - slot.count
-                  const isFull = remaining <= 0
-                  return (
-                    <button
-                      key={slot.id}
-                      type="button"
-                      onClick={() => {
-                        setReschedNewSlotDay(slot.day)
-                        setReschedNewSlotTime(slot.time)
-                        setReschedNewDate(getNextSlotDateStr(slot.day))
-                      }}
-                      className={`relative text-center px-2 py-2.5 rounded-lg border text-xs transition-all ${
-                        isSelected ? "bg-orange-500 text-white border-orange-500" : "border-gray-200 hover:border-orange-300 hover:bg-orange-50"
-                      }`}
-                    >
-                      <div className="font-semibold">{slot.dayLabel}</div>
-                      <div className="text-[10px] mt-0.5 opacity-80">{slot.time}</div>
-                      {reschedSlotAvailability.length > 0 && (
-                        <div className={`flex items-center justify-center gap-0.5 mt-1 text-[10px] font-medium ${
-                          isSelected ? "text-white/80" : isFull ? "text-red-500" : slot.count >= 5 ? "text-orange-500" : "text-green-600"
-                        }`}>
-                          <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                          </svg>
-                          <span>{slot.count}/{slot.max}</span>
-                        </div>
-                      )}
-                      {isFull && reschedSlotAvailability.length > 0 && (
-                        <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>
-                      )}
-                    </button>
-                  )
-                })}
+              {/* Day dropdown */}
+              <div className="relative">
+                <select
+                  value={reschedSelectedDay}
+                  onChange={(e) => {
+                    const newDay = e.target.value
+                    setReschedSelectedDay(newDay)
+                    // Clear time selection when changing day (unless same day)
+                    if (newDay !== reschedNewSlotDay) {
+                      setReschedNewSlotTime("")
+                      setReschedNewSlotDay("")
+                    }
+                    // Update date to next occurrence of the selected day
+                    setReschedNewDate(getNextSlotDateStr(newDay))
+                  }}
+                  className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 pr-10 text-sm font-medium focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all cursor-pointer"
+                >
+                  {RESCHED_DAY_OPTIONS.map((d) => (
+                    <option key={d.value} value={d.value}>
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
             </div>
+
+            {/* Time slots for selected day */}
+            {reschedSelectedDay && (
+              <div>
+                <Label className="mb-2 block">
+                  Select Time — <span className="text-orange-600 font-semibold">{RESCHED_DAY_OPTIONS.find((d) => d.value === reschedSelectedDay)?.label}</span>
+                </Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(reschedSlotAvailability.length > 0
+                    ? reschedSlotAvailability
+                    : SLOTS.map((s) => ({ id: s.id, day: s.day, dayLabel: s.dayLabel, time: s.time, count: 0, max: 8, available: true }))
+                  ).filter((slot) => slot.day === reschedSelectedDay).map((slot) => {
+                    const isSelected = reschedNewSlotDay === slot.day && reschedNewSlotTime === slot.time
+                    const remaining = slot.max - slot.count
+                    const isFull = remaining <= 0
+                    return (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        onClick={() => {
+                          setReschedNewSlotDay(slot.day)
+                          setReschedNewSlotTime(slot.time)
+                          setReschedNewDate(getNextSlotDateStr(slot.day))
+                        }}
+                        className={`relative text-center px-2 py-3 rounded-lg border text-xs transition-all ${
+                          isSelected ? "bg-orange-500 text-white border-orange-500 shadow-md" : "border-gray-200 hover:border-orange-300 hover:bg-orange-50"
+                        }`}
+                      >
+                        <div className="font-semibold text-sm">{slot.time}</div>
+                        {reschedSlotAvailability.length > 0 && (
+                          <div className={`flex items-center justify-center gap-0.5 mt-1.5 text-[10px] font-medium ${
+                            isSelected ? "text-white/80" : isFull ? "text-red-500" : slot.count >= 5 ? "text-orange-500" : "text-green-600"
+                          }`}>
+                            <Users className="h-2.5 w-2.5" />
+                            <span>{slot.count}/{slot.max}</span>
+                          </div>
+                        )}
+                        {isFull && reschedSlotAvailability.length > 0 && (
+                          <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
             <div>
               <Label>New Date</Label>
               <Input type="date" value={reschedNewDate} onChange={(e) => setReschedNewDate(e.target.value)} className="mt-1" />
