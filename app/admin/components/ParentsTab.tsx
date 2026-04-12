@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Plus, Pencil, Trash2, Mail, Phone, Users, ChevronDown, ChevronUp,
   UserPlus, BookOpen, X, Eye, EyeOff, CalendarDays, Loader2, Search,
-  RefreshCw,
+  RefreshCw, PlusCircle,
 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { SLOTS, MAX_PER_SLOT, getNextSlotDateStr, getSlotDayOfWeek, generateStampDates } from '@/lib/slots'
@@ -121,6 +121,13 @@ export default function ParentsTab() {
   const [slotAvailability, setSlotAvailability] = useState<SlotAvailability[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [savingEnroll, setSavingEnroll] = useState(false)
+
+  // Extend duration dialog
+  const [extendDialogOpen, setExtendDialogOpen] = useState(false)
+  const [extendStudent, setExtendStudent] = useState<Student | null>(null)
+  const [extendEnrollmentIdx, setExtendEnrollmentIdx] = useState(-1)
+  const [extendWeeks, setExtendWeeks] = useState('4')
+  const [savingExtend, setSavingExtend] = useState(false)
 
   // Reschedule dialog
   const [reschedDialogOpen, setReschedDialogOpen] = useState(false)
@@ -353,6 +360,42 @@ export default function ParentsTab() {
       body: JSON.stringify({ enrollments: updated }),
     })
     fetchAll()
+  }
+
+  // ===== Extend Duration =====
+  const openExtendDuration = (student: Student, enrollmentIdx: number) => {
+    setExtendStudent(student)
+    setExtendEnrollmentIdx(enrollmentIdx)
+    setExtendWeeks('4')
+    setExtendDialogOpen(true)
+  }
+
+  const extendEnrollment = extendStudent && extendEnrollmentIdx >= 0
+    ? extendStudent.enrollments[extendEnrollmentIdx]
+    : null
+
+  const handleExtendDuration = async () => {
+    if (!extendStudent || extendEnrollmentIdx < 0 || !extendWeeks) return
+    const weeks = Number(extendWeeks)
+    if (weeks <= 0 || isNaN(weeks)) return
+
+    setSavingExtend(true)
+    try {
+      const updated = extendStudent.enrollments.map((e, i) => {
+        if (i !== extendEnrollmentIdx) return e
+        const currentWeeks = e.courseDurationWeeks || 0
+        return { ...e, courseDurationWeeks: currentWeeks + weeks }
+      })
+      await fetch(`/api/admin/students/${extendStudent._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enrollments: updated }),
+      })
+      setExtendDialogOpen(false)
+      fetchAll()
+    } finally {
+      setSavingExtend(false)
+    }
   }
 
   // ===== Reschedule =====
@@ -684,6 +727,27 @@ export default function ParentsTab() {
                                               Start {new Date(e.startDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: '2-digit' })}
                                             </span>
                                           )}
+                                          {e.courseDurationWeeks != null && e.courseDurationWeeks > 0 && (
+                                            <span className="text-[10px] text-teal-600 flex items-center gap-0.5 bg-teal-50 px-1 rounded">
+                                              📚 {e.courseDurationWeeks} wks
+                                              <button
+                                                onClick={(ev) => { ev.stopPropagation(); openExtendDuration(s, idx) }}
+                                                className="ml-0.5 text-teal-500 hover:text-teal-700 transition-colors"
+                                                title="เพิ่มระยะเวลาคอร์ส"
+                                              >
+                                                <PlusCircle className="w-3 h-3" />
+                                              </button>
+                                            </span>
+                                          )}
+                                          {(!e.courseDurationWeeks || e.courseDurationWeeks === 0) && (
+                                            <button
+                                              onClick={(ev) => { ev.stopPropagation(); openExtendDuration(s, idx) }}
+                                              className="text-[10px] text-teal-500 hover:text-teal-700 flex items-center gap-0.5"
+                                              title="เพิ่มระยะเวลาคอร์ส"
+                                            >
+                                              <PlusCircle className="w-3 h-3" /> เพิ่มสัปดาห์
+                                            </button>
+                                          )}
                                         </div>
                                       </div>
                                       {/* Status select */}
@@ -949,6 +1013,99 @@ export default function ParentsTab() {
               {savingEnroll ? 'Saving...' : 'Enroll'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Extend Duration Dialog */}
+      <Dialog open={extendDialogOpen} onOpenChange={setExtendDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base flex items-center gap-2">
+              <PlusCircle className="w-5 h-5 text-teal-500" />
+              เพิ่มระยะเวลาคอร์ส
+            </DialogTitle>
+          </DialogHeader>
+          {extendEnrollment && extendStudent && (
+            <div className="space-y-4">
+              {/* Info */}
+              <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 text-sm space-y-1">
+                <p className="font-medium text-teal-700">{extendStudent.name}</p>
+                <p className="text-xs text-teal-600">{extendEnrollment.courseName}</p>
+                <p className="text-xs text-teal-500">
+                  ระยะเวลาปัจจุบัน: <span className="font-semibold">{extendEnrollment.courseDurationWeeks || 0}</span> สัปดาห์
+                </p>
+                {extendEnrollment.startDate && extendEnrollment.slot && extendEnrollment.courseDurationWeeks ? (
+                  (() => {
+                    const stamps = generateStampDates(extendEnrollment.startDate, extendEnrollment.courseDurationWeeks, extendEnrollment.slot)
+                    const lastDate = stamps.length > 0 ? stamps[stamps.length - 1] : null
+                    return lastDate ? (
+                      <p className="text-xs text-teal-500">
+                        สัปดาห์สุดท้ายปัจจุบัน: {lastDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    ) : null
+                  })()
+                ) : null}
+              </div>
+
+              {/* Weeks input */}
+              <div>
+                <Label className="text-sm font-medium">จำนวนสัปดาห์ที่ต้องการเพิ่ม</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="52"
+                  value={extendWeeks}
+                  onChange={(e) => setExtendWeeks(e.target.value)}
+                  className="mt-1"
+                  placeholder="เช่น 4"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  สัปดาห์ใหม่จะนับต่อจากสัปดาห์สุดท้ายล่าสุด
+                </p>
+              </div>
+
+              {/* Preview */}
+              {extendWeeks && Number(extendWeeks) > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm space-y-1">
+                  <p className="font-medium text-blue-700 text-xs">ผลลัพธ์หลังเพิ่ม:</p>
+                  <p className="text-xs text-blue-600">
+                    ระยะเวลาใหม่: <span className="font-semibold">{(extendEnrollment.courseDurationWeeks || 0) + Number(extendWeeks)}</span> สัปดาห์
+                    <span className="text-blue-400 ml-1">
+                      ({extendEnrollment.courseDurationWeeks || 0} + {extendWeeks})
+                    </span>
+                  </p>
+                  {extendEnrollment.startDate && extendEnrollment.slot && (
+                    (() => {
+                      const newTotalWeeks = (extendEnrollment.courseDurationWeeks || 0) + Number(extendWeeks)
+                      const newStamps = generateStampDates(extendEnrollment.startDate, newTotalWeeks, extendEnrollment.slot)
+                      const newLastDate = newStamps.length > 0 ? newStamps[newStamps.length - 1] : null
+                      return newLastDate ? (
+                        <p className="text-xs text-blue-600">
+                          สัปดาห์สุดท้ายใหม่: <span className="font-semibold">{newLastDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        </p>
+                      ) : null
+                    })()
+                  )}
+                </div>
+              )}
+
+              {/* Actions */}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setExtendDialogOpen(false)}>ยกเลิก</Button>
+                <Button
+                  onClick={handleExtendDuration}
+                  disabled={savingExtend || !extendWeeks || Number(extendWeeks) <= 0}
+                  className="bg-teal-500 hover:bg-teal-600 text-white"
+                >
+                  {savingExtend ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" />กำลังบันทึก...</>
+                  ) : (
+                    <><PlusCircle className="w-4 h-4 mr-2" />เพิ่มสัปดาห์</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
