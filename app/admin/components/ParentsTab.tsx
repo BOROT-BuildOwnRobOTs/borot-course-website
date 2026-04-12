@@ -156,8 +156,10 @@ export default function ParentsTab() {
     if (tj.success) setTeachers(tj.data)
     if (sj.success) {
       const map: Record<string, Student[]> = {}
-      sj.data.forEach((s: Student & { parent: { _id: string } }) => {
+      sj.data.forEach((s: Student & { parent: { _id: string } | string | null }) => {
+        if (!s.parent) return
         const pid = typeof s.parent === 'object' ? s.parent._id : s.parent
+        if (!pid) return
         if (!map[pid]) map[pid] = []
         map[pid].push(s)
       })

@@ -5,6 +5,7 @@ export interface IParent extends Document {
   email: string
   password: string
   phone?: string
+  clerkId?: string | null
   createdAt: Date
   updatedAt: Date
 }
@@ -15,6 +16,7 @@ const ParentSchema = new Schema<IParent>(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
     phone: { type: String, default: '' },
+    clerkId: { type: String, default: null, sparse: true },
   },
   { timestamps: true }
 )

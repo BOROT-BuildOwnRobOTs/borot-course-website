@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ClerkProvider } from '@clerk/nextjs'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' }, // ← ใช้รูปสิงโต.ico ที่คุณเปลี่ยนชื่อไว้
+      { url: '/favicon.ico', sizes: 'any' },
       { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
       { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
     ],
@@ -40,12 +41,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        {children}
-        <Analytics />
-        <BorotFooter />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+          {children}
+          <Analytics />
+          <BorotFooter />
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }
