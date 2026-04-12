@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Menu, X, User } from "lucide-react"
 import Image from "next/image"
@@ -13,8 +14,8 @@ export function Navbar() {
 
   const navItems = [
     { href: "/", label: "Home" },
-    { href: "/courses", label: "Courses" },   // เปลี่ยนจาก /modules → /courses
-    { href: "/about", label: "About" },        // ตัด Pricing ออก
+    { href: "/courses", label: "Courses" },
+    { href: "/about", label: "About" },
   ]
 
   return (
@@ -46,16 +47,41 @@ export function Navbar() {
                 {item.label}
               </Link>
             ))}
-            <Link href="/login">
-              <Button
-                variant={pathname === "/login" || pathname === "/profile" ? "default" : "outline"}
-                size="sm"
-                className="gap-2"
-              >
-                <User className="h-4 w-4" />
-                Login
-              </Button>
-            </Link>
+
+            {/* Clerk Auth - Signed Out: show Login button */}
+            <SignedOut>
+              <SignInButton mode="redirect">
+                <Button
+                  variant={pathname === "/login" ? "default" : "outline"}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <User className="h-4 w-4" />
+                  Login
+                </Button>
+              </SignInButton>
+            </SignedOut>
+
+            {/* Clerk Auth - Signed In: show UserButton avatar */}
+            <SignedIn>
+              <Link href="/profile">
+                <Button
+                  variant={pathname === "/profile" ? "default" : "outline"}
+                  size="sm"
+                  className="gap-2"
+                >
+                  Profile
+                </Button>
+              </Link>
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    avatarBox: 'h-9 w-9',
+                  },
+                }}
+              />
+            </SignedIn>
           </div>
 
           {/* Mobile Menu Button */}
@@ -80,16 +106,43 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="pt-2 mt-2 border-t border-border">
-                <Link href="/login" onClick={() => setIsOpen(false)}>
-                  <Button
-                    variant={pathname === "/login" || pathname === "/profile" ? "default" : "outline"}
-                    size="sm"
-                    className="gap-2 w-full"
-                  >
-                    <User className="h-4 w-4" />
-                    Login
-                  </Button>
-                </Link>
+                {/* Mobile - Signed Out */}
+                <SignedOut>
+                  <SignInButton mode="redirect">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 w-full"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <User className="h-4 w-4" />
+                      Login
+                    </Button>
+                  </SignInButton>
+                </SignedOut>
+
+                {/* Mobile - Signed In */}
+                <SignedIn>
+                  <div className="flex items-center justify-between gap-3">
+                    <Link href="/profile" className="flex-1" onClick={() => setIsOpen(false)}>
+                      <Button
+                        variant={pathname === "/profile" ? "default" : "outline"}
+                        size="sm"
+                        className="gap-2 w-full"
+                      >
+                        Profile
+                      </Button>
+                    </Link>
+                    <UserButton
+                      afterSignOutUrl="/"
+                      appearance={{
+                        elements: {
+                          avatarBox: 'h-9 w-9',
+                        },
+                      }}
+                    />
+                  </div>
+                </SignedIn>
               </div>
             </div>
           </div>
