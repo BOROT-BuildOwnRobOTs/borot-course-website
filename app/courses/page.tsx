@@ -189,6 +189,45 @@ const learningOutcomes: Record<string, string[]> = {
   "rg-l3": ["Understand program structure: Sequence, Loops, Events", "Write block-based code to control images, sound, and devices", "Use variables and conditions (if-else) to think logically", "Create interactive projects and games with Micro:bit", "Work as a team, communicate ideas, and share results"],
 }
 
+/* ─── Lightbox ─────────────────────────────────────────────────── */
+function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", onKey)
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.removeEventListener("keydown", onKey)
+      document.body.style.overflow = ""
+    }
+  }, [onClose])
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(8px)", animation: "fadeIn 0.18s ease" }}
+      onClick={onClose}
+    >
+      <style>{`@keyframes fadeIn { from { opacity:0 } to { opacity:1 } } @keyframes zoomIn { from { transform:scale(0.88); opacity:0 } to { transform:scale(1); opacity:1 } }`}</style>
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center z-10"
+        style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)" }}
+      >
+        <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
+          <path d="M1 1l12 12M13 1L1 13" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </button>
+      <img
+        src={src}
+        alt={alt}
+        className="max-w-full max-h-full rounded-2xl object-contain"
+        style={{ maxHeight: "90vh", animation: "zoomIn 0.22s cubic-bezier(0.32,0.72,0,1)", boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }}
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  )
+}
+
 /* ─── Arrow ────────────────────────────────────────────────────── */
 function Arrow({ color }: { color: string }) {
   return (
@@ -207,6 +246,7 @@ function MobileDetailSheet({ node, onClose }: { node: Node; onClose: () => void 
   const weekly = weeklyMockup[node.id] ?? []
   const outcomes = learningOutcomes[node.id] ?? []
   const [activeTab, setActiveTab] = useState<"overview" | "sessions" | "outcomes">("overview")
+  const [lightbox, setLightbox] = useState(false)
   const sheetRef = useRef<HTMLDivElement>(null)
 
   // Prevent body scroll when sheet is open
@@ -243,11 +283,10 @@ function MobileDetailSheet({ node, onClose }: { node: Node; onClose: () => void 
           }
         `}</style>
 
-        {/* Hero Image — course cover */}
+        {/* Hero Image — full cover with text overlay */}
         <div
           className="relative flex-shrink-0 overflow-hidden"
           style={{
-            height: 180,
             borderRadius: "24px 24px 0 0",
             background: `linear-gradient(135deg, ${t.colorMid}99 0%, ${t.colorLight} 100%)`,
           }}
@@ -255,13 +294,15 @@ function MobileDetailSheet({ node, onClose }: { node: Node; onClose: () => void 
           <img
             src={`/images/courses/${imageId(node.id)}.png`}
             alt={node.title}
-            className="w-full h-full object-cover absolute inset-0"
+            className="w-full object-cover cursor-zoom-in"
+            style={{ minHeight: 220, maxHeight: 280 }}
+            onClick={() => setLightbox(true)}
             onError={(e) => { e.currentTarget.style.display = "none" }}
           />
-          {/* Gradient overlay so text is readable */}
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%)" }} />
+          {/* Gradient only over bottom text area */}
+          <div className="absolute inset-x-0 bottom-0" style={{ height: "80%", background: "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.1) 80%, transparent 100%)" }} />
 
-          {/* Drag handle on top of image */}
+          {/* Drag handle */}
           <div className="absolute top-0 left-0 right-0 flex justify-center pt-3">
             <div className="w-10 h-1 rounded-full bg-white opacity-60" />
           </div>
@@ -277,37 +318,33 @@ function MobileDetailSheet({ node, onClose }: { node: Node; onClose: () => void 
             </svg>
           </button>
 
-          {/* Badge + age overlay at bottom-left */}
-          <div className="absolute bottom-3 left-4 flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{ background: t.color }}>
-              {node.badge}
-            </span>
-            <span className="text-[11px] font-medium text-white opacity-90">{node.age}</span>
-          </div>
-
-          {/* Icon badge at bottom-right */}
-          <div className="absolute bottom-3 right-4 w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden" style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(8px)" }}>
+          {/* Icon top-left */}
+          <div className="absolute top-4 left-4 w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden" style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(8px)" }}>
             <img src={`/images/icons/${imageId(node.id)}.png`} alt={node.title} className="w-7 h-7 object-contain" onError={(e) => { e.currentTarget.style.display = "none" }} />
           </div>
-        </div>
 
-        {/* Title + price info below image */}
-        <div className="px-5 pt-4 pb-3 flex-shrink-0">
-          <h2 className="text-xl font-bold text-[#111827] leading-tight">{node.title}</h2>
-          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-            <span className="text-[11px] text-[#9CA3AF]">{node.sessions}</span>
-            <span className="text-base font-bold" style={{ color: t.color }}>{node.price}</span>
-            {node.priceNote && <span className="text-[10px] text-[#9CA3AF]">{node.priceNote}</span>}
+          {/* Text overlay at bottom */}
+          <div className="absolute inset-x-0 bottom-0 px-5 pb-5 z-10 flex flex-col gap-1.5" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{ background: t.color }}>
+                {node.badge}
+              </span>
+              <span className="text-[11px] font-medium text-white">{node.age}</span>
+            </div>
+            <h2 className="text-xl font-bold text-white leading-tight">{node.title}</h2>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-[11px] text-white/90">{node.sessions}</span>
+              <span className="text-base font-bold text-white">{node.price}</span>
+              {node.priceNote && <span className="text-[10px] text-white/80">{node.priceNote}</span>}
+            </div>
+            <div className="flex gap-1.5 flex-wrap mt-0.5">
+              {node.tools.split(" · ").map((tool) => (
+                <span key={tool} className="text-[10px] px-2.5 py-1 rounded-full border font-medium" style={{ borderColor: "rgba(255,255,255,0.5)", color: "#fff", background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }}>
+                  {tool}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
-
-        {/* Tools chips */}
-        <div className="flex gap-1.5 px-5 pb-3 flex-wrap flex-shrink-0">
-          {node.tools.split(" · ").map((tool) => (
-            <span key={tool} className="text-[10px] px-2.5 py-1 rounded-full border font-medium" style={{ borderColor: t.colorMid, color: t.color, background: t.colorLight }}>
-              {tool}
-            </span>
-          ))}
         </div>
 
         {/* Tab bar */}
@@ -396,6 +433,13 @@ function MobileDetailSheet({ node, onClose }: { node: Node; onClose: () => void 
           </a>
         </div>
       </div>
+      {lightbox && (
+        <ImageLightbox
+          src={`/images/courses/${imageId(node.id)}.png`}
+          alt={node.title}
+          onClose={() => setLightbox(false)}
+        />
+      )}
     </>
   )
 }
@@ -724,26 +768,29 @@ function CourseDetailPanel({ node }: { node: Node }) {
   const t = tracks[node.track]
   const weekly = weeklyMockup[node.id] ?? []
   const outcomes = learningOutcomes[node.id] ?? []
+  const [lightbox, setLightbox] = useState(false)
   return (
     <div className="flex flex-col gap-5">
       <div className="rounded-2xl overflow-hidden border" style={{ borderColor: t.colorMid }}>
-        <div className="w-full relative flex items-center justify-center" style={{ height: 200, background: `linear-gradient(135deg, ${t.colorMid}88 0%, ${t.colorLight} 100%)` }}>
-          <img src={`/images/courses/${imageId(node.id)}.png`} alt={node.title} className="w-full h-full object-cover absolute inset-0" onError={(e) => { e.currentTarget.style.display = "none" }} />
-          <div className="absolute bottom-3 left-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ color: "#fff", background: t.color }}>{node.badge} · {node.age}</span>
-          </div>
-        </div>
-        <div className="p-5" style={{ background: t.colorLight }}>
-          <h2 className="text-xl font-bold text-[#111827]">{node.title}</h2>
-          <div className="flex flex-wrap items-center gap-3 mt-2">
-            <span className="text-sm text-[#6B7280]">{node.sessions}</span>
-            <span className="text-base font-bold" style={{ color: t.color }}>{node.price}</span>
-            {node.priceNote && <span className="text-xs text-[#9CA3AF]">{node.priceNote}</span>}
-          </div>
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {node.tools.split(" · ").map((tool) => (
-              <span key={tool} className="text-[10px] px-2 py-0.5 rounded-full border font-medium" style={{ borderColor: t.colorMid, color: t.color, background: "#fff" }}>{tool}</span>
-            ))}
+        <div className="w-full relative" style={{ minHeight: 220, background: `linear-gradient(135deg, ${t.colorMid}88 0%, ${t.colorLight} 100%)` }}>
+          {/* Full cover image — no tint on top */}
+          <img src={`/images/courses/${imageId(node.id)}.png`} alt={node.title} className="w-full h-full object-cover absolute inset-0 cursor-zoom-in" onClick={() => setLightbox(true)} onError={(e) => { e.currentTarget.style.display = "none" }} />
+          {/* Gradient only over the bottom text area */}
+          <div className="absolute inset-x-0 bottom-0" style={{ height: "80%", background: "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.1) 80%, transparent 100%)" }} />
+          {/* Content overlaid on the image */}
+          <div className="relative z-10 p-5 pt-28 flex flex-col gap-2" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>
+            <span className="self-start text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ color: "#fff", background: t.color, textShadow: "none" }}>{node.badge} · {node.age}</span>
+            <h2 className="text-xl font-bold text-white leading-tight">{node.title}</h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm text-white/90">{node.sessions}</span>
+              <span className="text-base font-bold text-white">{node.price}</span>
+              {node.priceNote && <span className="text-xs text-white/80">{node.priceNote}</span>}
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {node.tools.split(" · ").map((tool) => (
+                <span key={tool} className="text-[10px] px-2 py-0.5 rounded-full border font-medium" style={{ borderColor: "rgba(255,255,255,0.5)", color: "#fff", background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)", textShadow: "none" }}>{tool}</span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -783,6 +830,13 @@ function CourseDetailPanel({ node }: { node: Node }) {
             ))}
           </div>
         </div>
+      )}
+      {lightbox && (
+        <ImageLightbox
+          src={`/images/courses/${imageId(node.id)}.png`}
+          alt={node.title}
+          onClose={() => setLightbox(false)}
+        />
       )}
     </div>
   )
