@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
 import { generateStampDates } from '@/lib/slots'
+import { syncScheduleToSheet } from '@/lib/googleSheets'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,28 +34,23 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!enrollment.reschedules) enrollment.reschedules = []
 
     if (rescheduleRemaining) {
-      // Bulk reschedule: reschedule all remaining sessions from originalDate onward
       const origDateObj = new Date(originalDate)
       const newDateObj = new Date(newDate)
       const offsetMs = newDateObj.getTime() - origDateObj.getTime()
 
-      // Generate all stamp dates for this enrollment
       const stamps = enrollment.startDate && enrollment.slot && enrollment.courseDurationWeeks
         ? generateStampDates(enrollment.startDate, enrollment.courseDurationWeeks, enrollment.slot)
         : []
 
-      // Find all stamp dates >= originalDate (same day or later)
       const remainingStamps = stamps.filter((stampDate: Date) => {
-        return stampDate.getTime() >= origDateObj.getTime() - 12 * 60 * 60 * 1000 // allow small tolerance for timezone
+        return stampDate.getTime() >= origDateObj.getTime() - 12 * 60 * 60 * 1000
       })
 
       for (const stampDate of remainingStamps) {
         const stampOrigStr = stampDate.toDateString()
-        // Remove existing reschedule for this date
         enrollment.reschedules = enrollment.reschedules.filter(
           (r: any) => new Date(r.originalDate).toDateString() !== stampOrigStr
         )
-        // Compute new date by applying the same offset
         const newStampDate = new Date(stampDate.getTime() + offsetMs)
         enrollment.reschedules.push({
           originalDate: stampDate,
@@ -63,12 +60,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         })
       }
     } else {
-      // Single reschedule
       const origStr = new Date(originalDate).toDateString()
       enrollment.reschedules = enrollment.reschedules.filter(
         (r: any) => new Date(r.originalDate).toDateString() !== origStr
       )
-
       enrollment.reschedules.push({
         originalDate: new Date(originalDate),
         newSlot,
@@ -80,9 +75,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     student.markModified('enrollments')
     await student.save()
 
+    setImmediate(() => {
+      syncScheduleToSheet().catch((err) => console.error('[sheets] sync error:', err))
+    })
+
     return NextResponse.json({ success: true, data: student })
   } catch (error) {
-    console.error(error)
+    console.error('[reschedule POST error]', error)
     return NextResponse.json({ success: false, error: 'Failed to save reschedule' }, { status: 500 })
   }
 }
@@ -111,6 +110,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     student.markModified('enrollments')
     await student.save()
+
+    setImmediate(() => {
+      syncScheduleToSheet().catch((err) => console.error('[sheets] sync error:', err))
+    })
 
     return NextResponse.json({ success: true, data: student })
   } catch (error) {

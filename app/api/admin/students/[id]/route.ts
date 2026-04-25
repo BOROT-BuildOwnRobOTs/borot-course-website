@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
+import { syncScheduleToSheet } from '@/lib/googleSheets'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,6 +33,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     const student = await Student.findByIdAndUpdate(params.id, updateData, { new: true }).populate('parent', 'name email phone')
     if (!student) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
+
+    setImmediate(() => {
+      syncScheduleToSheet().catch((err) => console.error('[sheets] sync error:', err))
+    })
 
     return NextResponse.json({ success: true, data: student })
   } catch (error) {
