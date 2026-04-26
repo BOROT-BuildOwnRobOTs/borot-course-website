@@ -4,7 +4,6 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-import { BorotFooter } from "@/components/borot-footer"
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.borot.co.th'),
@@ -46,7 +45,6 @@ export default function RootLayout({
         <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
           {children}
           <Analytics />
-          <BorotFooter />
         </body>
       </html>
     </ClerkProvider>

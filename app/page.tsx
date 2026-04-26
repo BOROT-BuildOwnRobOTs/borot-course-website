@@ -1,88 +1,107 @@
-"use client"
-
-import { useState } from "react"
-import { HeroSection } from "@/components/hero-section"
-import { Navbar } from "@/components/navbar"
-import { QRCodeWidget } from "@/components/qr-code-widget"
-import { PretestModal } from "@/components/pretest-modal"
-// import { LearningPathHero } from "@/components/learning-path-hero"
-// import ModuleDetailsSection from "@/components/module-details-section"
-// import { PartnershipSection } from "@/components/partnership-section"
-// import { ShowCaseSection } from "@/components/showcase-section"
-import { YouTubeSection } from "@/components/youtube-section"
-// import { BorotCompanySection } from "@/components/borot-company-section"
-// import { BorotFooter } from "@/components/borot-footer"
+import Image from "next/image"
 
 export default function Home() {
-  const [isPretestOpen, setIsPretestOpen] = useState(false)
-
   return (
-    <>
-      <Navbar />
-      <main className="min-h-screen bg-background">
-        <HeroSection />
-        {/* <LearningPathHero /> */}
-        {/* <ModuleDetailsSection /> */}
-        {/* <PartnershipSection /> */}
-        {/* <ShowCaseSection />  */}
-        <YouTubeSection /> 
-        {/* <BorotCompanySection /> */}
-         {/* <BorotFooter /> */}
-        <QRCodeWidget />
-      </main>
+    <main className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] relative overflow-hidden px-6">
+      {/* Background glow effects */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full opacity-20 blur-[120px] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse, #E5690D 0%, transparent 70%)" }}
+      />
+      <div
+        className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full opacity-10 blur-[120px] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse, #FF8C00 0%, transparent 70%)" }}
+      />
 
-      {/* Floating Pretest Button */}
-      <button
-        onClick={() => setIsPretestOpen(true)}
-        className="fixed bottom-6 left-6 z-40 group"
-        aria-label="ทำแบบทดสอบเลือกคอร์ส"
-      >
-        <style>{`
-          @keyframes pretestBounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-4px); }
-          }
-          @keyframes pretestGlow {
-            0%, 100% { box-shadow: 0 4px 20px rgba(229, 105, 13, 0.3); }
-            50% { box-shadow: 0 4px 28px rgba(229, 105, 13, 0.5); }
-          }
-          .pretest-float-btn {
-            animation: pretestBounce 3s ease-in-out infinite, pretestGlow 3s ease-in-out infinite;
-          }
-          .pretest-float-btn:hover {
-            animation: none;
-            transform: scale(1.05);
-            box-shadow: 0 6px 30px rgba(229, 105, 13, 0.45);
-          }
-          .pretest-tooltip {
-            opacity: 0;
-            transform: translateX(-8px);
-            transition: all 0.25s ease;
-            pointer-events: none;
-          }
-          .group:hover .pretest-tooltip {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        `}</style>
-        <div className="flex items-center gap-3">
-          <div
-            className="pretest-float-btn flex items-center gap-2.5 px-4 py-3 rounded-2xl text-white font-bold text-sm cursor-pointer transition-all duration-200"
+      {/* Grid overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
+
+      <div className="relative z-10 flex flex-col items-center text-center max-w-2xl w-full">
+        {/* Logo */}
+        <div className="mb-10">
+          <Image
+            src="/images/borot-logo.png"
+            alt="Borot"
+            width={120}
+            height={40}
+            className="h-10 w-auto"
+            priority
+          />
+        </div>
+
+        {/* Status badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 mb-8">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
+          </span>
+          <span className="text-orange-400 text-xs font-semibold tracking-widest uppercase">
+            Under Maintenance
+          </span>
+        </div>
+
+        {/* Heading */}
+        <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight mb-4">
+          We&apos;re leveling up
+          <br />
+          <span
+            className="bg-clip-text text-transparent"
             style={{
-              background: "linear-gradient(135deg, #E5690D 0%, #FF8C00 100%)",
+              backgroundImage: "linear-gradient(135deg, #E5690D 0%, #FF8C00 60%, #FFB347 100%)",
             }}
           >
-            <span className="text-lg">✨</span>
-            <div className="flex flex-col items-start leading-tight">
-              <span className="text-[13px] font-bold">Pretest</span>
-              <span className="text-[10px] font-medium opacity-80">ค้นหาคอร์สที่ใช่</span>
-            </div>
+            Borot Platform
+          </span>
+        </h1>
+
+        {/* Apology + description */}
+        <div className="flex flex-col items-center gap-3 mb-12 max-w-md">
+          <span className="text-5xl select-none">🙏</span>
+          <p className="text-[#aaa] text-base sm:text-lg leading-relaxed">
+            We sincerely apologize for the inconvenience.
+          </p>
+          <p className="text-[#666] text-sm sm:text-base leading-relaxed">
+            Our team is currently working hard to improve the platform and bring you a better learning experience. We&apos;ll be back up shortly — thank you for your patience.
+          </p>
+        </div>
+
+        {/* Divider */}
+        <div className="w-full max-w-xs h-px bg-gradient-to-r from-transparent via-[#333] to-transparent mb-10" />
+
+        {/* Contact */}
+        <div className="flex flex-col items-center gap-2">
+          <p className="text-[#555] text-sm">Have questions? Feel free to reach us:</p>
+          <div className="flex flex-col sm:flex-row items-center gap-3 mt-1">
+            <a
+              href="tel:0863932415"
+              className="flex items-center gap-2 text-[#888] hover:text-orange-400 transition-colors text-sm"
+            >
+              <span className="text-orange-500">📞</span>
+              086-393-2415
+            </a>
+            <span className="hidden sm:block text-[#333]">·</span>
+            <a
+              href="mailto:contact.borot@gmail.com"
+              className="flex items-center gap-2 text-[#888] hover:text-orange-400 transition-colors text-sm"
+            >
+              <span className="text-orange-500">✉️</span>
+              contact.borot@gmail.com
+            </a>
           </div>
         </div>
-      </button>
+      </div>
 
-      {/* Pretest Modal */}
-      <PretestModal isOpen={isPretestOpen} onClose={() => setIsPretestOpen(false)} />
-    </>
+      {/* Bottom bar */}
+      <div className="absolute bottom-6 left-0 right-0 flex justify-center">
+        <p className="text-[#333] text-xs">© {new Date().getFullYear()} Borot Co., Ltd. All rights reserved.</p>
+      </div>
+    </main>
   )
 }
