@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import connectDB from '@/lib/mongodb'
 import Session from '@/models/Session'
 import Student from '@/models/Student'
+import { syncScheduleToSheet } from '@/lib/googleSheets'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +48,10 @@ export async function POST(req: NextRequest) {
       topic,
       notes,
       attendance,
+    })
+
+    setImmediate(() => {
+      syncScheduleToSheet().catch((err) => console.error('[sheets] sync error:', err))
     })
 
     return NextResponse.json({ success: true, data: session }, { status: 201 })
