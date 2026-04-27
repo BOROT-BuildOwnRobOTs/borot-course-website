@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { useUser, useClerk } from "@clerk/nextjs"
+import { useClerk } from "@clerk/nextjs"
 import { UserData, SessionData } from "../types"
 
 export interface AccountOption {
@@ -11,9 +11,24 @@ export interface AccountOption {
   email: string
 }
 
-export function useProfileData() {
+/**
+ * useProfileData
+ *
+ * Authentication note:
+ *   We deliberately do NOT use Clerk's `useUser()` here. With Clerk
+ *   production keys (custom Frontend API at clerk.borot.co.th), the
+ *   client-side hook can briefly report `isSignedIn=false` while the
+ *   FAPI is resolving the session — even though the server-side
+ *   middleware/`auth()` already verified the cookie. That race condition
+ *   was the root cause of the /profile <-> /login bounce loop.
+ *
+ *   Instead, the parent Server Component (`app/profile/page.tsx`) calls
+ *   `auth()` + `currentUser()` and passes the verified `clerkUserId`
+ *   and `clerkEmail` down as props. By the time this hook runs, those
+ *   values are guaranteed to exist.
+ */
+export function useProfileData(clerkUserId: string, clerkEmail: string) {
   const router = useRouter()
-  const { user: clerkUser, isLoaded: clerkLoaded, isSignedIn } = useUser()
   const { signOut } = useClerk()
 
   const [user, setUser] = useState<UserData | null>(null)
@@ -36,22 +51,8 @@ export function useProfileData() {
   // Prevent duplicate sync calls
   const syncAttempted = useRef(false)
 
-  // Get Clerk user ID
-  const clerkId = clerkUser?.id || null
-
-  // Load user: sessionStorage first, then Clerk sync fallback
-  //
-  // NOTE: Route protection for /profile is enforced by Clerk middleware
-  // (see middleware.ts). If the user is NOT signed in, the middleware
-  // redirects to /login *before* this component ever runs. We therefore
-  // do NOT do a client-side `router.replace("/login")` here — doing so
-  // caused a redirect loop with Clerk production keys, where the client
-  // `isSignedIn` briefly reads `false` even though the server-side cookie
-  // is valid (custom Frontend API domain resolves slower than dev keys).
+  // Load user: sessionStorage first, then DB sync (with Clerk data from props).
   useEffect(() => {
-    // Wait for Clerk to finish loading
-    if (!clerkLoaded) return
-
     // 1) Try sessionStorage first
     const raw = sessionStorage.getItem("borot_user")
     if (raw) {
@@ -59,7 +60,7 @@ export function useProfileData() {
         const parsed = JSON.parse(raw)
         // Validate shape — must have at minimum _id and role.
         // Old/stale data without these fields will crash render code, so
-        // we treat it as invalid and fall through to a fresh Clerk sync.
+        // we treat it as invalid and fall through to a fresh sync.
         const isValid =
           parsed &&
           typeof parsed === "object" &&
@@ -83,67 +84,61 @@ export function useProfileData() {
       }
     }
 
-    // 2) If Clerk user is signed in, sync with our DB
-    if (isSignedIn && clerkUser?.primaryEmailAddress?.emailAddress) {
-      if (syncAttempted.current) return // prevent double calls
-      syncAttempted.current = true
-
-      const email = clerkUser.primaryEmailAddress.emailAddress
-      fetch("/api/auth/clerk-sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, clerkId }),
-      })
-        .then((r) => r.json())
-        .then((j) => {
-          if (j.success && j.multiple && j.accounts) {
-            // Multiple accounts found — show account picker
-            setAccounts(j.accounts)
-            setSelectingAccount(true)
-          } else if (j.success && j.user) {
-            // Single account — proceed
-            sessionStorage.setItem("borot_user", JSON.stringify(j.user))
-            setUser(j.user)
-          } else if (j.newUser) {
-            // No account in DB — new user, show onboarding
-            setIsNewUser(true)
-          } else {
-            // Unexpected error — stop loading and let UI show fallback
-            console.error("[useProfileData] clerk-sync unexpected response", j)
-          }
-        })
-        .catch((err) => {
-          console.error("[useProfileData] clerk-sync failed", err)
-        })
-        .finally(() => {
-          setLoading(false)
-        })
+    // 2) Sync with DB using verified Clerk data from server-side props
+    if (!clerkEmail) {
+      // No email on the Clerk user — we can't look up a DB account.
+      // Treat as new user so they can complete onboarding.
+      setIsNewUser(true)
+      setLoading(false)
       return
     }
 
-    // 3) Clerk loaded but `isSignedIn` is false here.
-    //    Because middleware protects /profile, this state should only
-    //    occur transiently while Clerk's client SDK is still resolving
-    //    the session against the production Frontend API. Keep the
-    //    loader visible — do NOT redirect (would cause /profile <-> /login bounce).
-    //    If Clerk truly has no session, middleware will already have
-    //    redirected before this code runs.
-  }, [clerkLoaded, isSignedIn, clerkUser, router]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (syncAttempted.current) return // prevent double calls in StrictMode
+    syncAttempted.current = true
 
+    fetch("/api/auth/clerk-sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: clerkEmail, clerkId: clerkUserId }),
+    })
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success && j.multiple && j.accounts) {
+          // Multiple accounts found — show account picker
+          setAccounts(j.accounts)
+          setSelectingAccount(true)
+        } else if (j.success && j.user) {
+          // Single account — proceed
+          sessionStorage.setItem("borot_user", JSON.stringify(j.user))
+          setUser(j.user)
+        } else if (j.newUser) {
+          // No account in DB — new user, show onboarding option
+          setIsNewUser(true)
+        } else {
+          // Unexpected — log and stop loading; UI will show fallback
+          console.error("[useProfileData] clerk-sync unexpected response", j)
+        }
+      })
+      .catch((err) => {
+        console.error("[useProfileData] clerk-sync failed", err)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [clerkUserId, clerkEmail])
 
   // Select a specific account (when multiple exist)
   const selectAccount = useCallback(
     async (role: "teacher" | "parent") => {
-      if (!clerkUser?.primaryEmailAddress?.emailAddress) return
+      if (!clerkEmail) return
       setSelectingAccount(false)
       setLoading(true)
 
-      const email = clerkUser.primaryEmailAddress.emailAddress
       try {
         const res = await fetch("/api/auth/clerk-sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, selectRole: role, clerkId }),
+          body: JSON.stringify({ email: clerkEmail, selectRole: role, clerkId: clerkUserId }),
         })
         const j = await res.json()
         if (j.success && j.user) {
@@ -157,7 +152,7 @@ export function useProfileData() {
         setLoading(false)
       }
     },
-    [clerkUser, clerkId, router]
+    [clerkEmail, clerkUserId, router]
   )
 
   // Switch account — clear current session and go back to account picker
@@ -168,27 +163,29 @@ export function useProfileData() {
     setIsLegacyLogin(false)
     syncAttempted.current = false
     setLoading(true)
-    // Re-trigger sync
-    if (clerkUser?.primaryEmailAddress?.emailAddress) {
-      const email = clerkUser.primaryEmailAddress.emailAddress
-      fetch("/api/auth/clerk-sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, clerkId }),
-      })
-        .then((r) => r.json())
-        .then((j) => {
-          if (j.success && j.multiple && j.accounts) {
-            setAccounts(j.accounts)
-            setSelectingAccount(true)
-          } else if (j.success && j.user) {
-            sessionStorage.setItem("borot_user", JSON.stringify(j.user))
-            setUser(j.user)
-          }
-        })
-        .finally(() => setLoading(false))
+
+    if (!clerkEmail) {
+      setLoading(false)
+      return
     }
-  }, [clerkUser, clerkId])
+
+    fetch("/api/auth/clerk-sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: clerkEmail, clerkId: clerkUserId }),
+    })
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success && j.multiple && j.accounts) {
+          setAccounts(j.accounts)
+          setSelectingAccount(true)
+        } else if (j.success && j.user) {
+          sessionStorage.setItem("borot_user", JSON.stringify(j.user))
+          setUser(j.user)
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [clerkEmail, clerkUserId])
 
   // Legacy login: authenticate with old email/password, optionally link Clerk
   const legacyLogin = useCallback(
@@ -200,7 +197,7 @@ export function useProfileData() {
           body: JSON.stringify({
             legacyEmail,
             password,
-            clerkId: linkClerk ? clerkId : undefined,
+            clerkId: linkClerk ? clerkUserId : undefined,
           }),
         })
         const j = await res.json()
@@ -225,18 +222,18 @@ export function useProfileData() {
         return { success: false, error: "เกิดข้อผิดพลาด กรุณาลองใหม่" }
       }
     },
-    [clerkId]
+    [clerkUserId]
   )
 
   // Link existing DB account to Clerk (called from ClerkLinkBanner)
   const linkToClerk = useCallback(
     async (legacyEmail: string, password: string) => {
-      if (!clerkId) return { success: false, error: "ไม่พบ Clerk user" }
+      if (!clerkUserId) return { success: false, error: "ไม่พบ Clerk user" }
       try {
         const res = await fetch("/api/auth/link-account", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ legacyEmail, password, clerkId }),
+          body: JSON.stringify({ legacyEmail, password, clerkId: clerkUserId }),
         })
         const j = await res.json()
         if (j.success && j.linked) {
@@ -249,7 +246,7 @@ export function useProfileData() {
         return { success: false, error: "เกิดข้อผิดพลาด กรุณาลองใหม่" }
       }
     },
-    [clerkId]
+    [clerkUserId]
   )
 
   // Dismiss legacy login banner
