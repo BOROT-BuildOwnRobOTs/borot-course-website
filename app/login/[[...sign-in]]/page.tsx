@@ -29,6 +29,16 @@ export default function SignInPage() {
           },
         }}
       />
+
+      {/* Privacy / Consent Notice */}
+      <div className="mt-6 max-w-md text-center">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          We request access to your email address to create your account and contact you about your activity.
+        </p>
+        <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+          เราขอเข้าถึงอีเมลของคุณเพื่อสร้างบัญชีและติดต่อคุณเกี่ยวกับกิจกรรมการเรียนของคุณ
+        </p>
+      </div>
     </div>
   )
 }
