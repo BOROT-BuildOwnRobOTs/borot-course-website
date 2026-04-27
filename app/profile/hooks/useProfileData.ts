@@ -40,6 +40,14 @@ export function useProfileData() {
   const clerkId = clerkUser?.id || null
 
   // Load user: sessionStorage first, then Clerk sync fallback
+  //
+  // NOTE: Route protection for /profile is enforced by Clerk middleware
+  // (see middleware.ts). If the user is NOT signed in, the middleware
+  // redirects to /login *before* this component ever runs. We therefore
+  // do NOT do a client-side `router.replace("/login")` here — doing so
+  // caused a redirect loop with Clerk production keys, where the client
+  // `isSignedIn` briefly reads `false` even though the server-side cookie
+  // is valid (custom Frontend API domain resolves slower than dev keys).
   useEffect(() => {
     // Wait for Clerk to finish loading
     if (!clerkLoaded) return
@@ -100,12 +108,12 @@ export function useProfileData() {
             // No account in DB — new user, show onboarding
             setIsNewUser(true)
           } else {
-            // Unexpected error — redirect to home
-            router.replace("/")
+            // Unexpected error — stop loading and let UI show fallback
+            console.error("[useProfileData] clerk-sync unexpected response", j)
           }
         })
-        .catch(() => {
-          router.replace("/")
+        .catch((err) => {
+          console.error("[useProfileData] clerk-sync failed", err)
         })
         .finally(() => {
           setLoading(false)
@@ -113,10 +121,15 @@ export function useProfileData() {
       return
     }
 
-    // 3) Not signed in at all — redirect to login
-    setLoading(false)
-    router.replace("/login")
+    // 3) Clerk loaded but `isSignedIn` is false here.
+    //    Because middleware protects /profile, this state should only
+    //    occur transiently while Clerk's client SDK is still resolving
+    //    the session against the production Frontend API. Keep the
+    //    loader visible — do NOT redirect (would cause /profile <-> /login bounce).
+    //    If Clerk truly has no session, middleware will already have
+    //    redirected before this code runs.
   }, [clerkLoaded, isSignedIn, clerkUser, router]) // eslint-disable-line react-hooks/exhaustive-deps
+
 
   // Select a specific account (when multiple exist)
   const selectAccount = useCallback(

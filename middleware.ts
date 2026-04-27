@@ -1,6 +1,20 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-export default clerkMiddleware();
+// Routes that require an authenticated Clerk session.
+// Middleware enforces this server-side (using the Clerk session cookie),
+// which avoids race conditions between client-side `useUser()` and
+// the <SignIn> component — the cause of the /profile <-> /login bounce
+// when using Clerk production keys on a custom Frontend API domain.
+const isProtectedRoute = createRouteMatcher([
+  '/profile(.*)',
+  '/onboarding(.*)',
+]);
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) {
+    await auth.protect();
+  }
+});
 
 export const config = {
   matcher: [
