@@ -348,10 +348,10 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-base">
-                      {student.name.charAt(0)}
+                      {(student.name?.trim().charAt(0) || "?").toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-bold text-lg leading-tight">{student.name}</p>
+                      <p className="font-bold text-lg leading-tight">{student.name || "Unnamed"}</p>
                       <p className="text-xs text-muted-foreground">
                         {student.nickname && `(${student.nickname})`}
                         {student.age && ` Age ${student.age}`}

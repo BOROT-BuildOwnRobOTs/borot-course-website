@@ -49,14 +49,27 @@ export function useProfileData() {
     if (raw) {
       try {
         const parsed = JSON.parse(raw)
-        setUser(parsed)
-        // Check if this was a legacy login (no Clerk link yet)
-        const legacyFlag = sessionStorage.getItem("borot_legacy_login")
-        if (legacyFlag === "true") {
-          setIsLegacyLogin(true)
+        // Validate shape — must have at minimum _id and role.
+        // Old/stale data without these fields will crash render code, so
+        // we treat it as invalid and fall through to a fresh Clerk sync.
+        const isValid =
+          parsed &&
+          typeof parsed === "object" &&
+          typeof parsed._id === "string" &&
+          (parsed.role === "teacher" || parsed.role === "parent" || parsed.role === "admin")
+
+        if (isValid) {
+          setUser(parsed)
+          // Check if this was a legacy login (no Clerk link yet)
+          const legacyFlag = sessionStorage.getItem("borot_legacy_login")
+          if (legacyFlag === "true") {
+            setIsLegacyLogin(true)
+          }
+          setLoading(false)
+          return
         }
-        setLoading(false)
-        return
+        // Invalid shape — clear and fall through
+        sessionStorage.removeItem("borot_user")
       } catch {
         sessionStorage.removeItem("borot_user")
       }

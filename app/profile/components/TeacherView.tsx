@@ -322,9 +322,9 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
       if (!allSearchQuery.trim()) return true
       const q = allSearchQuery.toLowerCase()
       return (
-        s.name.toLowerCase().includes(q) ||
+        (s.name || "").toLowerCase().includes(q) ||
         (s.nickname && s.nickname.toLowerCase().includes(q)) ||
-        s.enrollments.some((e) => e.courseName.toLowerCase().includes(q))
+        s.enrollments.some((e) => (e.courseName || "").toLowerCase().includes(q))
       )
     })
 
@@ -494,10 +494,10 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
                       <div className={`h-9 w-9 rounded-full flex items-center justify-center font-bold text-base ${isAllTab ? "bg-blue-100 text-blue-600" : "bg-orange-100 text-orange-600"}`}>
-                        {student.name.charAt(0)}
+                        {(student.name?.trim().charAt(0) || "?").toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-bold text-lg leading-tight">{student.name}</p>
+                        <p className="font-bold text-lg leading-tight">{student.name || "Unnamed"}</p>
                         <p className="text-xs text-muted-foreground">
                           {student.nickname && `(${student.nickname})`}
                           {student.age && ` Age ${student.age}`}

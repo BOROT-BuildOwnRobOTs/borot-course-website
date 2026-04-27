@@ -14,9 +14,13 @@ interface Props {
 }
 
 export default function ProfileHeader({ user, tierSessionCount, onLogout }: Props) {
-  const allEnrollments: Enrollment[] = (user.students ?? []).flatMap((s) => s.enrollments ?? [])
-  const completedCount = allEnrollments.filter((e) => e.status === "completed").length
-  const activeCount = allEnrollments.filter((e) => e.status === "active").length
+  const allEnrollments: Enrollment[] = (user.students ?? []).flatMap((s) => s?.enrollments ?? [])
+  const completedCount = allEnrollments.filter((e) => e?.status === "completed").length
+  const activeCount = allEnrollments.filter((e) => e?.status === "active").length
+
+  // Safe initial / display name (handles legacy sessionStorage without `name`)
+  const displayName = user.name || user.email || "User"
+  const initial = (displayName.trim().charAt(0) || "?").toUpperCase()
 
   return (
     <div className="mb-10">
@@ -49,7 +53,7 @@ export default function ProfileHeader({ user, tierSessionCount, onLogout }: Prop
                     />
                   </svg>
                   <div className="absolute inset-[7px] rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-                    {user.name.charAt(0)}
+                    {initial}
                   </div>
                 </div>
                 <span
@@ -62,13 +66,13 @@ export default function ProfileHeader({ user, tierSessionCount, onLogout }: Prop
             )
           })() : (
             <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white text-3xl font-bold shadow-lg shrink-0">
-              {user.name.charAt(0)}
+              {initial}
             </div>
           )}
 
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-3xl font-bold">{user.name}</h1>
+              <h1 className="text-3xl font-bold">{displayName}</h1>
               <Badge
                 variant="outline"
                 className={
@@ -85,10 +89,12 @@ export default function ProfileHeader({ user, tierSessionCount, onLogout }: Prop
               </Badge>
             </div>
             <div className="flex flex-col gap-1 text-muted-foreground text-sm">
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <span>{user.email}</span>
-              </div>
+              {user.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <span>{user.email}</span>
+                </div>
+              )}
               {user.phone && (
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
