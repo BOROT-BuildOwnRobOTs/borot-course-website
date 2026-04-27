@@ -11,6 +11,7 @@ import CoursesTab from './components/CoursesTab'
 import SessionsTab from './components/SessionsTab'
 import FeedbackTab from './components/FeedbackTab'
 import TrialClassTab from './components/TrialClassTab'
+import ParentViewSimulatorTab from './components/ParentViewSimulatorTab'
 
 interface Stats {
   parents: number
@@ -295,6 +296,13 @@ export default function AdminPage() {
               <FlaskConical className="w-4 h-4 mr-1.5" />
               Trial Class
             </TabsTrigger>
+            <TabsTrigger
+              value="parent-view"
+              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white rounded-md px-4 py-2 text-sm font-medium text-gray-600 transition-all"
+            >
+              <Eye className="w-4 h-4 mr-1.5" />
+              Parent View
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="parents" className="mt-0">
@@ -319,6 +327,10 @@ export default function AdminPage() {
 
           <TabsContent value="trial-class" className="mt-0">
             <TrialClassTab />
+          </TabsContent>
+
+          <TabsContent value="parent-view" className="mt-0">
+            <ParentViewSimulatorTab />
           </TabsContent>
         </Tabs>
       </div>
