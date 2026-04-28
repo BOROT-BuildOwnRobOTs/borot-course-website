@@ -395,6 +395,9 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                       return sum + (att?.attendedHours ?? 0)
                     }, 0)
 
+                    const courseTotalHours = enroll.courseHours ?? 0
+                    const enrollRemaining = Math.max(0, courseTotalHours - enrollAttended)
+
                     return (
                       <div key={enrollIdx} className="border rounded-xl overflow-hidden">
                         {/* Enrollment header */}
@@ -403,13 +406,31 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                             <div className="flex items-center gap-2 flex-wrap">
                               <BookOpen className="h-4 w-4 text-primary shrink-0" />
                               <span className="text-sm font-semibold">{enroll.courseName}</span>
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-sm">
-                                {enrollAttended}/{(enroll as any).courseHours ?? 0} hrs
-                              </span>
                               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[enroll.status]}`}>
                                 {STATUS_ICONS[enroll.status]}{STATUS_LABELS[enroll.status]}
                               </span>
                             </div>
+                            {/* Hour learning progress */}
+                            {courseTotalHours > 0 && (
+                              <div className="mt-2 flex items-center gap-3">
+                                <div className="flex items-center gap-1.5 text-xs">
+                                  <Clock className="h-3.5 w-3.5 text-primary" />
+                                  <span className="font-semibold text-primary">
+                                    {enrollAttended} / {courseTotalHours} hrs
+                                  </span>
+                                </div>
+                                {enrollRemaining > 0 && (
+                                  <span className="text-[11px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+                                    เหลืออีก {enrollRemaining} ชั่วโมง
+                                  </span>
+                                )}
+                                {enrollRemaining === 0 && enroll.status !== "completed" && (
+                                  <span className="text-[11px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">
+                                    เรียนครบแล้ว!
+                                  </span>
+                                )}
+                              </div>
+                            )}
                             {/* Slot info */}
                             <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                               {enroll.slot ? (
