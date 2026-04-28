@@ -421,12 +421,12 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                                 </div>
                                 {enrollRemaining > 0 && (
                                   <span className="text-[11px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
-                                    เหลืออีก {enrollRemaining} ชั่วโมง
+                                    {enrollRemaining} hours remaining
                                   </span>
                                 )}
                                 {enrollRemaining === 0 && enroll.status !== "completed" && (
                                   <span className="text-[11px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">
-                                    เรียนครบแล้ว!
+                                    All hours completed!
                                   </span>
                                 )}
                               </div>
