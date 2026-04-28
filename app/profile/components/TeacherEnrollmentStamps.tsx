@@ -155,12 +155,12 @@ export default function TeacherEnrollmentStamps({
   }
 
   const handleFeedbackSaved = async (
-    sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[], artworkImageUrl: string, artworkName: string, artworkDescription: string
+    sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[], artworkImageUrl: string, artworkName: string, artworkDescription: string, attendedHours: number
   ) => {
     const res = await fetch(`/api/admin/sessions/${sessionId}/feedback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ studentId, feedback, rating: rating || undefined, videoUrl, imageUrls, artworkImageUrl, artworkName, artworkDescription }),
+      body: JSON.stringify({ studentId, feedback, rating: rating || undefined, videoUrl, imageUrls, artworkImageUrl, artworkName, artworkDescription, attendedHours }),
     })
     const j = await res.json()
     if (j.success) {
@@ -180,6 +180,7 @@ export default function TeacherEnrollmentStamps({
                 artworkImageUrl,
                 artworkName,
                 artworkDescription,
+                attendedHours,
                 checkedIn: true,
                 checkedInAt: a.checkedInAt || new Date().toISOString(),
               }
@@ -198,6 +199,7 @@ export default function TeacherEnrollmentStamps({
           artworkImageUrl,
           artworkName,
           artworkDescription,
+          attendedHours,
           checkedIn: true,
           checkedInAt: prev.checkedInAt || new Date().toISOString(),
         } : prev
@@ -310,6 +312,17 @@ export default function TeacherEnrollmentStamps({
             <div className="flex items-center gap-2 flex-wrap">
               <BookOpen className="h-4 w-4 text-primary shrink-0" />
               <span className="text-sm font-semibold">{enrollment.courseName}</span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-sm">
+                {stamps.reduce((sum, d) => {
+                  const r = enrollment.reschedules?.find((re) =>
+                    new Date(re.originalDate).toDateString() === d.toDateString()
+                  )
+                  const actual = r ? new Date(r.newDate) : d
+                  const ses = findSessionForStamp(sessions, enrollment.course, student._id, d, actual)
+                  const att = ses?.attendance.find((a) => a.student === student._id)
+                  return sum + (att?.attendedHours ?? 0)
+                }, 0)}/{enrollment.courseHours ?? 0} hrs
+              </span>
               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[enrollment.status] || ""}`}>
                 <Clock className="h-3.5 w-3.5" />{STATUS_LABELS[enrollment.status] || enrollment.status}
               </span>

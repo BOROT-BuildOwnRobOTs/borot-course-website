@@ -22,6 +22,8 @@ interface Course {
   _id: string
   name: string
   level: string
+  durationWeeks?: number
+  hours?: number
 }
 
 interface Teacher {
@@ -45,6 +47,7 @@ interface Enrollment {
   courseName: string
   courseLevel?: string
   courseDurationWeeks?: number
+  courseHours?: number
   teacher?: string
   teacherName?: string
   status: 'active' | 'completed' | 'dropped' | 'pending'
@@ -301,7 +304,8 @@ export default function ParentsTab() {
         course: enrollCourseId,
         courseName: course.name,
         courseLevel: course.level,
-        courseDurationWeeks: (course as any).durationWeeks || 0,
+        courseDurationWeeks: course.durationWeeks || 0,
+        courseHours: course.hours || 0,
         teacher: enrollTeacherId || undefined,
         teacherName: teacher?.name || '',
         status: enrollStatus,
@@ -682,7 +686,7 @@ export default function ParentsTab() {
                                     <div key={idx} className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5">
                                       {/* Course info */}
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium text-gray-800 truncate">{e.courseName}</p>
+                                        <p className="text-xs font-medium text-gray-800 truncate">{e.courseName} ({(() => { const c = courses.find(co => co._id === e.course); return (c?.hours ?? e.courseHours ?? 0) })()} hrs, {(() => { const c = courses.find(co => co._id === e.course); return (c?.durationWeeks ?? e.courseDurationWeeks ?? 0) })()} wks)</p>
                                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                           {e.courseLevel && (
                                             <span className="text-[10px] text-orange-500 truncate">{e.courseLevel}</span>
@@ -892,7 +896,7 @@ export default function ParentsTab() {
                       const selected = courses.find(c => c._id === enrollCourseId)
                       return selected ? (
                         <div className="text-left">
-                          <p className="text-sm font-medium leading-tight truncate">{selected.name}</p>
+                          <p className="text-sm font-medium leading-tight truncate">{selected.name} ({(selected as any).hours ?? 0} hrs, {selected.durationWeeks ?? 0} wks)</p>
                           <p className="text-xs text-gray-500 leading-tight truncate">{selected.level}</p>
                         </div>
                       ) : null
@@ -905,7 +909,7 @@ export default function ParentsTab() {
                     .map(c => (
                       <SelectItem key={c._id} value={c._id} className="py-2">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-medium">{c.name}</span>
+                          <span className="text-sm font-medium">{c.name} ({(c as any).hours ?? 0} hrs, {c.durationWeeks ?? 0} wks)</span>
                           <span className="text-xs text-gray-500">{c.level}</span>
                         </div>
                       </SelectItem>

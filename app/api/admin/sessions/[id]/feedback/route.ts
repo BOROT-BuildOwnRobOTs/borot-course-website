@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     await connectDB()
-    const { studentId, feedback, rating, videoUrl, imageUrls, artworkImageUrl, artworkName, artworkDescription } = await req.json()
+    const { studentId, feedback, rating, videoUrl, imageUrls, artworkImageUrl, artworkName, artworkDescription, attendedHours } = await req.json()
 
     if (!studentId) {
       return NextResponse.json({ success: false, error: 'studentId is required' }, { status: 400 })
@@ -33,6 +33,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (artworkImageUrl !== undefined) attendanceEntry.artworkImageUrl = artworkImageUrl
     if (artworkName !== undefined) attendanceEntry.artworkName = artworkName
     if (artworkDescription !== undefined) attendanceEntry.artworkDescription = artworkDescription
+    if (attendedHours !== undefined) attendanceEntry.attendedHours = attendedHours
+
+    // Mark attendance array as modified so Mongoose detects subdocument changes
+    session.markModified('attendance')
 
     // Auto check-in when saving feedback (if not already checked in)
     // This handles the case where a teacher fills feedback from "All Students"

@@ -22,10 +22,10 @@ export async function GET(req: NextRequest) {
       students.flatMap((s: any) => s.enrollments.map((e: any) => e.course?.toString()).filter(Boolean))
     )]
     const courseDocs = courseIds.length > 0
-      ? await Course.find({ _id: { $in: courseIds } }, 'durationWeeks').lean()
+      ? await Course.find({ _id: { $in: courseIds } }, 'durationWeeks hours').lean()
       : []
-    const courseMap: Record<string, number> = {}
-    ;(courseDocs as any[]).forEach((c: any) => { courseMap[c._id.toString()] = c.durationWeeks || 0 })
+    const courseMap: Record<string, { durationWeeks: number; hours: number }> = {}
+    ;(courseDocs as any[]).forEach((c: any) => { courseMap[c._id.toString()] = { durationWeeks: c.durationWeeks || 0, hours: c.hours || 0 } })
 
     const enrichedStudents = students.map((s: any) => ({
       ...s,
@@ -33,7 +33,10 @@ export async function GET(req: NextRequest) {
         ...e,
         courseDurationWeeks: (e.courseDurationWeeks && e.courseDurationWeeks > 0)
           ? e.courseDurationWeeks
-          : courseMap[e.course?.toString()] || 0,
+          : courseMap[e.course?.toString()]?.durationWeeks || 0,
+        courseHours: (e.courseHours && e.courseHours > 0)
+          ? e.courseHours
+          : courseMap[e.course?.toString()]?.hours || 0,
       })),
     }))
 

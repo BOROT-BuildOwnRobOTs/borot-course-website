@@ -5,6 +5,7 @@ export interface ICourse extends Document {
   description?: string
   level: string
   durationWeeks?: number
+  hours?: number
   createdAt: Date
   updatedAt: Date
 }
@@ -15,6 +16,7 @@ const CourseSchema = new Schema<ICourse>(
     description: { type: String, default: '' },
     level: { type: String, default: 'Module 1' },
     durationWeeks: { type: Number, default: 0 },
+    hours: { type: Number, default: 0 },
   },
   { timestamps: true }
 )

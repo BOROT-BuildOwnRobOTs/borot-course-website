@@ -8,7 +8,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   try {
     await connectDB()
     const body = await req.json()
-    const course = await Course.findByIdAndUpdate(params.id, body, { new: true })
+
+    // Build $set explicitly so Mongoose always sets the field even if it didn't exist in old documents
+    const setFields: Record<string, any> = {}
+    if (body.name !== undefined) setFields.name = body.name
+    if (body.description !== undefined) setFields.description = body.description
+    if (body.level !== undefined) setFields.level = body.level
+    if (body.durationWeeks !== undefined) setFields.durationWeeks = body.durationWeeks
+    if (body.hours !== undefined) setFields.hours = body.hours
+
+    const course = await Course.findByIdAndUpdate(params.id, { $set: setFields }, { new: true })
     if (!course) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
     return NextResponse.json({ success: true, data: course })
   } catch (error) {

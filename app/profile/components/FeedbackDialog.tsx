@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { CheckCircle2, ImageIcon, MessageSquare, Palette, Star, Video, X } from "lucide-react"
+import { CheckCircle2, Clock, ImageIcon, MessageSquare, Palette, Star, Video, X } from "lucide-react"
 import { AttendanceEntry } from "../types"
 
 interface Props {
@@ -45,6 +45,17 @@ export default function FeedbackDialog({ open, onClose, entry, sessionInfo }: Pr
                   )}
                 </div>
               </div>
+
+              {/* Hours attended */}
+              {entry.attendedHours != null && entry.attendedHours > 0 && (
+                <div className="flex items-center gap-2 text-sm bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+                  <Clock className="h-4 w-4 text-primary shrink-0" />
+                  <div>
+                    <span className="font-medium text-primary">{entry.attendedHours} hrs attended</span>
+                    <span className="text-xs text-muted-foreground ml-1">this session</span>
+                  </div>
+                </div>
+              )}
 
               {/* Rating */}
               {entry.rating && entry.rating > 0 ? (

@@ -12,6 +12,7 @@ export interface IAttendance {
   artworkImageUrl?: string
   artworkName?: string
   artworkDescription?: string
+  attendedHours?: number
 }
 
 export interface ISession extends Document {
@@ -40,6 +41,7 @@ const AttendanceSchema = new Schema<IAttendance>({
   artworkImageUrl: { type: String, default: '' },
   artworkName: { type: String, default: '' },
   artworkDescription: { type: String, default: '' },
+  attendedHours: { type: Number, min: 0 },
 })
 
 const SessionSchema = new Schema<ISession>(

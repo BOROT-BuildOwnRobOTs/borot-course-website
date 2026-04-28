@@ -15,6 +15,7 @@ export interface Enrollment {
   courseName: string
   courseLevel?: string
   courseDurationWeeks?: number
+  courseHours?: number
   status: "active" | "completed" | "dropped" | "pending"
   progress?: number
   startDate?: string
@@ -34,6 +35,7 @@ export interface AttendanceEntry {
   artworkImageUrl?: string
   artworkName?: string
   artworkDescription?: string
+  attendedHours?: number
 }
 
 export interface SessionData {
@@ -78,6 +80,7 @@ export interface TeacherStudentEnrollment {
   course: string
   courseName: string
   courseDurationWeeks?: number
+  courseHours?: number
   status: string
   startDate?: string
   slot?: SlotInfo

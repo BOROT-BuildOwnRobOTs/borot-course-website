@@ -3,6 +3,7 @@ import mongoose from 'mongoose'
 import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
 import Parent from '@/models/Parent'
+import Course from '@/models/Course'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,30 +23,51 @@ export async function GET(req: NextRequest) {
       : []
     const parentMap = new Map(parents.map((p: any) => [p._id.toString(), { name: p.name, phone: p.phone }]))
 
+    // Enrich courseDurationWeeks + courseHours from real Course documents
+    const courseIds = [...new Set(
+      allStudents.flatMap((s: any) => s.enrollments?.map((e: any) => e.course?.toString()).filter(Boolean) || [])
+    )]
+    const courseDocs = courseIds.length > 0
+      ? await Course.find({ _id: { $in: courseIds.map(id => new mongoose.Types.ObjectId(id)) } }, 'durationWeeks hours').lean()
+      : []
+    const courseMap: Record<string, { durationWeeks: number; hours: number }> = {}
+    ;(courseDocs as any[]).forEach((c: any) => { courseMap[c._id.toString()] = { durationWeeks: c.durationWeeks || 0, hours: c.hours || 0 } })
+
     // Normalize ObjectId fields to plain strings for consistent frontend comparison
     const normalized = allStudents.map((s: any) => {
       const parentInfo = parentMap.get(s.parent?.toString())
       return {
-      ...s,
-      _id: s._id?.toString(),
-      parent: s.parent?.toString(),
-      parentPhone: parentInfo?.phone || '',
-      parentName: parentInfo?.name || '',
-      enrollments: (s.enrollments || []).map((e: any) => ({
-        ...e,
-        _id: e._id?.toString(),
-        course: e.course?.toString(),
-        teacher: e.teacher?.toString(),
-        teacherName: e.teacherName || '',
-        startDate: e.startDate ? new Date(e.startDate).toISOString() : undefined,
-        endDate: e.endDate ? new Date(e.endDate).toISOString() : undefined,
-        reschedules: (e.reschedules || []).map((r: any) => ({
-          ...r,
-          originalDate: r.originalDate ? new Date(r.originalDate).toISOString() : undefined,
-          newDate: r.newDate ? new Date(r.newDate).toISOString() : undefined,
-        })),
-      })),
-    }})
+        ...s,
+        _id: s._id?.toString(),
+        parent: s.parent?.toString(),
+        parentPhone: parentInfo?.phone || '',
+        parentName: parentInfo?.name || '',
+        enrollments: (s.enrollments || []).map((e: any) => {
+          const cid = e.course?.toString()
+          const courseData = cid ? courseMap[cid] : undefined
+          return {
+            ...e,
+            _id: e._id?.toString(),
+            course: cid,
+            teacher: e.teacher?.toString(),
+            teacherName: e.teacherName || '',
+            courseDurationWeeks: (e.courseDurationWeeks && e.courseDurationWeeks > 0)
+              ? e.courseDurationWeeks
+              : courseData?.durationWeeks || 0,
+            courseHours: (e.courseHours && e.courseHours > 0)
+              ? e.courseHours
+              : courseData?.hours || 0,
+            startDate: e.startDate ? new Date(e.startDate).toISOString() : undefined,
+            endDate: e.endDate ? new Date(e.endDate).toISOString() : undefined,
+            reschedules: (e.reschedules || []).map((r: any) => ({
+              ...r,
+              originalDate: r.originalDate ? new Date(r.originalDate).toISOString() : undefined,
+              newDate: r.newDate ? new Date(r.newDate).toISOString() : undefined,
+            })),
+          }
+        }),
+      }
+    })
 
     return NextResponse.json({ success: true, data: normalized })
   } catch (error) {

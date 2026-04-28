@@ -386,6 +386,15 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                       ? generateStampDates(enroll.startDate, enroll.courseDurationWeeks!, enroll.slot)
                       : []
 
+                    // Sum total attended hours for this enrollment
+                    const enrollAttended = stamps.reduce((sum, d) => {
+                      const reschedule = enroll.reschedules?.find((r) => isSameDay(new Date(r.originalDate), d))
+                      const actualDate = reschedule ? new Date(reschedule.newDate) : d
+                      const session = findSessionForStamp(enroll.course, student._id, d, actualDate)
+                      const att = session?.attendance.find((a) => a.student === student._id)
+                      return sum + (att?.attendedHours ?? 0)
+                    }, 0)
+
                     return (
                       <div key={enrollIdx} className="border rounded-xl overflow-hidden">
                         {/* Enrollment header */}
@@ -394,6 +403,9 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                             <div className="flex items-center gap-2 flex-wrap">
                               <BookOpen className="h-4 w-4 text-primary shrink-0" />
                               <span className="text-sm font-semibold">{enroll.courseName}</span>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-sm">
+                                {enrollAttended}/{(enroll as any).courseHours ?? 0} hrs
+                              </span>
                               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[enroll.status]}`}>
                                 {STATUS_ICONS[enroll.status]}{STATUS_LABELS[enroll.status]}
                               </span>

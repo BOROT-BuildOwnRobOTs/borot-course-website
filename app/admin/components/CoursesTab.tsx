@@ -23,6 +23,7 @@ interface Course {
   description: string
   level: string
   durationWeeks: number
+  hours: number
   createdAt: string
 }
 
@@ -60,6 +61,7 @@ export default function CoursesTab() {
     description: '',
     level: '',
     durationWeeks: 0,
+    hours: 0,
   })
   const [saving, setSaving] = useState(false)
 
@@ -75,13 +77,13 @@ export default function CoursesTab() {
 
   const openAdd = () => {
     setEditCourse(null)
-    setForm({ name: '', description: '', level: '', durationWeeks: 0 })
+    setForm({ name: '', description: '', level: '', durationWeeks: 0, hours: 0 })
     setDialogOpen(true)
   }
 
   const openEdit = (c: Course) => {
     setEditCourse(c)
-    setForm({ name: c.name, description: c.description, level: c.level, durationWeeks: c.durationWeeks })
+    setForm({ name: c.name, description: c.description, level: c.level, durationWeeks: c.durationWeeks, hours: c.hours ?? 0 })
     setDialogOpen(true)
   }
 
@@ -146,7 +148,7 @@ export default function CoursesTab() {
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-base font-semibold">{c.name}</CardTitle>
+                    <CardTitle className="text-base font-semibold">{c.name} ({c.hours ?? 0} hrs, {c.durationWeeks ?? 0} wks)</CardTitle>
                     <Badge variant="outline" className="mt-1 text-xs text-orange-600 border-orange-300">
                       {c.level}
                     </Badge>
@@ -166,6 +168,7 @@ export default function CoursesTab() {
                 {c.durationWeeks > 0 && (
                   <p className="text-xs text-gray-400">{c.durationWeeks} weeks</p>
                 )}
+                <p className="text-xs text-gray-400">{c.hours ?? 0} hours</p>
               </CardContent>
             </Card>
           ))}
@@ -221,6 +224,16 @@ export default function CoursesTab() {
                 type="number"
                 value={form.durationWeeks}
                 onChange={(e) => setForm({ ...form, durationWeeks: Number(e.target.value) })}
+              />
+            </div>
+
+            {/* ── Hours ── */}
+            <div>
+              <Label>Total Hours</Label>
+              <Input
+                type="number"
+                value={form.hours}
+                onChange={(e) => setForm({ ...form, hours: Number(e.target.value) })}
               />
             </div>
 

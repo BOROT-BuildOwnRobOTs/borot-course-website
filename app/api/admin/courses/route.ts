@@ -18,13 +18,13 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB()
     const body = await req.json()
-    const { name, description, level, durationWeeks } = body
+    const { name, description, level, durationWeeks, hours } = body
 
     if (!name) {
       return NextResponse.json({ success: false, error: 'Course name is required' }, { status: 400 })
     }
 
-    const course = await Course.create({ name, description, level, durationWeeks })
+    const course = await Course.create({ name, description, level, durationWeeks, hours })
     return NextResponse.json({ success: true, data: course }, { status: 201 })
   } catch (error) {
     return NextResponse.json({ success: false, error: 'Failed to create course' }, { status: 500 })

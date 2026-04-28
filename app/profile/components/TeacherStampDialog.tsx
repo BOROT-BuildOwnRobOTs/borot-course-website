@@ -127,7 +127,7 @@ interface TeacherStampDialogProps {
   studentName: string
   onCheckinToggle: (sessionId: string, studentId: string, checkedIn: boolean) => Promise<void>
   onCheckinRetroactive: (courseId: string, courseName: string, studentId: string, scheduledAt: string, checkedIn: boolean) => Promise<SessionData | null>
-  onFeedbackSaved: (sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[], artworkImageUrl: string, artworkName: string, artworkDescription: string) => Promise<void>
+  onFeedbackSaved: (sessionId: string, studentId: string, feedback: string, rating: number, videoUrl: string, imageUrls: string[], artworkImageUrl: string, artworkName: string, artworkDescription: string, attendedHours: number) => Promise<void>
   onReschedule?: () => void
 }
 
@@ -161,6 +161,7 @@ export default function TeacherStampDialog({
   const [artworkImageUrl, setArtworkImageUrl] = useState("")
   const [artworkName, setArtworkName] = useState("")
   const [artworkDescription, setArtworkDescription] = useState("")
+  const [attendedHours, setAttendedHours] = useState<number>(0)
   const [uploadingArtwork, setUploadingArtwork] = useState(false)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -201,6 +202,7 @@ export default function TeacherStampDialog({
       setArtworkImageUrl(attendee?.artworkImageUrl ?? "")
       setArtworkName(attendee?.artworkName ?? "")
       setArtworkDescription(attendee?.artworkDescription ?? "")
+      setAttendedHours(attendee?.attendedHours ?? 0)
       setUploadError(null)
       busyRef.current = false
       if (cooldownTimer.current) clearTimeout(cooldownTimer.current)
@@ -325,7 +327,7 @@ export default function TeacherStampDialog({
     lockDialog()
     setSavingFeedback(true)
     try {
-      await onFeedbackSaved(session._id, studentId, feedback, rating, videoUrl, images, artworkImageUrl, artworkName, artworkDescription)
+      await onFeedbackSaved(session._id, studentId, feedback, rating, videoUrl, images, artworkImageUrl, artworkName, artworkDescription, attendedHours)
       busyRef.current = false
       if (cooldownTimer.current) clearTimeout(cooldownTimer.current)
       onOpenChange(false)
@@ -554,6 +556,23 @@ export default function TeacherStampDialog({
                   )}
                 </div>
               )}
+            </div>
+
+            {/* ── Hours attended this session ──────────────────────────────────── */}
+            <div>
+              <Label htmlFor="attended-hours" className="text-sm font-medium">Hours Attended This Session</Label>
+              <Input
+                id="attended-hours"
+                type="number"
+                min={0}
+                max={24}
+                step={0.5}
+                value={attendedHours || ""}
+                onChange={(e) => setAttendedHours(e.target.value ? parseFloat(e.target.value) : 0)}
+                placeholder="e.g. 1.5"
+                className="mt-1.5 w-28"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">ชั่วโมงที่เข้าเรียนในวันนี้</p>
             </div>
 
             {/* ── Artwork / Project Section ──────────────────────────────────── */}
