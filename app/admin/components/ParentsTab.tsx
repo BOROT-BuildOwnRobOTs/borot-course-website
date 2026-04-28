@@ -343,7 +343,7 @@ export default function ParentsTab() {
     if (!course) return
     const updated = student.enrollments.map((e, i) =>
       i === enrollmentIdx
-        ? { ...e, course: courseId, courseName: course.name, courseLevel: course.level, courseDurationWeeks: (course as any).durationWeeks || e.courseDurationWeeks }
+        ? { ...e, courseName: course.name, courseLevel: course.level }
         : e
     )
     await fetch(`/api/admin/students/${student._id}`, {
