@@ -338,6 +338,22 @@ export default function ParentsTab() {
     fetchAll()
   }
 
+  const handleUpdateEnrollmentCourse = async (student: Student, enrollmentIdx: number, courseId: string) => {
+    const course = courses.find(c => c._id === courseId)
+    if (!course) return
+    const updated = student.enrollments.map((e, i) =>
+      i === enrollmentIdx
+        ? { ...e, course: courseId, courseName: course.name, courseLevel: course.level, courseDurationWeeks: (course as any).durationWeeks || e.courseDurationWeeks }
+        : e
+    )
+    await fetch(`/api/admin/students/${student._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enrollments: updated }),
+    })
+    fetchAll()
+  }
+
   const handleUpdateEnrollmentTeacher = async (student: Student, enrollmentIdx: number, teacherId: string) => {
     const teacher = teachers.find(t => t._id === teacherId)
     const updated = student.enrollments.map((e, i) =>
@@ -682,7 +698,22 @@ export default function ParentsTab() {
                                     <div key={idx} className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5">
                                       {/* Course info */}
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium text-gray-800 truncate">{e.courseName}</p>
+                                        <Select
+                                          value={e.course || '__none__'}
+                                          onValueChange={(val) => handleUpdateEnrollmentCourse(s, idx, val)}
+                                        >
+                                          <SelectTrigger className="h-auto w-auto border-0 p-0 focus:ring-0 shadow-none shrink-0 gap-0.5 max-w-full">
+                                            <span className="text-xs font-medium text-gray-800 truncate">{e.courseName || 'Select course'}</span>
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {courses.map(c => (
+                                              <SelectItem key={c._id} value={c._id} className="text-xs">
+                                                <span className="font-medium">{c.name}</span>
+                                                {c.level && <span className="text-orange-500 ml-1 text-[10px]">{c.level}</span>}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
                                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                           {e.courseLevel && (
                                             <span className="text-[10px] text-orange-500 truncate">{e.courseLevel}</span>
