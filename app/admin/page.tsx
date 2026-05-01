@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
-import { Users, GraduationCap, BookOpen, CalendarDays, Shield, LogOut, Eye, EyeOff, MessageSquare, FlaskConical } from 'lucide-react'
+import { Users, GraduationCap, BookOpen, CalendarDays, Shield, LogOut, Eye, EyeOff, MessageSquare, FlaskConical, RefreshCw, CheckCircle, XCircle } from 'lucide-react'
 import Image from 'next/image'
 import ParentsTab from './components/ParentsTab'
 import TeachersTab from './components/TeachersTab'
@@ -145,6 +145,23 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [stats, setStats] = useState<Stats>({ parents: 0, students: 0, teachers: 0, courses: 0, sessions: 0 })
+  const [syncing, setSyncing] = useState(false)
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle')
+
+  const handleSyncSheet = async () => {
+    setSyncing(true)
+    setSyncStatus('idle')
+    try {
+      const res = await fetch('/api/admin/sync-sheet', { method: 'POST' })
+      const j = await res.json()
+      setSyncStatus(j.success ? 'success' : 'error')
+    } catch {
+      setSyncStatus('error')
+    } finally {
+      setSyncing(false)
+      setTimeout(() => setSyncStatus('idle'), 4000)
+    }
+  }
 
   // Check session on mount
   useEffect(() => {
@@ -222,6 +239,23 @@ export default function AdminPage() {
             >
               ← Back to Home
             </a>
+            <button
+              onClick={handleSyncSheet}
+              disabled={syncing}
+              className="flex items-center gap-1.5 text-xs border rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50
+                text-green-600 border-green-200 hover:border-green-400 hover:bg-green-50"
+            >
+              {syncing ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : syncStatus === 'success' ? (
+                <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+              ) : syncStatus === 'error' ? (
+                <XCircle className="w-3.5 h-3.5 text-red-500" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5" />
+              )}
+              {syncing ? 'กำลัง Sync...' : syncStatus === 'success' ? 'Sync สำเร็จ!' : syncStatus === 'error' ? 'Sync ล้มเหลว' : 'Sync Google Sheet'}
+            </button>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 transition-colors border border-red-100 hover:border-red-300 rounded-lg px-3 py-1.5"
