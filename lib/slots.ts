@@ -20,38 +20,38 @@ export const MAX_PER_TRIAL_SLOT = 3
 
 // ── Regular slot definitions ─────────────────────────────────────────────────
 // 1-hour sessions with 30-minute breaks between slots (except first two are back-to-back)
-// 9:00-10:00, 10:00-11:00, 11:30-12:30, 13:30-14:30, 15:00-16:00, 16:30-17:30
+// 9:00-10:00, 10:00-11:00, 11:00-12:00, 13:00-14:00, 15:00-16:00, 16:00-17:00
 export const SLOTS = [
   { id: 'tue-0900', day: 'tuesday',  dayLabel: 'Tuesday',   time: '09:00-10:00', startHour: 9,  startMin: 0 },
   { id: 'tue-1000', day: 'tuesday',  dayLabel: 'Tuesday',   time: '10:00-11:00', startHour: 10, startMin: 0 },
-  { id: 'tue-1130', day: 'tuesday',  dayLabel: 'Tuesday',   time: '11:30-12:30', startHour: 11, startMin: 30 },
-  { id: 'tue-1330', day: 'tuesday',  dayLabel: 'Tuesday',   time: '13:30-14:30', startHour: 13, startMin: 30 },
+  { id: 'tue-1100', day: 'tuesday',  dayLabel: 'Tuesday',   time: '11:00-12:00', startHour: 11, startMin: 0 },
+  { id: 'tue-1300', day: 'tuesday',  dayLabel: 'Tuesday',   time: '13:00-14:00', startHour: 13, startMin: 0 },
   { id: 'tue-1500', day: 'tuesday',  dayLabel: 'Tuesday',   time: '15:00-16:00', startHour: 15, startMin: 0 },
-  { id: 'tue-1630', day: 'tuesday',  dayLabel: 'Tuesday',   time: '16:30-17:30', startHour: 16, startMin: 30 },
+  { id: 'tue-1600', day: 'tuesday',  dayLabel: 'Tuesday',   time: '16:00-17:00', startHour: 16, startMin: 0 },
   { id: 'fri-0900', day: 'friday',   dayLabel: 'Friday',    time: '09:00-10:00', startHour: 9,  startMin: 0 },
   { id: 'fri-1000', day: 'friday',   dayLabel: 'Friday',    time: '10:00-11:00', startHour: 10, startMin: 0 },
-  { id: 'fri-1130', day: 'friday',   dayLabel: 'Friday',    time: '11:30-12:30', startHour: 11, startMin: 30 },
-  { id: 'fri-1330', day: 'friday',   dayLabel: 'Friday',    time: '13:30-14:30', startHour: 13, startMin: 30 },
+  { id: 'fri-1100', day: 'friday',   dayLabel: 'Friday',    time: '11:00-12:00', startHour: 11, startMin: 0 },
+  { id: 'fri-1300', day: 'friday',   dayLabel: 'Friday',    time: '13:00-14:00', startHour: 13, startMin: 0 },
   { id: 'fri-1500', day: 'friday',   dayLabel: 'Friday',    time: '15:00-16:00', startHour: 15, startMin: 0 },
-  { id: 'fri-1630', day: 'friday',   dayLabel: 'Friday',    time: '16:30-17:30', startHour: 16, startMin: 30 },
+  { id: 'fri-1600', day: 'friday',   dayLabel: 'Friday',    time: '16:00-17:00', startHour: 16, startMin: 0 },
   { id: 'sat-0900', day: 'saturday', dayLabel: 'Saturday',  time: '09:00-10:00', startHour: 9,  startMin: 0 },
   { id: 'sat-1000', day: 'saturday', dayLabel: 'Saturday',  time: '10:00-11:00', startHour: 10, startMin: 0 },
-  { id: 'sat-1130', day: 'saturday', dayLabel: 'Saturday',  time: '11:30-12:30', startHour: 11, startMin: 30 },
-  { id: 'sat-1330', day: 'saturday', dayLabel: 'Saturday',  time: '13:30-14:30', startHour: 13, startMin: 30 },
+  { id: 'sat-1100', day: 'saturday', dayLabel: 'Saturday',  time: '11:00-12:00', startHour: 11, startMin: 0 },
+  { id: 'sat-1300', day: 'saturday', dayLabel: 'Saturday',  time: '13:00-14:00', startHour: 13, startMin: 0 },
   { id: 'sat-1500', day: 'saturday', dayLabel: 'Saturday',  time: '15:00-16:00', startHour: 15, startMin: 0 },
-  { id: 'sat-1630', day: 'saturday', dayLabel: 'Saturday',  time: '16:30-17:30', startHour: 16, startMin: 30 },
+  { id: 'sat-1600', day: 'saturday', dayLabel: 'Saturday',  time: '16:00-17:00', startHour: 16, startMin: 0 },
   { id: 'sun-0900', day: 'sunday',   dayLabel: 'Sunday',    time: '09:00-10:00', startHour: 9,  startMin: 0 },
   { id: 'sun-1000', day: 'sunday',   dayLabel: 'Sunday',    time: '10:00-11:00', startHour: 10, startMin: 0 },
-  { id: 'sun-1130', day: 'sunday',   dayLabel: 'Sunday',    time: '11:30-12:30', startHour: 11, startMin: 30 },
-  { id: 'sun-1330', day: 'sunday',   dayLabel: 'Sunday',    time: '13:30-14:30', startHour: 13, startMin: 30 },
+  { id: 'sun-1100', day: 'sunday',   dayLabel: 'Sunday',    time: '11:00-12:00', startHour: 11, startMin: 0 },
+  { id: 'sun-1300', day: 'sunday',   dayLabel: 'Sunday',    time: '13:00-14:00', startHour: 13, startMin: 0 },
   { id: 'sun-1500', day: 'sunday',   dayLabel: 'Sunday',    time: '15:00-16:00', startHour: 15, startMin: 0 },
-  { id: 'sun-1630', day: 'sunday',   dayLabel: 'Sunday',    time: '16:30-17:30', startHour: 16, startMin: 30 },
+  { id: 'sun-1600', day: 'sunday',   dayLabel: 'Sunday',    time: '16:00-17:00', startHour: 16, startMin: 0 },
 ] as const
 
 export const MAX_PER_SLOT = 8
 
 export type SlotDay = 'tuesday' | 'friday' | 'saturday' | 'sunday'
-export type SlotTime = '09:00-10:00' | '10:00-11:00' | '11:30-12:30' | '13:30-14:30' | '15:00-16:00' | '16:30-17:30'
+export type SlotTime = '09:00-10:00' | '10:00-11:00' | '11:00-12:00' | '13:00-14:00' | '15:00-16:00' | '16:00-17:00'
 
 export interface SlotInfo {
   day: string

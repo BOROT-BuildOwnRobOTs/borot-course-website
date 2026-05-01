@@ -6,12 +6,17 @@ import Session from '@/models/Session'
 export const dynamic = 'force-dynamic'
 
 /**
- * Migration: Map old slot times to nearest new slot times
+ * Migration: Map old slot times to new slot times
  *
- * Old slots:       New slots (nearest match):
- * 10:00-12:00  →  10:00-11:00  (same start time)
- * 13:00-15:00  →  13:30-14:30  (closest, 30 min diff)
- * 15:30-17:30  →  15:00-16:00  (closest, 30 min diff)
+ * Round 1 – legacy 2-hour slots → 1-hour slots:
+ * 10:00-12:00  →  10:00-11:00
+ * 13:00-15:00  →  13:30-14:30  (kept intermediate value)
+ * 15:30-17:30  →  15:00-16:00
+ *
+ * Round 2 – shift :30 slots 30 minutes earlier:
+ * 11:30-12:30  →  11:00-12:00
+ * 13:30-14:30  →  13:00-14:00
+ * 16:30-17:30  →  16:00-17:00
  *
  * This updates:
  *  - Student.enrollments[].slot.time
@@ -20,9 +25,14 @@ export const dynamic = 'force-dynamic'
  */
 
 const SLOT_TIME_MAP: Record<string, string> = {
+  // Round 1: legacy 2-hour → 1-hour
   '10:00-12:00': '10:00-11:00',
-  '13:00-15:00': '13:30-14:30',
+  '13:00-15:00': '13:00-14:00',
   '15:30-17:30': '15:00-16:00',
+  // Round 2: shift :30 start times → :00 start times
+  '11:30-12:30': '11:00-12:00',
+  '13:30-14:30': '13:00-14:00',
+  '16:30-17:30': '16:00-17:00',
 }
 
 const OLD_SLOT_TIMES = Object.keys(SLOT_TIME_MAP)
