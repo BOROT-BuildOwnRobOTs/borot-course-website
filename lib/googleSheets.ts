@@ -1,6 +1,8 @@
 import { google } from 'googleapis'
 import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
+import Session from '@/models/Session'
+import Course from '@/models/Course'
 import '@/models/Parent'
 import { generateStampDates, isSameDay } from '@/lib/slots'
 
@@ -230,6 +232,41 @@ export async function syncScheduleToSheet(): Promise<void> {
   await connectDB()
   const students = await Student.find({}).populate('parent', 'name phone').lean()
 
+  // Build courseHours map: courseId → hours
+  const courses = await Course.find({}, { _id: 1, hours: 1 }).lean()
+  const courseHoursMap = new Map<string, number>()
+  for (const c of courses) courseHoursMap.set(c._id.toString(), c.hours ?? 0)
+
+  // Fetch all sessions and index by courseId+date for fast lookup
+  // Multiple students can share the same course+date session, so store array per key
+  const allSessions = await Session.find({}, {
+    course: 1, scheduledAt: 1, slot: 1, attendance: 1,
+  }).lean()
+
+  // Index: `${courseId}|${dateKey}` → session[]
+  const sessionIndex = new Map<string, (typeof allSessions[number])[]>()
+  for (const s of allSessions) {
+    const dateKey = new Date(s.scheduledAt).toDateString()
+    const key = `${s.course.toString()}|${dateKey}`
+    if (!sessionIndex.has(key)) sessionIndex.set(key, [])
+    sessionIndex.get(key)!.push(s)
+  }
+
+  // Find the session that contains attendance for this specific student
+  function findAttendance(courseId: string, studentId: string, stampDate: Date, actualDate: Date) {
+    const candidates = [
+      ...(sessionIndex.get(`${courseId}|${actualDate.toDateString()}`) ?? []),
+      ...(actualDate.toDateString() !== stampDate.toDateString()
+        ? (sessionIndex.get(`${courseId}|${stampDate.toDateString()}`) ?? [])
+        : []),
+    ]
+    for (const ses of candidates) {
+      const att = ses.attendance.find((a: any) => a.student.toString() === studentId)
+      if (att) return att
+    }
+    return undefined
+  }
+
   const auth = getAuth()
   const sheets = google.sheets({ version: 'v4', auth })
   const tabIds = await getSheetTabIds(sheets)
@@ -237,14 +274,31 @@ export async function syncScheduleToSheet(): Promise<void> {
   // ── Overview tab ──────────────────────────────────────────────────────────────
   const overviewHeader = [
     'ชื่อนักเรียน', 'ชื่อเล่น', 'คอร์ส', 'ระดับ', 'ครู',
-    'วันเรียน', 'เวลา', 'วันเริ่มเรียน', 'จำนวนสัปดาห์',
-    'สถานะ', 'ชื่อผู้ปกครอง', 'เบอร์โทร',
+    'วันเรียน', 'เวลา', 'วันเริ่มเรียน', 'จำนวนสัปดาห์', 'ชั่วโมง (คอร์ส)',
+    'ชั่วโมงที่เรียนแล้ว', 'สถานะ', 'ชื่อผู้ปกครอง', 'เบอร์โทร',
   ]
   const overviewRows: string[][] = [overviewHeader]
 
   for (const student of students) {
     for (const enrollment of student.enrollments ?? []) {
       const parent = student.parent as any
+      const courseId = enrollment.course.toString()
+      const courseHours = courseHoursMap.get(courseId) ?? 0
+
+      // Sum attendedHours across all stamps for this enrollment
+      let attendedHoursTotal = 0
+      if (enrollment.startDate && enrollment.slot && enrollment.courseDurationWeeks) {
+        const stamps = generateStampDates(enrollment.startDate, enrollment.courseDurationWeeks, enrollment.slot)
+        for (const stampDate of stamps) {
+          const reschedule = (enrollment.reschedules ?? []).find((r: any) =>
+            isSameDay(new Date(r.originalDate), stampDate)
+          )
+          const actualDate = reschedule ? new Date(reschedule.newDate) : stampDate
+          const att = findAttendance(courseId, student._id.toString(), stampDate, actualDate)
+          attendedHoursTotal += att?.attendedHours ?? 0
+        }
+      }
+
       overviewRows.push([
         student.name ?? '',
         student.nickname ?? '',
@@ -255,6 +309,8 @@ export async function syncScheduleToSheet(): Promise<void> {
         enrollment.slot?.time ?? '',
         formatDate(enrollment.startDate),
         String(enrollment.courseDurationWeeks ?? ''),
+        String(courseHours),
+        String(attendedHoursTotal),
         statusLabel(enrollment.status),
         parent?.name ?? '',
         parent?.phone ?? '',
@@ -265,7 +321,7 @@ export async function syncScheduleToSheet(): Promise<void> {
   // ── Build all session rows ────────────────────────────────────────────────────
   const scheduleHeader = [
     'วันที่', 'วัน', 'เวลา', 'ครั้งที่', 'ชื่อนักเรียน', 'ชื่อเล่น',
-    'คอร์ส', 'ครู', 'สถานะ', 'หมายเหตุ',
+    'คอร์ส', 'ครู', 'เช็คอิน', 'ชั่วโมง (ครั้งนี้)', 'สถานะ', 'หมายเหตุ',
   ]
 
   const allRows: SessionRow[] = []
@@ -274,6 +330,7 @@ export async function syncScheduleToSheet(): Promise<void> {
     for (const enrollment of student.enrollments ?? []) {
       if (!enrollment.startDate || !enrollment.slot || !enrollment.courseDurationWeeks) continue
 
+      const courseId = enrollment.course.toString()
       const stamps = generateStampDates(enrollment.startDate, enrollment.courseDurationWeeks, enrollment.slot)
 
       stamps.forEach((stampDate, index) => {
@@ -284,6 +341,10 @@ export async function syncScheduleToSheet(): Promise<void> {
         const displayDate = reschedule ? new Date(reschedule.newDate) : stampDate
         const displaySlot = reschedule ? reschedule.newSlot : enrollment.slot
         const status = sessionStatusLabel(stampDate, reschedule ? new Date(reschedule.newDate) : undefined)
+
+        const att = findAttendance(courseId, student._id.toString(), stampDate, displayDate)
+        const checkedIn = att?.checkedIn ? 'เช็คอินแล้ว' : ''
+        const attendedHours = att?.attendedHours != null ? String(att.attendedHours) : ''
 
         let note = ''
         if (reschedule) {
@@ -309,6 +370,8 @@ export async function syncScheduleToSheet(): Promise<void> {
             student.nickname ?? '',
             enrollment.courseName ?? '',
             enrollment.teacherName ?? '',
+            checkedIn,
+            attendedHours,
             status,
             note,
           ],
