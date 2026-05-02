@@ -231,9 +231,6 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
         >
           <span className="text-base leading-none">📊</span>
           Learning Progress
-          <span className="text-[10px] bg-amber-100 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full font-semibold">
-            Coming Soon
-          </span>
         </button>
         <button
           onClick={() => setActiveTab("portfolio")}
@@ -246,9 +243,6 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
         >
           <span className="text-base leading-none">📁</span>
           Student Portfolio
-          <span className="text-[10px] bg-amber-100 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full font-semibold">
-            Coming Soon
-          </span>
         </button>
         <button
           onClick={() => setActiveTab("ai")}
@@ -261,9 +255,6 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
         >
           <span className="text-base leading-none">🤖</span>
           AI Recommendation
-          <span className="text-[10px] bg-amber-100 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full font-semibold">
-            Coming Soon
-          </span>
         </button>
       </div>
 
@@ -274,7 +265,10 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
 
       {/* Portfolio tab */}
       {activeTab === "portfolio" && (
-        <StudentPortfolio studentName={user.students?.[0]?.name} />
+        <StudentPortfolio
+          studentName={user.students?.[0]?.name}
+          studentId={user.students?.[0]?._id}
+        />
       )}
 
       {/* AI Recommendation tab */}
