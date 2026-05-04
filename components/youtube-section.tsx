@@ -26,7 +26,7 @@ export function YouTubeSection() {
 
   return (
     <section
-      className="w-full flex flex-col items-center gap-8 px-4 md:px-8 lg:px-[100px] py-12 md:py-[72px]"
+      className="w-full flex flex-col items-center gap-6 sm:gap-8 px-4 sm:px-6 md:px-8 lg:px-[100px] py-10 sm:py-12 md:py-[72px]"
       style={{
         background: "#FFFFFF",
         fontFamily: 'var(--font-geist-sans), "IBM Plex Sans Thai", sans-serif',
@@ -34,12 +34,12 @@ export function YouTubeSection() {
     >
       {/* Header */}
       <div className="w-full max-w-[1440px] text-center">
-        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4">
           <span style={{ color: "#101010" }}>YouTube </span>
           <span style={{ color: "#E5690D" }}>Channel</span>
         </h2>
         <p
-          className="text-base md:text-lg max-w-3xl mx-auto leading-relaxed"
+          className="text-sm sm:text-base md:text-lg max-w-3xl mx-auto leading-relaxed px-2"
           style={{ color: "#484848" }}
         >
           Follow content and projects from our participants on our YouTube Channel.
@@ -47,7 +47,7 @@ export function YouTubeSection() {
       </div>
 
       {/* Video Grid */}
-      <div className="w-full max-w-[1440px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="w-full max-w-[1440px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {videos.map((video) => (
           <div
             key={video.id}
@@ -100,9 +100,9 @@ export function YouTubeSection() {
             </div>
 
             {/* Video Title */}
-            <div className="px-6 pb-6">
+            <div className="px-4 sm:px-6 pb-4 sm:pb-6">
               <h3
-                className="text-base md:text-lg font-semibold"
+                className="text-sm sm:text-base md:text-lg font-semibold"
                 style={{ color: "#101010" }}
               >
                 {video.title}
@@ -139,12 +139,12 @@ export function YouTubeSection() {
       </div>
 
       {/* View All Button */}
-      <div className="w-full max-w-[1440px] flex justify-center mt-4">
+      <div className="w-full max-w-[1440px] flex justify-center mt-2 sm:mt-4">
         <a
           href="https://youtube.com/@borot.Official"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-lg font-semibold transition-all hover:opacity-90"
+          className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 rounded-lg font-semibold text-sm sm:text-base transition-all hover:opacity-90"
           style={{
             background: "#E5690D",
             color: "#FFFFFF",

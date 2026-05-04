@@ -34,7 +34,7 @@ export default function Home() {
       {/* Floating Pretest Button */}
       <button
         onClick={() => setIsPretestOpen(true)}
-        className="fixed bottom-6 left-6 z-40 group"
+        className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 group"
         aria-label="ทำแบบทดสอบเลือกคอร์ส"
       >
         <style>{`
@@ -67,15 +67,15 @@ export default function Home() {
         `}</style>
         <div className="flex items-center gap-3">
           <div
-            className="pretest-float-btn flex items-center gap-2.5 px-4 py-3 rounded-2xl text-white font-bold text-sm cursor-pointer transition-all duration-200"
+            className="pretest-float-btn flex items-center gap-2 sm:gap-2.5 px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl text-white font-bold text-sm cursor-pointer transition-all duration-200"
             style={{
               background: "linear-gradient(135deg, #E5690D 0%, #FF8C00 100%)",
             }}
           >
-            <span className="text-lg">✨</span>
+            <span className="text-base sm:text-lg">✨</span>
             <div className="flex flex-col items-start leading-tight">
-              <span className="text-[13px] font-bold">Pretest</span>
-              <span className="text-[10px] font-medium opacity-80">ค้นหาคอร์สที่ใช่</span>
+              <span className="text-[12px] sm:text-[13px] font-bold">Pretest</span>
+              <span className="text-[9px] sm:text-[10px] font-medium opacity-80 whitespace-nowrap">ค้นหาคอร์สที่ใช่</span>
             </div>
           </div>
         </div>

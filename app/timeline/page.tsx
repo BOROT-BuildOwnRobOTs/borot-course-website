@@ -5,25 +5,25 @@ import { Clock, Calendar, FileText, Users, AlertCircle, BookOpen, Award, CheckCi
 export default function TimelinePage() {
   return (
     <div className="min-h-screen bg-background pt-20">
-      <div className="container mx-auto px-6 py-12">
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
-            <Calendar className="h-4 w-4" />
+      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="text-center mb-10 sm:mb-16">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium mb-4 sm:mb-6">
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Learning Schedule & Timeline
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-balance mb-6">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-balance mb-4 sm:mb-6">
             <span className="text-foreground">ตารางเวลา</span> <span className="text-primary">การเรียน</span>
           </h1>
-          <p className="text-xl text-muted-foreground max-w-4xl mx-auto text-balance">
+          <p className="text-base sm:text-xl text-muted-foreground max-w-4xl mx-auto text-balance px-2">
             ตารางเวลาการเรียนแบบปฏิทิน เข้าใจง่าย ชัดเจน พร้อมความยืดหยุ่นตามความต้องการของโรงเรียน
           </p>
         </div>
 
-        <Card className="mb-12 shadow-lg border">
-          <CardHeader className="bg-primary text-primary-foreground">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <div className="p-2 bg-primary-foreground/20 rounded-lg">
-                <Calendar className="h-6 w-6" />
+        <Card className="mb-8 sm:mb-12 shadow-lg border">
+          <CardHeader className="bg-primary text-primary-foreground p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-xl">
+              <div className="p-1.5 sm:p-2 bg-primary-foreground/20 rounded-lg flex-shrink-0">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
               ตารางปฏิทินการเรียน Module 1 (ตัวอย่าง)
             </CardTitle>
@@ -31,7 +31,7 @@ export default function TimelinePage() {
               เลือกวันในสัปดาห์ที่สะดวก แล้วเรียนต่อเนื่องตามตารางนี้
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-4 sm:p-8">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse rounded-xl overflow-hidden shadow-lg">
                 <thead>
@@ -118,11 +118,11 @@ export default function TimelinePage() {
           </CardContent>
         </Card>
 
-        <Card className="mb-12 shadow-lg border">
-          <CardHeader className="bg-secondary text-secondary-foreground">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <div className="p-2 bg-secondary-foreground/20 rounded-lg">
-                <Clock className="h-6 w-6" />
+        <Card className="mb-8 sm:mb-12 shadow-lg border">
+          <CardHeader className="bg-secondary text-secondary-foreground p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-xl">
+              <div className="p-1.5 sm:p-2 bg-secondary-foreground/20 rounded-lg flex-shrink-0">
+                <Clock className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
               ตัวเลือกการจัดเรียนแบบรายเดือน
             </CardTitle>
@@ -130,7 +130,7 @@ export default function TimelinePage() {
               สำหรับโรงเรียนที่ต้องการความยืดหยุ่นมากขึ้น
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-4 sm:p-8">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse rounded-xl overflow-hidden shadow-lg">
                 <thead>
@@ -170,7 +170,7 @@ export default function TimelinePage() {
           </CardContent>
         </Card>
 
-        <div className="grid md:grid-cols-2 gap-8 mb-12">
+        <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-12">
           <Card className="shadow-lg border">
             <CardHeader className="bg-destructive text-destructive-foreground">
               <CardTitle className="flex items-center gap-3">
@@ -180,7 +180,7 @@ export default function TimelinePage() {
                 ระบบการสอบ
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-6">
+            <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
               <div className="p-5 bg-green-50 rounded-xl border border-green-200">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 bg-green-100 rounded-lg">
@@ -234,7 +234,7 @@ export default function TimelinePage() {
                 ข้อมูลสำคัญ
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-6">
+            <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
               <div className="p-5 bg-blue-50 rounded-xl border border-blue-200">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
@@ -269,10 +269,10 @@ export default function TimelinePage() {
         </div>
 
         <Card className="shadow-lg border">
-          <CardHeader className="bg-secondary text-secondary-foreground">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <div className="p-2 bg-secondary-foreground/20 rounded-lg">
-                <Calendar className="h-6 w-6" />
+          <CardHeader className="bg-secondary text-secondary-foreground p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-xl">
+              <div className="p-1.5 sm:p-2 bg-secondary-foreground/20 rounded-lg flex-shrink-0">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
               ตารางเรียนครบหลักสูตร 4 Modules (แบบรายสัปดาห์)
             </CardTitle>
@@ -280,7 +280,7 @@ export default function TimelinePage() {
               ภาพรวมการเรียนทั้งหมด 20 สัปดาห์
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-4 sm:p-8">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse rounded-xl overflow-hidden shadow-lg text-sm">
                 <thead>

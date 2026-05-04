@@ -19,11 +19,11 @@ export function Navbar() {
   ]
 
   return (
-    <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-[1240px] max-w-[calc(100%-2rem)]">
+    <nav className="fixed top-3 sm:top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-[1240px] px-3 sm:px-4">
       <div className="relative">
-        <div className="flex items-center justify-between h-[81px] px-6 bg-white rounded-[100px] shadow-[0_-4px_8px_0_rgba(0,0,0,0.03),0_28px_8px_0_rgba(0,0,0,0),0_18px_7px_0_rgba(0,0,0,0.01),0_10px_6px_0_rgba(0,0,0,0.03),0_4px_4px_0_rgba(0,0,0,0.04),0_1px_2px_0_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-between h-16 sm:h-[81px] px-4 sm:px-6 bg-white rounded-full sm:rounded-[100px] shadow-[0_-4px_8px_0_rgba(0,0,0,0.03),0_28px_8px_0_rgba(0,0,0,0),0_18px_7px_0_rgba(0,0,0,0.01),0_10px_6px_0_rgba(0,0,0,0.03),0_4px_4px_0_rgba(0,0,0,0.04),0_1px_2px_0_rgba(0,0,0,0.05)]">
           <Link href="/" className="flex items-center gap-3">
-            <div className="h-10">
+            <div className="h-8 sm:h-10">
               <Image
                 src="/images/borot-kmutt-logo.png"
                 alt="BOROT x KMUTT Partnership"

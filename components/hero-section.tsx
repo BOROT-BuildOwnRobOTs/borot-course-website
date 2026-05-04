@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Play } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
@@ -12,7 +11,7 @@ export function HeroSection() {
 
   return (
     <>
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-10">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-28 pb-12 lg:pt-10 lg:pb-0">
       <style jsx>{`
         @keyframes fadeInUp {
           from {
@@ -214,15 +213,101 @@ export function HeroSection() {
         }}
       />
       
-      <div className="container max-w-7xl mx-auto px-6 relative z-10">
+      <div className="container max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          
+
+          {/* Mobile Hero Image - shown on mobile only */}
+          <div className="lg:hidden flex justify-center items-center relative w-full mb-2 initial-hidden animate-fade-in-up delay-100">
+            <div className="relative w-[280px] h-[280px] sm:w-[340px] sm:h-[340px]">
+              {/* Dashed Border Circle */}
+              <div className="absolute inset-0 rounded-full animate-rotate-dashed pointer-events-none" style={{ border: '1px dashed #B9B9B9' }} />
+
+              {/* Main Circle */}
+              <div
+                className="absolute inset-[6%] rounded-full overflow-hidden animate-pulse-subtle"
+                style={{
+                  border: '8px solid #E5690D',
+                  boxShadow: '0 12px 24px rgba(229,105,13,0.18), 0 4px 8px rgba(0,0,0,0.08)'
+                }}
+              >
+                <Image
+                  src="/images/hero-main.png"
+                  alt="Students working on robotics"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 280px, 340px"
+                />
+              </div>
+
+              {/* Top Left Mini Circle */}
+              <div
+                className="absolute rounded-full overflow-hidden animate-float"
+                style={{
+                  width: '28%',
+                  aspectRatio: '1',
+                  top: '-4%',
+                  left: '-6%',
+                  border: '3px solid #E5690D',
+                  boxShadow: '0 6px 14px rgba(0,0,0,0.15)'
+                }}
+              >
+                <Image
+                  src="/images/hero-top-left.png"
+                  alt="Line following robot"
+                  fill
+                  className="object-cover"
+                  sizes="100px"
+                />
+              </div>
+
+              {/* Right Middle Mini Circle */}
+              <div
+                className="absolute rounded-full overflow-hidden animate-float-slow"
+                style={{
+                  width: '26%',
+                  aspectRatio: '1',
+                  top: '22%',
+                  right: '-8%',
+                  border: '3px solid #E5690D',
+                  boxShadow: '0 6px 14px rgba(0,0,0,0.15)'
+                }}
+              >
+                <Image
+                  src="/images/hero-right-middle.png"
+                  alt="Students in meeting"
+                  fill
+                  className="object-cover"
+                  sizes="100px"
+                />
+              </div>
+
+              {/* Mascot */}
+              <div
+                className="absolute animate-rotate-float"
+                style={{
+                  width: '52%',
+                  aspectRatio: '283/268',
+                  right: '-8%',
+                  bottom: '-6%'
+                }}
+              >
+                <Image
+                  src="/images/borot-mascot.png"
+                  alt="BOROT Mascot"
+                  fill
+                  className="object-contain"
+                  sizes="180px"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Left Content */}
           <div className="flex flex-col items-start gap-4 w-full max-w-[608px]">
 
             {/* Main heading */}
             <h1
-              className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight uppercase initial-hidden animate-fade-in-up delay-200"
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight uppercase initial-hidden animate-fade-in-up delay-200"
               style={{
                 background: 'linear-gradient(180deg, #FF8C00 0%, #E5690D 100%)',
                 WebkitBackgroundClip: 'text',
@@ -260,12 +345,12 @@ export function HeroSection() {
             </button>
 
             {/* CTA Button */}
-            <div className="flex items-center initial-hidden animate-fade-in-up delay-500">
-              <Link href="/courses">
+            <div className="flex items-center w-full sm:w-auto initial-hidden animate-fade-in-up delay-500">
+              <Link href="/courses" className="w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="lg"
-                  className="px-6 py-3 text-base font-semibold rounded-lg bg-transparent hover-lift"
+                  className="w-full sm:w-auto px-6 py-3 text-base font-semibold rounded-lg bg-transparent hover-lift"
                   style={{
                     color: '#E5690D',
                     fontSize: '16px',
@@ -288,7 +373,7 @@ export function HeroSection() {
               >
                 Our Partners
               </p>
-              <div className="flex items-center gap-5 flex-wrap">
+              <div className="flex items-center gap-3 sm:gap-5 flex-wrap">
                 {/* Partner 1 - KMUTT Smart Kid */}
                 <div className="partner-logo-item" style={{ opacity: 0.75 }}>
                   <Image
@@ -296,7 +381,7 @@ export function HeroSection() {
                     alt="KMUTT Smart Kid"
                     width={90}
                     height={40}
-                    className="object-contain"
+                    className="object-contain h-8 sm:h-10 w-auto"
                   />
                 </div>
 
@@ -307,7 +392,7 @@ export function HeroSection() {
                     alt="KMUTT"
                     width={70}
                     height={40}
-                    className="object-contain"
+                    className="object-contain h-8 sm:h-10 w-auto"
                   />
                 </div>
 
@@ -318,7 +403,7 @@ export function HeroSection() {
                     alt="KMUTT Continuing Education Center"
                     width={110}
                     height={40}
-                    className="object-contain"
+                    className="object-contain h-8 sm:h-10 w-auto"
                   />
                 </div>
 
@@ -329,7 +414,7 @@ export function HeroSection() {
                     alt="KMUTT Works"
                     width={100}
                     height={40}
-                    className="object-contain"
+                    className="object-contain h-8 sm:h-10 w-auto"
                   />
                 </div>
 
