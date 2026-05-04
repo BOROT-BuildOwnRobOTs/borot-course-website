@@ -14,7 +14,7 @@ import {
   Plus, Trash2, CalendarDays, Users, ChevronDown, ChevronUp,
   CheckCircle2, XCircle, Star, MessageSquare, Clock, Video, CalendarCheck,
 } from 'lucide-react'
-import { SLOTS } from '@/lib/slots'
+import { SLOTS, getSlotLabel as libGetSlotLabel } from '@/lib/slots'
 
 const ADMIN_DAY_OPTIONS = [
   { value: "tuesday", label: "Tuesday" },
@@ -188,8 +188,7 @@ export default function SessionsTab() {
 
   const getSlotLabel = (slot?: { day: string; time: string }) => {
     if (!slot) return null
-    const found = SLOTS.find(s => s.day === slot.day && s.time === slot.time)
-    return found ? `${found.dayLabel} ${found.time}` : `${slot.day} ${slot.time}`
+    return libGetSlotLabel(slot)
   }
 
   // When slot day changes, auto-set a matching scheduledAt date

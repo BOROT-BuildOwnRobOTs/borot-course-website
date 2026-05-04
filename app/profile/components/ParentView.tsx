@@ -8,7 +8,7 @@ import {
   AlertCircle, BookOpen, CalendarDays, CheckCircle2, ChevronDown,
   ChevronUp, Clock, Loader2, MessageSquare, RefreshCw, Trophy, Users, XCircle,
 } from "lucide-react"
-import { SLOTS, generateStampDates, isSameDay } from "@/lib/slots"
+import { SLOTS, generateStampDates, isSameDay, getSlotLabel as libGetSlotLabel } from "@/lib/slots"
 
 // ── Compute weekly status info from stamps & sessions ─────────────────────────
 function getWeeklyStatus(
@@ -95,9 +95,7 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
 }
 
 function getSlotLabel(slot: { day: string; time: string } | null | undefined): string {
-  if (!slot) return ""
-  const found = SLOTS.find((s) => s.day === slot.day && s.time === slot.time)
-  return found ? `${found.dayLabel} ${found.time}` : `${slot.day} ${slot.time}`
+  return libGetSlotLabel(slot as any)
 }
 
 interface Props {

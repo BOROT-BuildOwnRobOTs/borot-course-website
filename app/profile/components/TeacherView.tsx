@@ -11,15 +11,18 @@ import {
 } from "lucide-react"
 import TeacherEnrollmentStamps from "./TeacherEnrollmentStamps"
 import type { UserData, TeacherStudentData, SessionData } from "../types"
-import { SLOTS } from "@/lib/slots"
+import { SLOTS, isTwoHourTime, getConstituentSlotTimes, getTwoHourSlotOptions } from "@/lib/slots"
 
 interface TeacherViewProps {
   user: UserData
   onSessionCountLoaded?: (count: number) => void
 }
 
-// All possible slot combos
-const ALL_SLOTS = SLOTS.map((s) => ({ id: s.id, day: s.day, dayLabel: s.dayLabel, time: s.time }))
+// All possible slot combos (including 2-hour options)
+const ALL_SLOTS = [
+  ...SLOTS.map((s) => ({ id: s.id, day: s.day, dayLabel: s.dayLabel, time: s.time })),
+  ...getTwoHourSlotOptions().map((s) => ({ id: s.id, day: s.day, dayLabel: s.dayLabel, time: s.time })),
+]
 
 const DAY_COLOR: Record<string, string> = {
   saturday: "orange",
@@ -246,7 +249,18 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
       const match = ALL_SLOTS.find(
         (s) => s.day === enrollment.slot!.day && s.time === enrollment.slot!.time
       )
-      if (match) slotStudentMap.get(match.id)?.add(student._id)
+      if (match) {
+        slotStudentMap.get(match.id)?.add(student._id)
+      } else if (isTwoHourTime(enrollment.slot.time)) {
+        // For 2-hr slots, also count toward constituent 1-hr slots
+        const times = getConstituentSlotTimes(enrollment.slot.time)
+        for (const t of times) {
+          const oneHrMatch = ALL_SLOTS.find(
+            (s) => s.day === enrollment.slot!.day && s.time === t
+          )
+          if (oneHrMatch) slotStudentMap.get(oneHrMatch.id)?.add(student._id)
+        }
+      }
     }
   }
 
@@ -258,10 +272,23 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
       let enrollments = student.enrollments
       if (selectedSlot) {
         enrollments = enrollments.filter(
-          (e) =>
-            e.slot &&
-            e.slot.day === selectedSlot.day &&
-            e.slot.time === selectedSlot.time
+          (e) => {
+            if (!e.slot) return false
+            if (e.slot.day !== selectedSlot.day) return false
+            // Match exact slot time
+            if (e.slot.time === selectedSlot.time) return true
+            // For 2-hr slots matching 1-hr constituent
+            if (isTwoHourTime(e.slot.time)) {
+              const times = getConstituentSlotTimes(e.slot.time)
+              return times.includes(selectedSlot.time)
+            }
+            // For 1-hr slot matching 2-hr selection
+            if (isTwoHourTime(selectedSlot.time)) {
+              const selTimes = getConstituentSlotTimes(selectedSlot.time)
+              return selTimes.includes(e.slot.time)
+            }
+            return false
+          }
         )
         enrollments = enrollments.filter((e) => e.status === "active")
       } else {
@@ -293,7 +320,18 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
       const match = ALL_SLOTS.find(
         (s) => s.day === enrollment.slot!.day && s.time === enrollment.slot!.time
       )
-      if (match) allSlotStudentMap.get(match.id)?.add(student._id)
+      if (match) {
+        allSlotStudentMap.get(match.id)?.add(student._id)
+      } else if (isTwoHourTime(enrollment.slot.time)) {
+        // For 2-hr slots, also count toward constituent 1-hr slots
+        const times = getConstituentSlotTimes(enrollment.slot.time)
+        for (const t of times) {
+          const oneHrMatch = ALL_SLOTS.find(
+            (s) => s.day === enrollment.slot!.day && s.time === t
+          )
+          if (oneHrMatch) allSlotStudentMap.get(oneHrMatch.id)?.add(student._id)
+        }
+      }
     }
   }
 
@@ -304,10 +342,23 @@ export default function TeacherView({ user, onSessionCountLoaded }: TeacherViewP
       let enrollments = student.enrollments
       if (allSelectedSlot) {
         enrollments = enrollments.filter(
-          (e) =>
-            e.slot &&
-            e.slot.day === allSelectedSlot.day &&
-            e.slot.time === allSelectedSlot.time
+          (e) => {
+            if (!e.slot) return false
+            if (e.slot.day !== allSelectedSlot.day) return false
+            // Match exact slot time
+            if (e.slot.time === allSelectedSlot.time) return true
+            // For 2-hr slots matching 1-hr constituent
+            if (isTwoHourTime(e.slot.time)) {
+              const times = getConstituentSlotTimes(e.slot.time)
+              return times.includes(allSelectedSlot.time)
+            }
+            // For 1-hr slot matching 2-hr selection
+            if (isTwoHourTime(allSelectedSlot.time)) {
+              const selTimes = getConstituentSlotTimes(allSelectedSlot.time)
+              return selTimes.includes(e.slot.time)
+            }
+            return false
+          }
         )
         enrollments = enrollments.filter((e) => e.status === "active")
       } else {

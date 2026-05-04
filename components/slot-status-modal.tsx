@@ -15,6 +15,7 @@ interface StudentEntry {
   nickname: string
   courseName: string
   courseLevel: string
+  isTwoHour?: boolean
 }
 
 interface SlotData {
@@ -340,6 +341,11 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                 >
                   {student.courseLevel || "No level specified"}
                 </span>
+                {student.isTwoHour && (
+                  <span className="text-[9px] font-bold text-amber-700 bg-amber-100 border border-amber-300 rounded-full px-1.5 py-0.5 shrink-0">
+                    ⏱2h
+                  </span>
+                )}
               </div>
             ))}
           </div>

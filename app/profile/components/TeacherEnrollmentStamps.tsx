@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { BookOpen, CalendarDays, ChevronDown, ChevronUp, Clock, AlertCircle, Users, CheckCircle2, Trophy } from "lucide-react"
-import { generateStampDates, isSameDay, SLOTS, getNextSlotDateStr } from "@/lib/slots"
+import { generateStampDates, isSameDay, SLOTS, getNextSlotDateStr, isTwoHourTime, getConstituentSlotTimes, getTwoHourSlotOptions, getSlotLabel as libGetSlotLabel, MAX_PER_SLOT } from "@/lib/slots"
 import StampCircle from "./StampCircle"
 import StampLegend from "./StampLegend"
 import TeacherStampDialog from "./TeacherStampDialog"
@@ -39,8 +39,7 @@ interface Props {
 
 function getSlotLabel(slot: { day: string; time: string } | undefined): string {
   if (!slot) return ""
-  const found = SLOTS.find((s) => s.day === slot.day && s.time === slot.time)
-  return found ? `${found.dayLabel} ${found.time}` : `${slot.day} ${slot.time}`
+  return libGetSlotLabel(slot as any)
 }
 
 function findSessionForStamp(
@@ -90,6 +89,7 @@ export default function TeacherEnrollmentStamps({
   }[]>([])
   const [loadingReschedSlots, setLoadingReschedSlots] = useState(false)
   const [reschedSelectedDay, setReschedSelectedDay] = useState("")
+  const [reschedDurationTab, setReschedDurationTab] = useState<"1hr" | "2hr">("1hr")
 
   // Complete course state
   const [completeConfirmOpen, setCompleteConfirmOpen] = useState(false)
@@ -268,14 +268,30 @@ export default function TeacherEnrollmentStamps({
 
   // Reschedule handlers
   const openReschedule = (origDate: Date) => {
+    const currentTime = enrollment.slot?.time || ""
     setReschedOrigDate(origDate)
     setReschedNewSlotDay(enrollment.slot?.day || "")
-    setReschedNewSlotTime(enrollment.slot?.time || "")
     setReschedNewDate(getNextSlotDateStr(enrollment.slot?.day || "saturday"))
     setReschedReason("")
     setRescheduleRemaining(false)
     setReschedSlotAvailability([])
     setReschedSelectedDay(enrollment.slot?.day || "tuesday")
+
+    // Detect if enrollment slot OR any existing reschedule is 2hr
+    let detectedTwoHr = isTwoHourTime(currentTime)
+    let twoHrTime = ""
+    if (!detectedTwoHr && enrollment.reschedules?.length) {
+      for (const r of enrollment.reschedules as any[]) {
+        if (isTwoHourTime(r.newSlot?.time)) {
+          detectedTwoHr = true
+          twoHrTime = r.newSlot.time
+          break
+        }
+      }
+    }
+    setReschedDurationTab(detectedTwoHr ? "2hr" : "1hr")
+    setReschedNewSlotTime(twoHrTime || currentTime)
+
     setReschedOpen(true)
     // Fetch slot availability
     setLoadingReschedSlots(true)
@@ -501,6 +517,39 @@ export default function TeacherEnrollmentStamps({
                 Original date: {reschedOrigDate.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               </div>
             )}
+
+            {/* Duration Tab Switcher */}
+            <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setReschedDurationTab("1hr")
+                  setReschedNewSlotTime("")
+                }}
+                className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold transition-all ${
+                  reschedDurationTab === "1hr"
+                    ? "bg-white text-gray-800 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                ⏱ 1 Hour
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setReschedDurationTab("2hr")
+                  setReschedNewSlotTime("")
+                }}
+                className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold transition-all ${
+                  reschedDurationTab === "2hr"
+                    ? "bg-white text-gray-800 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                ⏱⏱ 2 Hours
+              </button>
+            </div>
+
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Select New Day</Label>
@@ -538,12 +587,43 @@ export default function TeacherEnrollmentStamps({
               <div>
                 <Label className="mb-2 block">
                   Select Time — <span className="text-orange-600 font-semibold">{RESCHED_DAY_OPTIONS.find((d) => d.value === reschedSelectedDay)?.label}</span>
+                  {reschedDurationTab === "2hr" && (
+                    <span className="ml-1 text-[11px] text-gray-400 font-normal">(2-hour block)</span>
+                  )}
                 </Label>
                 <div className="grid grid-cols-3 gap-2">
-                  {(reschedSlotAvailability.length > 0
-                    ? reschedSlotAvailability
-                    : SLOTS.map((s) => ({ id: s.id, day: s.day, dayLabel: s.dayLabel, time: s.time, count: 0, max: 8, available: true }))
-                  ).filter((slot) => slot.day === reschedSelectedDay).map((slot) => {
+                  {(() => {
+                    const rawSlotList = reschedSlotAvailability.length > 0
+                      ? reschedSlotAvailability
+                      : SLOTS.map((s) => ({ id: s.id, day: s.day, dayLabel: s.dayLabel, time: s.time, count: 0, max: 8, available: true }))
+
+                    if (reschedDurationTab === "1hr") {
+                      return rawSlotList.filter((slot) => slot.day === reschedSelectedDay)
+                    } else {
+                      const twoHourOptions = getTwoHourSlotOptions()
+                      const dayTwoHourOptions = twoHourOptions.filter((s) => s.day === reschedSelectedDay)
+                      const availMap = new Map<string, typeof rawSlotList[0]>()
+                      for (const s of rawSlotList) {
+                        availMap.set(`${s.day}|${s.time}`, s)
+                      }
+                      return dayTwoHourOptions.map((twoHr) => {
+                        const slotsData = twoHr.constituentSlots.map((cs) =>
+                          availMap.get(`${twoHr.day}|${cs.time}`) || { id: `${twoHr.day}-${cs.time}`, day: twoHr.day, dayLabel: twoHr.dayLabel, time: cs.time, count: 0, max: MAX_PER_SLOT, available: true }
+                        )
+                        const combinedCount = Math.max(...slotsData.map((s) => s.count))
+                        const combinedAvailable = slotsData.every((s) => s.count < s.max)
+                        return {
+                          id: twoHr.id,
+                          day: twoHr.day,
+                          dayLabel: twoHr.dayLabel,
+                          time: twoHr.time,
+                          count: combinedCount,
+                          max: MAX_PER_SLOT,
+                          available: combinedAvailable,
+                        }
+                      })
+                    }
+                  })().map((slot) => {
                     const isSelected = reschedNewSlotDay === slot.day && reschedNewSlotTime === slot.time
                     const remaining = slot.max - slot.count
                     const isFull = remaining <= 0
@@ -551,13 +631,18 @@ export default function TeacherEnrollmentStamps({
                       <button
                         key={slot.id}
                         type="button"
+                        disabled={isFull}
                         onClick={() => {
                           setReschedNewSlotDay(slot.day)
                           setReschedNewSlotTime(slot.time)
                           setReschedNewDate(getNextSlotDateStr(slot.day))
                         }}
                         className={`relative text-center px-2 py-3 rounded-lg border text-xs transition-all ${
-                          isSelected ? "bg-orange-500 text-white border-orange-500 shadow-md" : "border-gray-200 hover:border-orange-300 hover:bg-orange-50"
+                          isSelected
+                            ? "bg-orange-500 text-white border-orange-500 shadow-md"
+                            : isFull
+                            ? "border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed"
+                            : "border-gray-200 hover:border-orange-300 hover:bg-orange-50"
                         }`}
                       >
                         <div className="font-semibold text-sm">{slot.time}</div>

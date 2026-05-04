@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Student from '@/models/Student'
 import TrialRegistration from '@/models/TrialRegistration'
-import { SLOTS, MAX_PER_SLOT, TRIAL_SLOTS, MAX_PER_TRIAL_SLOT, generateStampDates, isSameDay } from '@/lib/slots'
+import { SLOTS, MAX_PER_SLOT, TRIAL_SLOTS, MAX_PER_TRIAL_SLOT, generateStampDates, isSameDay, isTwoHourTime, getConstituentSlotTimes } from '@/lib/slots'
 
 // Force dynamic — never cache this route
 export const dynamic = 'force-dynamic'
@@ -76,7 +76,12 @@ export async function GET(req: NextRequest) {
         if (!['active', 'pending'].includes(enrollment.status)) continue
         if (!enrollment.slot?.day || !enrollment.slot?.time) continue
 
-        const originalSlotKey = `${enrollment.slot.day}|${enrollment.slot.time}`
+        // For 2-hour slots, the enrollment counts toward BOTH constituent 1-hour slots
+        const isTwoHr = isTwoHourTime(enrollment.slot.time)
+        const constituentTimes = isTwoHr ? getConstituentSlotTimes(enrollment.slot.time) : [enrollment.slot.time]
+
+        const originalSlotKeys = constituentTimes.map((t) => `${enrollment.slot.day}|${t}`)
+        const primarySlotKey = `${enrollment.slot.day}|${enrollment.slot.time}`
         const hasStampInfo = enrollment.startDate && enrollment.courseDurationWeeks
         const reschedules: any[] = enrollment.reschedules || []
 
@@ -91,50 +96,58 @@ export async function GET(req: NextRequest) {
           nickname: student.nickname || '',
           courseName: enrollment.courseName || '',
           courseLevel: enrollment.courseLevel || '',
+          isTwoHour: isTwoHourTime(enrollment.slot.time),
         }
 
         // ── Handle ORIGINAL slot ──
-        // Check if the student should appear in their original slot on that day's date
+        // For 2-hour slots, add the student to EACH constituent 1-hour slot key
         const originalDayDate = dayDates[enrollment.slot.day]
-        if (originalDayDate && slotStudentSets[originalSlotKey] !== undefined) {
-          let showInOriginal = true
 
-          if (hasStampInfo && stamps.length > 0) {
-            // Check if there's a stamp on the original slot's specific date
-            const hasStampOnDate = stamps.some((d: Date) => isSameDay(d, originalDayDate))
-            if (!hasStampOnDate) {
+        // Determine if student should show on the original day date
+        let showInOriginal = true
+
+        if (hasStampInfo && stamps.length > 0 && originalDayDate) {
+          // Check if there's a stamp on the original slot's specific date
+          const hasStampOnDate = stamps.some((d: Date) => isSameDay(d, originalDayDate))
+          if (!hasStampOnDate) {
+            showInOriginal = false
+          }
+
+          // Check if rescheduled OUT from this date
+          if (showInOriginal && reschedules.length > 0) {
+            const rescheduledOut = reschedules.some(
+              (r: any) => isSameDay(new Date(r.originalDate), originalDayDate)
+            )
+            if (rescheduledOut) {
               showInOriginal = false
             }
+          }
 
-            // Check if rescheduled OUT from this date
-            if (showInOriginal && reschedules.length > 0) {
-              const rescheduledOut = reschedules.some(
-                (r: any) => isSameDay(new Date(r.originalDate), originalDayDate)
-              )
-              if (rescheduledOut) {
-                showInOriginal = false
-              }
-            }
-
-            // Check if rescheduled IN to the SAME slot on this date
-            // (e.g. rescheduled from Sat Apr 4 → Sat Apr 11, same time slot)
-            if (!showInOriginal && reschedules.length > 0) {
-              const rescheduledInSameSlot = reschedules.some(
-                (r: any) =>
-                  r.newSlot?.day === enrollment.slot.day &&
-                  r.newSlot?.time === enrollment.slot.time &&
-                  isSameDay(new Date(r.newDate), originalDayDate)
-              )
-              if (rescheduledInSameSlot) {
-                showInOriginal = true
-              }
+          // Check if rescheduled IN to the SAME slot on this date
+          // (e.g. rescheduled from Sat Apr 4 → Sat Apr 11, same time slot)
+          if (!showInOriginal && reschedules.length > 0) {
+            const rescheduledInSameSlot = reschedules.some(
+              (r: any) =>
+                r.newSlot?.day === enrollment.slot.day &&
+                r.newSlot?.time === enrollment.slot.time &&
+                isSameDay(new Date(r.newDate), originalDayDate)
+            )
+            if (rescheduledInSameSlot) {
+              showInOriginal = true
             }
           }
-          // If no stamp info (legacy enrollment), show by default
+        }
 
-          if (showInOriginal) {
-            slotStudentSets[originalSlotKey].add(studentId)
-            slotStudentList[originalSlotKey].push(studentInfo)
+        if (showInOriginal && originalDayDate) {
+          // Add to EACH constituent slot (for 2-hr: both 1-hr slots; for 1-hr: just one)
+          for (const key of originalSlotKeys) {
+            if (slotStudentSets[key] !== undefined) {
+              const alreadyListed = slotStudentSets[key].has(studentId)
+              slotStudentSets[key].add(studentId)
+              if (!alreadyListed) {
+                slotStudentList[key].push(studentInfo)
+              }
+            }
           }
         }
 
@@ -142,19 +155,31 @@ export async function GET(req: NextRequest) {
         // Check if any reschedule moves this student INTO a different slot on that slot's date
         for (const reschedule of reschedules) {
           if (!reschedule.newSlot?.day || !reschedule.newSlot?.time) continue
-          const newSlotKey = `${reschedule.newSlot.day}|${reschedule.newSlot.time}`
-
-          // Skip if it's the same as original slot (handled above)
-          if (newSlotKey === originalSlotKey) continue
+          const reschedConstituent = isTwoHourTime(reschedule.newSlot.time)
+            ? getConstituentSlotTimes(reschedule.newSlot.time)
+            : [reschedule.newSlot.time]
+          const reschedSlotKeys = reschedConstituent.map((t) => `${reschedule.newSlot.day}|${t}`)
 
           const newSlotDayDate = dayDates[reschedule.newSlot.day]
           if (!newSlotDayDate) continue
 
           // Check if the reschedule's newDate matches this slot's target date
           if (isSameDay(new Date(reschedule.newDate), newSlotDayDate)) {
-            if (slotStudentSets[newSlotKey] !== undefined) {
-              slotStudentSets[newSlotKey].add(studentId)
-              slotStudentList[newSlotKey].push(studentInfo)
+            // Add to ALL constituent slots. Set deduplication prevents double-counting
+            // when original slot and reschedule-in both target the same 1-hr slot.
+            // Use the reschedule's isTwoHour flag in the student info.
+            const reschedStudentInfo = {
+              ...studentInfo,
+              isTwoHour: isTwoHourTime(reschedule.newSlot.time),
+            }
+            for (const key of reschedSlotKeys) {
+              if (slotStudentSets[key] !== undefined) {
+                const alreadyListed = slotStudentSets[key].has(studentId)
+                slotStudentSets[key].add(studentId)
+                if (!alreadyListed) {
+                  slotStudentList[key].push(reschedStudentInfo)
+                }
+              }
             }
           }
         }
