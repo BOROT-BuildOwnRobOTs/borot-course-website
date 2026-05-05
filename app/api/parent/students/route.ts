@@ -4,6 +4,7 @@ import Student from '@/models/Student'
 import Course from '@/models/Course'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 30
 
 export async function GET(req: NextRequest) {
   try {

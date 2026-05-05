@@ -11,6 +11,38 @@ export interface AccountOption {
   email: string
 }
 
+// Retry on transient errors (network failures, 5xx, 408, 429).
+// Vercel cold starts + Mongo Atlas warm-up commonly produce these on the first hit.
+async function fetchJson<T = any>(
+  input: RequestInfo,
+  init?: RequestInit,
+  retries = 2,
+): Promise<T> {
+  let lastErr: unknown
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(input, init)
+      if (!res.ok) {
+        const retriable = res.status >= 500 || res.status === 408 || res.status === 429
+        if (retriable && attempt < retries) {
+          await new Promise((r) => setTimeout(r, 300 * Math.pow(3, attempt)))
+          continue
+        }
+        const body = await res.text().catch(() => "")
+        throw new Error(`HTTP ${res.status}${body ? `: ${body.slice(0, 200)}` : ""}`)
+      }
+      return (await res.json()) as T
+    } catch (err) {
+      lastErr = err
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, 300 * Math.pow(3, attempt)))
+        continue
+      }
+    }
+  }
+  throw lastErr
+}
+
 /**
  * useProfileData
  *
@@ -33,6 +65,7 @@ export function useProfileData(clerkUserId: string, clerkEmail: string) {
 
   const [user, setUser] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [tierSessionCount, setTierSessionCount] = useState(0)
 
   const [sessions, setSessions] = useState<SessionData[]>([])
@@ -95,13 +128,13 @@ export function useProfileData(clerkUserId: string, clerkEmail: string) {
 
     if (syncAttempted.current) return // prevent double calls in StrictMode
     syncAttempted.current = true
+    setLoadError(null)
 
-    fetch("/api/auth/clerk-sync", {
+    fetchJson<any>("/api/auth/clerk-sync", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: clerkEmail, clerkId: clerkUserId }),
     })
-      .then((r) => r.json())
       .then((j) => {
         if (j.success && j.multiple && j.accounts) {
           // Multiple accounts found — show account picker
@@ -115,17 +148,60 @@ export function useProfileData(clerkUserId: string, clerkEmail: string) {
           // No account in DB — new user, show onboarding option
           setIsNewUser(true)
         } else {
-          // Unexpected — log and stop loading; UI will show fallback
           console.error("[useProfileData] clerk-sync unexpected response", j)
+          setLoadError("ไม่สามารถโหลดข้อมูลผู้ใช้ได้ กรุณาลองใหม่")
+          syncAttempted.current = false
         }
       })
       .catch((err) => {
         console.error("[useProfileData] clerk-sync failed", err)
+        setLoadError("เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่")
+        syncAttempted.current = false
       })
       .finally(() => {
         setLoading(false)
       })
   }, [clerkUserId, clerkEmail])
+
+  const retryLoad = useCallback(() => {
+    syncAttempted.current = false
+    setLoadError(null)
+    setLoading(true)
+    sessionStorage.removeItem("borot_user")
+    // Trigger the effect by toggling a dummy state via router refresh fallback:
+    // simplest reliable way is to re-run the same fetch inline.
+    if (!clerkEmail) {
+      setIsNewUser(true)
+      setLoading(false)
+      return
+    }
+    syncAttempted.current = true
+    fetchJson<any>("/api/auth/clerk-sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: clerkEmail, clerkId: clerkUserId }),
+    })
+      .then((j) => {
+        if (j.success && j.multiple && j.accounts) {
+          setAccounts(j.accounts)
+          setSelectingAccount(true)
+        } else if (j.success && j.user) {
+          sessionStorage.setItem("borot_user", JSON.stringify(j.user))
+          setUser(j.user)
+        } else if (j.newUser) {
+          setIsNewUser(true)
+        } else {
+          setLoadError("ไม่สามารถโหลดข้อมูลผู้ใช้ได้ กรุณาลองใหม่")
+          syncAttempted.current = false
+        }
+      })
+      .catch((err) => {
+        console.error("[useProfileData] retry failed", err)
+        setLoadError("เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่")
+        syncAttempted.current = false
+      })
+      .finally(() => setLoading(false))
+  }, [clerkEmail, clerkUserId])
 
   // Select a specific account (when multiple exist)
   const selectAccount = useCallback(
@@ -135,19 +211,21 @@ export function useProfileData(clerkUserId: string, clerkEmail: string) {
       setLoading(true)
 
       try {
-        const res = await fetch("/api/auth/clerk-sync", {
+        const j = await fetchJson<any>("/api/auth/clerk-sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: clerkEmail, selectRole: role, clerkId: clerkUserId }),
         })
-        const j = await res.json()
         if (j.success && j.user) {
           sessionStorage.setItem("borot_user", JSON.stringify(j.user))
           setUser(j.user)
           // Keep accounts list so user can switch later
+        } else {
+          setLoadError("ไม่สามารถเลือกบัญชีได้ กรุณาลองใหม่")
         }
-      } catch {
-        router.replace("/")
+      } catch (err) {
+        console.error("[useProfileData] selectAccount failed", err)
+        setLoadError("เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่")
       } finally {
         setLoading(false)
       }
@@ -169,12 +247,11 @@ export function useProfileData(clerkUserId: string, clerkEmail: string) {
       return
     }
 
-    fetch("/api/auth/clerk-sync", {
+    fetchJson<any>("/api/auth/clerk-sync", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: clerkEmail, clerkId: clerkUserId }),
     })
-      .then((r) => r.json())
       .then((j) => {
         if (j.success && j.multiple && j.accounts) {
           setAccounts(j.accounts)
@@ -183,6 +260,10 @@ export function useProfileData(clerkUserId: string, clerkEmail: string) {
           sessionStorage.setItem("borot_user", JSON.stringify(j.user))
           setUser(j.user)
         }
+      })
+      .catch((err) => {
+        console.error("[useProfileData] switchAccount failed", err)
+        setLoadError("เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่")
       })
       .finally(() => setLoading(false))
   }, [clerkEmail, clerkUserId])
@@ -258,8 +339,7 @@ export function useProfileData(clerkUserId: string, clerkEmail: string) {
   // Re-fetch fresh student data from API (to get correct courseDurationWeeks etc.)
   useEffect(() => {
     if (!user || user.role !== "parent") return
-    fetch(`/api/parent/students?parentId=${user._id}`)
-      .then((r) => r.json())
+    fetchJson<any>(`/api/parent/students?parentId=${user._id}`)
       .then((j) => {
         if (j.success && j.data) {
           const updated = { ...user, students: j.data }
@@ -267,7 +347,10 @@ export function useProfileData(clerkUserId: string, clerkEmail: string) {
           setUser(updated)
         }
       })
-      .catch(() => {}) // silently fail, keep existing data
+      .catch((err) => {
+        // Keep existing data, but log so we can see this in production
+        console.error("[useProfileData] refresh students failed", err)
+      })
   }, [user?._id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch sessions for parent's students
@@ -275,9 +358,11 @@ export function useProfileData(clerkUserId: string, clerkEmail: string) {
     if (!user || user.role !== "parent" || !user.students?.length) return
     const ids = user.students.map((s) => s._id).join(",")
     setLoadingSessions(true)
-    fetch(`/api/parent/sessions?studentIds=${ids}`)
-      .then((r) => r.json())
+    fetchJson<any>(`/api/parent/sessions?studentIds=${ids}`)
       .then((j) => { if (j.success) setSessions(j.data) })
+      .catch((err) => {
+        console.error("[useProfileData] fetch sessions failed", err)
+      })
       .finally(() => setLoadingSessions(false))
   }, [user])
 
@@ -293,6 +378,8 @@ export function useProfileData(clerkUserId: string, clerkEmail: string) {
     user,
     setUser,
     loading,
+    loadError,
+    retryLoad,
     sessions,
     loadingSessions,
     tierSessionCount,

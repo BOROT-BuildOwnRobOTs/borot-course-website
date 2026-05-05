@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb'
 import Session from '@/models/Session'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 30
 
 // GET /api/parent/sessions?studentIds=id1,id2
 // Returns all sessions where any of the given students appear in attendance

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2, GraduationCap, Users, ArrowRightLeft, KeyRound } from "lucide-react"
+import { Loader2, GraduationCap, Users, ArrowRightLeft, KeyRound, AlertCircle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -34,6 +34,8 @@ export default function ProfileClient({ clerkUserId, clerkEmail }: Props) {
     user,
     setUser,
     loading,
+    loadError,
+    retryLoad,
     sessions,
     loadingSessions,
     tierSessionCount,
@@ -73,6 +75,32 @@ export default function ProfileClient({ clerkUserId, clerkEmail }: Props) {
     } else {
       setLegacyError(result.error || "เกิดข้อผิดพลาด")
     }
+  }
+
+  // ── Error state — show retry instead of an infinite spinner ─────────────
+  if (loadError && !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <Card className="max-w-md w-full border-2">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-2 h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+              <AlertCircle className="h-6 w-6 text-destructive" />
+            </div>
+            <CardTitle>โหลดข้อมูลไม่สำเร็จ</CardTitle>
+            <CardDescription>{loadError}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button onClick={retryLoad} className="w-full gap-2">
+              <RefreshCw className="h-4 w-4" />
+              ลองใหม่
+            </Button>
+            <Button variant="ghost" onClick={handleLogout} className="w-full">
+              ออกจากระบบ
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   // ── Loading ──────────────────────────────────────────────────────────────
@@ -307,8 +335,25 @@ export default function ProfileClient({ clerkUserId, clerkEmail }: Props) {
   // ── No user loaded ──────────────────────────────────────────────────────
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <Card className="max-w-md w-full border-2">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-2 h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+              <AlertCircle className="h-6 w-6 text-destructive" />
+            </div>
+            <CardTitle>ไม่พบข้อมูลผู้ใช้</CardTitle>
+            <CardDescription>การโหลดอาจไม่สมบูรณ์ ลองโหลดอีกครั้ง</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button onClick={retryLoad} className="w-full gap-2">
+              <RefreshCw className="h-4 w-4" />
+              ลองใหม่
+            </Button>
+            <Button variant="ghost" onClick={handleLogout} className="w-full">
+              ออกจากระบบ
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
