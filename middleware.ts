@@ -8,6 +8,10 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 const isProtectedRoute = createRouteMatcher([
   '/profile(.*)',
   '/onboarding(.*)',
+  // 3D print ordering flow — customers must be signed in so we can link
+  // orders to a Clerk userId for history & tracking.
+  '/service/3d-printing(.*)',
+  '/api/print/orders(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

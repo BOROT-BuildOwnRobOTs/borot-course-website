@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
-import { Users, GraduationCap, BookOpen, CalendarDays, Shield, LogOut, Eye, EyeOff, MessageSquare, FlaskConical, RefreshCw, CheckCircle, XCircle } from 'lucide-react'
+import { Users, GraduationCap, BookOpen, CalendarDays, Shield, LogOut, Eye, EyeOff, MessageSquare, FlaskConical, RefreshCw, CheckCircle, XCircle, Box, Printer } from 'lucide-react'
 import Image from 'next/image'
 import ParentsTab from './components/ParentsTab'
 import TeachersTab from './components/TeachersTab'
@@ -12,6 +12,8 @@ import SessionsTab from './components/SessionsTab'
 import FeedbackTab from './components/FeedbackTab'
 import TrialClassTab from './components/TrialClassTab'
 import ParentViewSimulatorTab from './components/ParentViewSimulatorTab'
+import OrdersTab from './components/OrdersTab'
+import PrintQueueTab from './components/PrintQueueTab'
 
 interface Stats {
   parents: number
@@ -29,6 +31,10 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const [error, setError] = useState('')
   const [shaking, setShaking] = useState(false)
 
+  // SECURITY (phase 2 — must fix before processing real payments via /print):
+  // Hardcoded credentials + sessionStorage flag is acceptable for the course CMS,
+  // but the 3D-print order flow handles money. Replace with Clerk-gated admin
+  // role check (see middleware.ts) and remove this client-side auth before launch.
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (username === 'admin' && password === 'admin') {
@@ -337,6 +343,20 @@ export default function AdminPage() {
               <Eye className="w-4 h-4 mr-1.5" />
               Parent View
             </TabsTrigger>
+            <TabsTrigger
+              value="print-orders"
+              className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md px-4 py-2 text-sm font-medium text-gray-600 transition-all"
+            >
+              <Box className="w-4 h-4 mr-1.5" />
+              3D Print Orders
+            </TabsTrigger>
+            <TabsTrigger
+              value="print-queue"
+              className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md px-4 py-2 text-sm font-medium text-gray-600 transition-all"
+            >
+              <Printer className="w-4 h-4 mr-1.5" />
+              Print Queue
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="parents" className="mt-0">
@@ -365,6 +385,14 @@ export default function AdminPage() {
 
           <TabsContent value="parent-view" className="mt-0">
             <ParentViewSimulatorTab />
+          </TabsContent>
+
+          <TabsContent value="print-orders" className="mt-0">
+            <OrdersTab />
+          </TabsContent>
+
+          <TabsContent value="print-queue" className="mt-0">
+            <PrintQueueTab />
           </TabsContent>
         </Tabs>
       </div>
