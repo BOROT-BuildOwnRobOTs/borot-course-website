@@ -15,6 +15,7 @@ import {
   CheckCircle2, XCircle, Star, MessageSquare, Clock, Video, CalendarCheck,
 } from 'lucide-react'
 import { SLOTS, getSlotLabel as libGetSlotLabel } from '@/lib/slots'
+import { DeleteConfirmDialog } from '@/components/admin/delete-confirm-dialog'
 
 const ADMIN_DAY_OPTIONS = [
   { value: "tuesday", label: "Tuesday" },
@@ -73,6 +74,7 @@ export default function SessionsTab() {
   })
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [pendingDelete, setPendingDelete] = useState<Session | null>(null)
 
   // Feedback dialog
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
@@ -137,7 +139,6 @@ export default function SessionsTab() {
   }
 
   const handleDeleteSession = async (id: string) => {
-    if (!confirm('Delete this session?')) return
     await fetch(`/api/admin/sessions/${id}`, { method: 'DELETE' })
     fetchAll()
   }
@@ -278,7 +279,7 @@ export default function SessionsTab() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <Button variant="ghost" size="sm" onClick={() => handleDeleteSession(s._id)}>
+                      <Button variant="ghost" size="sm" onClick={() => setPendingDelete(s)}>
                         <Trash2 className="w-3.5 h-3.5 text-red-400" />
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => setExpandedSession(isExpanded ? null : s._id)}>
@@ -571,6 +572,26 @@ export default function SessionsTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null) }}
+        itemType="session"
+        itemName={
+          pendingDelete
+            ? `${pendingDelete.courseName} — ${new Date(pendingDelete.scheduledAt).toLocaleString()}`
+            : ''
+        }
+        confirmPhrase="DELETE"
+        consequences={[
+          'The session will be removed',
+          'All attendance records, feedback, and uploaded artwork on this session will be lost',
+        ]}
+        onConfirm={async () => {
+          if (pendingDelete) await handleDeleteSession(pendingDelete._id)
+        }}
+        destructiveLabel="Delete session"
+      />
     </div>
   )
 }

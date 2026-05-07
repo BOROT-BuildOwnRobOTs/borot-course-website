@@ -29,23 +29,35 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { name, email, password, phone, branch } = body
 
-    if (!name || !email || !password) {
-      return NextResponse.json({ success: false, error: 'Name, email and password are required' }, { status: 400 })
+    if (!name) {
+      return NextResponse.json({ success: false, error: 'Name is required' }, { status: 400 })
     }
 
-    const existing = await Parent.findOne({ email: email.toLowerCase() })
-    if (existing) {
-      return NextResponse.json({ success: false, error: 'Email already exists' }, { status: 400 })
+    const trimmedEmail = typeof email === 'string' ? email.trim() : ''
+    const hasEmail = trimmedEmail.length > 0
+
+    if (hasEmail && !password) {
+      return NextResponse.json({ success: false, error: 'Password is required when email is provided' }, { status: 400 })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
-    const parent = await Parent.create({
+    if (hasEmail) {
+      const existing = await Parent.findOne({ email: trimmedEmail.toLowerCase() })
+      if (existing) {
+        return NextResponse.json({ success: false, error: 'Email already exists' }, { status: 400 })
+      }
+    }
+
+    const createData: Record<string, unknown> = {
       name,
-      email,
-      password: hashedPassword,
       phone,
       branch: branch || null,
-    })
+    }
+    if (hasEmail) {
+      createData.email = trimmedEmail
+      createData.password = await bcrypt.hash(password, 10)
+    }
+
+    const parent = await Parent.create(createData)
 
     const parentObj = parent.toObject()
     delete parentObj.password

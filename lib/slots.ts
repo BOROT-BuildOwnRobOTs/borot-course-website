@@ -52,7 +52,7 @@ export const SLOTS = [
   { id: 'sun-1600', day: 'sunday',   dayLabel: 'Sunday',    time: '16:00-17:00', startHour: 16, startMin: 0 },
 ] as const
 
-export const MAX_PER_SLOT = 8
+export const MAX_PER_SLOT = 6
 
 export type SlotDay = 'tuesday' | 'friday' | 'saturday' | 'sunday'
 export type SlotTime = '09:00-10:00' | '10:00-11:00' | '11:00-12:00' | '13:00-14:00' | '15:00-16:00' | '16:00-17:00'

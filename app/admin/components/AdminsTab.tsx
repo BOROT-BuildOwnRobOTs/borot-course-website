@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Plus, Pencil, Trash2, ShieldCheck, Shield, Mail, Eye, EyeOff } from 'lucide-react'
 import { useBranchContext, BranchSummary } from './BranchContext'
+import { DeleteConfirmDialog } from '@/components/admin/delete-confirm-dialog'
 
 interface AdminRecord {
   _id: string
@@ -42,6 +43,7 @@ export default function AdminsTab() {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<AdminRecord | null>(null)
 
   const fetchAll = async () => {
     setLoading(true)
@@ -126,12 +128,11 @@ export default function AdminsTab() {
   }
 
   const handleDelete = async (a: AdminRecord) => {
-    if (!confirm(`Delete admin "${a.email}"?`)) return
     const res = await fetch(`/api/admin/admins/${a._id}`, { method: 'DELETE' })
     const json = await res.json()
     if (!json.success) {
       alert(json.error || 'Delete failed')
-      return
+      throw new Error(json.error || 'Delete failed')
     }
     await fetchAll()
   }
@@ -217,7 +218,7 @@ export default function AdminsTab() {
                     <Button variant="ghost" size="sm" onClick={() => openEdit(a)}>
                       <Pencil className="w-3.5 h-3.5 text-gray-500" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(a)}>
+                    <Button variant="ghost" size="sm" onClick={() => setPendingDelete(a)}>
                       <Trash2 className="w-3.5 h-3.5 text-red-400" />
                     </Button>
                   </div>
@@ -326,6 +327,21 @@ export default function AdminsTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null) }}
+        itemType="admin"
+        itemName={pendingDelete?.email ?? ''}
+        consequences={[
+          'The admin user will lose access to the dashboard',
+          'This cannot be reversed without re-creating the account',
+        ]}
+        onConfirm={async () => {
+          if (pendingDelete) await handleDelete(pendingDelete)
+        }}
+        destructiveLabel="Delete admin"
+      />
     </div>
   )
 }

@@ -318,14 +318,25 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const saturdaySlots = slots.filter((s) => s.day === "saturday")
   const sundaySlots = slots.filter((s) => s.day === "sunday")
 
-  const totalStudents = slots.reduce((sum, s) => sum + s.count, 0)
+  // Dedupe by studentId across slots so 2-hour students (who appear in BOTH
+  // constituent 1-hour slots) aren't double-counted in totals.
+  const totalStudents = (() => {
+    const ids = new Set<string>()
+    slots.forEach((slot) => slot.students?.forEach((s) => ids.add(s.id)))
+    return ids.size
+  })()
 
-  // Aggregate course popularity from all students across all slots
+  // Aggregate course popularity from all students across all slots — dedupe by
+  // student+course pair so a 2-hour enrollment counts once toward its course.
   const courseCountMap = new Map<string, number>()
+  const seenStudentCourse = new Set<string>()
   slots.forEach((slot) => {
     slot.students?.forEach((student) => {
-      const key = student.courseName || "Unknown"
-      courseCountMap.set(key, (courseCountMap.get(key) || 0) + 1)
+      const courseKey = student.courseName || "Unknown"
+      const dedupeKey = `${student.id}|${courseKey}`
+      if (seenStudentCourse.has(dedupeKey)) return
+      seenStudentCourse.add(dedupeKey)
+      courseCountMap.set(courseKey, (courseCountMap.get(courseKey) || 0) + 1)
     })
   })
   const popularCourses = Array.from(courseCountMap.entries())
@@ -965,7 +976,11 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
                       { key: "saturday", label: "Saturday", icon: "🗓️", slots: saturdaySlots },
                       { key: "sunday", label: "Sunday", icon: "🗓️", slots: sundaySlots },
                     ] as const).map(({ key, label, icon, slots: daySlots }) => {
-                      const totalInDay = daySlots.reduce((sum, s) => sum + s.count, 0)
+                      // Dedupe by studentId within the day so 2-hour students
+                      // who occupy two adjacent 1-hour slots aren't counted twice.
+                      const dayIds = new Set<string>()
+                      daySlots.forEach((s) => s.students?.forEach((st) => dayIds.add(st.id)))
+                      const totalInDay = dayIds.size
                       const maxInDay = daySlots.reduce((sum, s) => sum + s.max, 0)
                       const backendDate = daySlots[0]?.targetDate
                       const dateObj = backendDate ? new Date(backendDate + "T00:00:00") : getUpcomingDateForDay(key)

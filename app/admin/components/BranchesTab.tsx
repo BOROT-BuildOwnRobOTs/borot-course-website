@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Pencil, Trash2, Building2, MapPin, Phone } from 'lucide-react'
 import { useBranchContext, BranchSummary } from './BranchContext'
+import { DeleteConfirmDialog } from '@/components/admin/delete-confirm-dialog'
 
 interface BranchRecord extends BranchSummary {
   address?: string
@@ -49,6 +50,7 @@ export default function BranchesTab() {
   })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<BranchRecord | null>(null)
 
   const fetchAll = async () => {
     setLoading(true)
@@ -115,12 +117,11 @@ export default function BranchesTab() {
   }
 
   const handleDelete = async (b: BranchRecord) => {
-    if (!confirm(`Delete branch "${b.name}"?`)) return
     const res = await fetch(`/api/admin/branches/${b._id}`, { method: 'DELETE' })
     const json = await res.json()
     if (!json.success) {
       alert(json.error || 'Delete failed')
-      return
+      throw new Error(json.error || 'Delete failed')
     }
     await fetchAll()
     await refreshBranches()
@@ -184,7 +185,7 @@ export default function BranchesTab() {
                       <Button variant="ghost" size="sm" onClick={() => openEdit(b)}>
                         <Pencil className="w-3.5 h-3.5 text-gray-500" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(b)}>
+                      <Button variant="ghost" size="sm" onClick={() => setPendingDelete(b)}>
                         <Trash2 className="w-3.5 h-3.5 text-red-400" />
                       </Button>
                     </div>
@@ -270,6 +271,21 @@ export default function BranchesTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null) }}
+        itemType="branch"
+        itemName={pendingDelete?.name ?? ''}
+        consequences={[
+          'The branch will be removed from the system',
+          'Records assigned to this branch (parents, students, etc.) will be detached',
+        ]}
+        onConfirm={async () => {
+          if (pendingDelete) await handleDelete(pendingDelete)
+        }}
+        destructiveLabel="Delete branch"
+      />
     </div>
   )
 }

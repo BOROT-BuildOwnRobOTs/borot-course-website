@@ -7,6 +7,7 @@ import {
   BookOpen, GraduationCap, CalendarDays, Stamp,
 } from 'lucide-react'
 import { SLOTS } from '@/lib/slots'
+import { DeleteConfirmDialog } from '@/components/admin/delete-confirm-dialog'
 
 interface AttendanceEntry {
   student: string | { _id: string }
@@ -78,6 +79,7 @@ export default function StudentsTab() {
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<Student | null>(null)
 
   const fetchAll = async () => {
     setLoading(true)
@@ -125,19 +127,20 @@ export default function StudentsTab() {
     s.parent && typeof s.parent === 'object' ? s.parent : null
 
   const handleDelete = async (s: Student) => {
-    const label = s.nickname ? `${s.name} (${s.nickname})` : s.name
-    if (!confirm(`Delete student "${label}"? This cannot be undone.`)) return
     setDeletingId(s._id)
     try {
       const res = await fetch(`/api/admin/students/${s._id}`, { method: 'DELETE' })
       const json = await res.json()
       if (!json.success) {
         alert(json.error || 'Failed to delete')
-        return
+        throw new Error(json.error || 'Failed to delete')
       }
       setStudents((prev) => prev.filter((x) => x._id !== s._id))
-    } catch {
-      alert('Failed to delete')
+    } catch (err) {
+      if (!(err instanceof Error && err.message === 'Failed to delete')) {
+        alert('Failed to delete')
+      }
+      throw err
     } finally {
       setDeletingId(null)
     }
@@ -403,7 +406,7 @@ export default function StudentsTab() {
                         : <ChevronDown className="w-4 h-4 text-gray-400" />
                     )}
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleDelete(s) }}
+                      onClick={(e) => { e.stopPropagation(); setPendingDelete(s) }}
                       disabled={isDeleting}
                       title="Delete student"
                       className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
@@ -506,6 +509,29 @@ export default function StudentsTab() {
           })}
         </div>
       )}
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null) }}
+        itemType="student"
+        itemName={
+          pendingDelete
+            ? (pendingDelete.nickname
+                ? `${pendingDelete.name} (${pendingDelete.nickname})`
+                : pendingDelete.name)
+            : ''
+        }
+        confirmPhrase={pendingDelete?.name ?? ''}
+        consequences={[
+          'The student record will be removed from the database',
+          'Their enrollments and slot assignments will be lost',
+          'Past attendance entries will become orphaned (the student name remains in session history)',
+        ]}
+        onConfirm={async () => {
+          if (pendingDelete) await handleDelete(pendingDelete)
+        }}
+        destructiveLabel="Delete student"
+      />
     </div>
   )
 }

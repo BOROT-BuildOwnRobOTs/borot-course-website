@@ -10,6 +10,7 @@ import {
   Loader2, ArrowUp, ArrowDown, Trash2, Printer, Clock, RefreshCw,
 } from 'lucide-react'
 import { PRINT_JOB_STATUSES, type PrintJobStatus } from '@/lib/print-enums'
+import { DeleteConfirmDialog } from '@/components/admin/delete-confirm-dialog'
 
 interface PrintJobRow {
   _id: string
@@ -39,6 +40,7 @@ export default function PrintQueueTab() {
   const [jobs, setJobs] = useState<PrintJobRow[]>([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<PrintJobRow | null>(null)
 
   const fetchJobs = async () => {
     setLoading(true)
@@ -121,12 +123,14 @@ export default function PrintQueueTab() {
   }
 
   const remove = async (job: PrintJobRow) => {
-    if (!confirm(`Remove ${job.orderNumber} from the queue?`)) return
     setBusyId(job._id)
     try {
       const res = await fetch(`/api/admin/print-jobs/${job._id}`, { method: 'DELETE' })
       const json = await res.json()
-      if (!json.success) { toast.error(json.error ?? 'Failed to remove'); return }
+      if (!json.success) {
+        toast.error(json.error ?? 'Failed to remove')
+        throw new Error(json.error ?? 'Failed to remove')
+      }
       setJobs((prev) => prev.filter((x) => x._id !== job._id))
     } finally {
       setBusyId(null)
@@ -225,7 +229,7 @@ export default function PrintQueueTab() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => remove(job)}
+                          onClick={() => setPendingDelete(job)}
                           disabled={busy}
                           className="text-red-600 hover:bg-red-50 hover:text-red-700"
                           aria-label="Remove from queue"
@@ -241,6 +245,30 @@ export default function PrintQueueTab() {
           </div>
         )}
       </CardContent>
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null) }}
+        itemType="print job"
+        itemName={pendingDelete?.orderNumber ?? ''}
+        confirmPhrase="REMOVE"
+        description={
+          pendingDelete ? (
+            <p>
+              Printer: <strong className="text-gray-900">{pendingDelete.printerName}</strong>
+              {' '}· Position {pendingDelete.position}
+            </p>
+          ) : null
+        }
+        consequences={[
+          'The job is removed from this printer queue',
+          'The underlying order is unaffected',
+        ]}
+        onConfirm={async () => {
+          if (pendingDelete) await remove(pendingDelete)
+        }}
+        destructiveLabel="Remove from queue"
+      />
     </Card>
   )
 }

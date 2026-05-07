@@ -16,8 +16,9 @@ import {
   RefreshCw, PlusCircle, Building2,
 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
-import { SLOTS, MAX_PER_SLOT, getNextSlotDateStr, getSlotDayOfWeek, generateStampDates } from '@/lib/slots'
+import { SLOTS, MAX_PER_SLOT, getNextSlotDateStr, getSlotDayOfWeek, generateStampDates, getTwoHourSlotOptions, isTwoHourTime } from '@/lib/slots'
 import { useBranchContext, BranchSummary } from './BranchContext'
+import { DeleteConfirmDialog } from '@/components/admin/delete-confirm-dialog'
 
 interface Course {
   _id: string
@@ -70,7 +71,7 @@ interface Student {
 interface Parent {
   _id: string
   name: string
-  email: string
+  email?: string | null
   phone: string
   createdAt: string
   branch?: BranchSummary | string | null
@@ -116,6 +117,7 @@ export default function ParentsTab() {
   const [parentError, setParentError] = useState('')
   const [savingParent, setSavingParent] = useState(false)
   const [showParentPassword, setShowParentPassword] = useState(false)
+  const [parentNoEmail, setParentNoEmail] = useState(false)
 
   // Student dialog
   const [studentDialogOpen, setStudentDialogOpen] = useState(false)
@@ -134,6 +136,8 @@ export default function ParentsTab() {
   const [enrollSlotDay, setEnrollSlotDay] = useState('')
   const [enrollSlotTime, setEnrollSlotTime] = useState('')
   const [enrollStartDate, setEnrollStartDate] = useState('')
+  const [enrollSelectedDay, setEnrollSelectedDay] = useState('tuesday')
+  const [enrollDurationTab, setEnrollDurationTab] = useState<'1hr' | '2hr'>('1hr')
   const [slotAvailability, setSlotAvailability] = useState<SlotAvailability[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [savingEnroll, setSavingEnroll] = useState(false)
@@ -144,6 +148,13 @@ export default function ParentsTab() {
   const [extendEnrollmentIdx, setExtendEnrollmentIdx] = useState(-1)
   const [extendWeeks, setExtendWeeks] = useState('4')
   const [savingExtend, setSavingExtend] = useState(false)
+
+  // Delete-confirmation dialogs
+  const [pendingParentDelete, setPendingParentDelete] = useState<Parent | null>(null)
+  const [pendingStudentDelete, setPendingStudentDelete] = useState<Student | null>(null)
+  const [pendingEnrollmentDelete, setPendingEnrollmentDelete] = useState<
+    { student: Student; idx: number } | null
+  >(null)
 
   // Reschedule dialog
   const [reschedDialogOpen, setReschedDialogOpen] = useState(false)
@@ -192,41 +203,49 @@ export default function ParentsTab() {
     setEditParent(null)
     const defaultBranch = lockedBranchId || selectedBranchId || ''
     setParentForm({ name: '', email: '', password: '', phone: '', branch: defaultBranch })
+    setParentNoEmail(false)
     setParentError('')
     setParentDialogOpen(true)
   }
 
   const openEditParent = (p: Parent) => {
     setEditParent(p)
+    const noEmail = !p.email
     setParentForm({
       name: p.name,
-      email: p.email,
+      email: p.email || '',
       password: '',
       phone: p.phone,
       branch: branchIdOf(p.branch),
     })
+    setParentNoEmail(noEmail)
     setParentError('')
     setParentDialogOpen(true)
   }
 
   const handleSaveParent = async () => {
-    if (!parentForm.name.trim() || !parentForm.email.trim()) return
-    if (!editParent && !parentForm.password.trim()) { setParentError('Please enter a password'); return }
+    if (!parentForm.name.trim()) { setParentError('Please enter a name'); return }
     if (!parentForm.branch) { setParentError('Please select a branch'); return }
+    if (!parentNoEmail) {
+      if (!parentForm.email.trim()) { setParentError('Please enter an email or check "No email yet"'); return }
+      if (!editParent && !parentForm.password.trim()) { setParentError('Please enter a password'); return }
+    }
     setSavingParent(true)
     setParentError('')
     try {
       const url = editParent ? `/api/admin/parents/${editParent._id}` : '/api/admin/parents'
       const method = editParent ? 'PUT' : 'POST'
+      const emailValue = parentNoEmail ? '' : parentForm.email
+      const passwordValue = parentNoEmail ? '' : parentForm.password
       const body = editParent
         ? {
             name: parentForm.name,
-            email: parentForm.email,
+            email: emailValue,
             phone: parentForm.phone,
             branch: parentForm.branch,
-            ...(parentForm.password ? { password: parentForm.password } : {}),
+            ...(passwordValue ? { password: passwordValue } : {}),
           }
-        : parentForm
+        : { ...parentForm, email: emailValue, password: passwordValue }
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const json = await res.json()
       if (!json.success) { setParentError(json.error || 'An error occurred'); return }
@@ -238,7 +257,6 @@ export default function ParentsTab() {
   }
 
   const handleDeleteParent = async (id: string) => {
-    if (!confirm('Delete this parent? Linked student data will remain.')) return
     await fetch(`/api/admin/parents/${id}`, { method: 'DELETE' })
     fetchAll()
   }
@@ -296,7 +314,6 @@ export default function ParentsTab() {
   }
 
   const handleDeleteStudent = async (id: string) => {
-    if (!confirm('Delete this student?')) return
     await fetch(`/api/admin/students/${id}`, { method: 'DELETE' })
     fetchAll()
   }
@@ -311,6 +328,16 @@ export default function ParentsTab() {
       .finally(() => setLoadingSlots(false))
   }, [enrollCourseId, enrollDialogOpen])
 
+  // Default duration tab based on selected course's hours
+  useEffect(() => {
+    if (!enrollCourseId) return
+    const course = courses.find(c => c._id === enrollCourseId)
+    setEnrollDurationTab(course?.hours === 2 ? '2hr' : '1hr')
+    setEnrollSlotDay('')
+    setEnrollSlotTime('')
+    setEnrollStartDate('')
+  }, [enrollCourseId, courses])
+
   // ===== Enrollment =====
   const openEnroll = (s: Student) => {
     setEnrollStudent(s)
@@ -320,6 +347,8 @@ export default function ParentsTab() {
     setEnrollSlotDay('')
     setEnrollSlotTime('')
     setEnrollStartDate('')
+    setEnrollSelectedDay('tuesday')
+    setEnrollDurationTab('1hr')
     setSlotAvailability([])
     setEnrollDialogOpen(true)
   }
@@ -418,7 +447,6 @@ export default function ParentsTab() {
   }
 
   const handleRemoveEnrollment = async (student: Student, enrollmentIdx: number) => {
-    if (!confirm('Remove this enrollment?')) return
     const updated = student.enrollments.filter((_, i) => i !== enrollmentIdx)
     await fetch(`/api/admin/students/${student._id}`, {
       method: 'PUT',
@@ -556,7 +584,7 @@ export default function ParentsTab() {
     ? parents.filter((p) => {
         // Match parent fields
         if (p.name.toLowerCase().includes(normalizedQuery)) return true
-        if (p.email.toLowerCase().includes(normalizedQuery)) return true
+        if (p.email && p.email.toLowerCase().includes(normalizedQuery)) return true
         if (p.phone?.toLowerCase().includes(normalizedQuery)) return true
         // Match children name / nickname
         const children = studentsMap[p._id] || []
@@ -624,14 +652,15 @@ export default function ParentsTab() {
             const children = studentsMap[p._id] || []
             const isExpanded = expandedParent === p._id
             const totalEnrollments = children.reduce((sum, s) => sum + (s.enrollments?.length || 0), 0)
+            const isIncomplete = !p.email
 
             return (
-              <Card key={p._id} className="border border-gray-200 overflow-hidden">
+              <Card key={p._id} className={`overflow-hidden ${isIncomplete ? 'border-2 border-amber-300 bg-amber-50/40' : 'border border-gray-200'}`}>
                 <CardContent className="p-4">
                   {/* Parent Header */}
                   <div className="flex items-start gap-3">
                     <Avatar className="w-10 h-10 shrink-0">
-                      <AvatarFallback className="bg-orange-100 text-orange-600 font-bold">
+                      <AvatarFallback className={`font-bold ${isIncomplete ? 'bg-amber-100 text-amber-600' : 'bg-orange-100 text-orange-600'}`}>
                         {p.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -640,6 +669,14 @@ export default function ParentsTab() {
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-semibold text-gray-800">{p.name}</p>
+                            {isIncomplete && (
+                              <span
+                                className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-300 px-1.5 py-0.5 rounded"
+                                title="ผู้ปกครองยังไม่มีอีเมล — กดแก้ไขเพื่อเพิ่มข้อมูล"
+                              >
+                                ⚠️ ข้อมูลไม่ครบ
+                              </span>
+                            )}
                             {(() => {
                               // Only show the chip in "All branches" mode so a single-branch
                               // view stays uncluttered; in mixed mode it's the visual cue
@@ -656,9 +693,15 @@ export default function ParentsTab() {
                             })()}
                           </div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                            <span className="flex items-center gap-1 text-xs text-gray-500">
-                              <Mail className="w-3 h-3" />{p.email}
-                            </span>
+                            {p.email ? (
+                              <span className="flex items-center gap-1 text-xs text-gray-500">
+                                <Mail className="w-3 h-3" />{p.email}
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-xs text-amber-600 italic">
+                                <Mail className="w-3 h-3" />ยังไม่ระบุ
+                              </span>
+                            )}
                             {p.phone && (
                               <span className="flex items-center gap-1 text-xs text-gray-500">
                                 <Phone className="w-3 h-3" />{p.phone}
@@ -673,7 +716,7 @@ export default function ParentsTab() {
                           <Button variant="ghost" size="sm" onClick={() => openEditParent(p)}>
                             <Pencil className="w-3.5 h-3.5 text-gray-500" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDeleteParent(p._id)}>
+                          <Button variant="ghost" size="sm" onClick={() => setPendingParentDelete(p)}>
                             <Trash2 className="w-3.5 h-3.5 text-red-400" />
                           </Button>
                           <Button
@@ -745,7 +788,7 @@ export default function ParentsTab() {
                                   <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => openEditStudent(s, p._id)}>
                                     <Pencil className="w-3 h-3 text-gray-400" />
                                   </Button>
-                                  <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => handleDeleteStudent(s._id)}>
+                                  <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => setPendingStudentDelete(s)}>
                                     <Trash2 className="w-3 h-3 text-red-400" />
                                   </Button>
                                 </div>
@@ -870,7 +913,7 @@ export default function ParentsTab() {
                                         </SelectContent>
                                       </Select>
                                       <button
-                                        onClick={() => handleRemoveEnrollment(s, idx)}
+                                        onClick={() => setPendingEnrollmentDelete({ student: s, idx })}
                                         className="text-gray-300 hover:text-red-400 shrink-0"
                                       >
                                         <X className="w-3 h-3" />
@@ -938,29 +981,56 @@ export default function ParentsTab() {
               <Label>Full Name *</Label>
               <Input value={parentForm.name} onChange={(e) => setParentForm({ ...parentForm, name: e.target.value })} placeholder="Parent name" />
             </div>
-            <div>
-              <Label>Email *</Label>
-              <Input type="email" value={parentForm.email} onChange={(e) => setParentForm({ ...parentForm, email: e.target.value })} placeholder="parent@example.com" />
-            </div>
-            <div>
-              <Label>{editParent ? 'Password (leave blank to keep unchanged)' : 'Password *'}</Label>
-              <div className="relative">
-                <Input
-                  type={showParentPassword ? 'text' : 'password'}
-                  value={parentForm.password}
-                  onChange={(e) => setParentForm({ ...parentForm, password: e.target.value })}
-                  placeholder="••••••••"
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowParentPassword(!showParentPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showParentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+
+            {/* No-email-yet toggle */}
+            <label className="flex items-start gap-2 cursor-pointer select-none">
+              <Checkbox
+                checked={parentNoEmail}
+                onCheckedChange={(v) => setParentNoEmail(!!v)}
+                className="mt-0.5"
+              />
+              <span className="text-sm text-gray-700 leading-tight">
+                ยังไม่มีข้อมูล email — กรอกทีหลัง
+                <span className="block text-[11px] text-gray-400">
+                  ผู้ปกครองจะยังล็อกอินไม่ได้จนกว่าจะเพิ่ม email และ password
+                </span>
+              </span>
+            </label>
+
+            {parentNoEmail && (
+              <div className="bg-amber-50 border border-amber-200 rounded-md px-3 py-2 text-xs text-amber-700">
+                ⚠️ ระบบจะบันทึกเป็น <strong>ข้อมูลไม่ครบ</strong> — เห็นได้ในรายการผู้ปกครอง
               </div>
-            </div>
+            )}
+
+            {!parentNoEmail && (
+              <>
+                <div>
+                  <Label>Email *</Label>
+                  <Input type="email" value={parentForm.email} onChange={(e) => setParentForm({ ...parentForm, email: e.target.value })} placeholder="parent@example.com" />
+                </div>
+                <div>
+                  <Label>{editParent ? 'Password (leave blank to keep unchanged)' : 'Password *'}</Label>
+                  <div className="relative">
+                    <Input
+                      type={showParentPassword ? 'text' : 'password'}
+                      value={parentForm.password}
+                      onChange={(e) => setParentForm({ ...parentForm, password: e.target.value })}
+                      placeholder="••••••••"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowParentPassword(!showParentPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showParentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
             <div>
               <Label>Phone</Label>
               <Input value={parentForm.phone} onChange={(e) => setParentForm({ ...parentForm, phone: e.target.value })} placeholder="0812345678" />
@@ -1091,71 +1161,152 @@ export default function ParentsTab() {
 
             {/* Slot selector */}
             {enrollCourseId && (
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
                   <Label className="text-sm font-medium">Select Class Time Slot</Label>
                   {loadingSlots && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
                 </div>
+
+                {/* Duration tab switcher */}
+                <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEnrollDurationTab('1hr')
+                      setEnrollSlotDay('')
+                      setEnrollSlotTime('')
+                      setEnrollStartDate('')
+                    }}
+                    className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold transition-all ${
+                      enrollDurationTab === '1hr' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    ⏱ 1 Hour
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEnrollDurationTab('2hr')
+                      setEnrollSlotDay('')
+                      setEnrollSlotTime('')
+                      setEnrollStartDate('')
+                    }}
+                    className={`flex-1 py-2 px-3 rounded-md text-xs font-semibold transition-all ${
+                      enrollDurationTab === '2hr' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    ⏱⏱ 2 Hours
+                  </button>
+                </div>
+
+                {/* Day dropdown */}
+                <div className="relative">
+                  <select
+                    value={enrollSelectedDay}
+                    onChange={(e) => {
+                      const newDay = e.target.value
+                      setEnrollSelectedDay(newDay)
+                      if (newDay !== enrollSlotDay) {
+                        setEnrollSlotDay('')
+                        setEnrollSlotTime('')
+                        setEnrollStartDate('')
+                      }
+                    }}
+                    className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 pr-10 text-sm font-medium focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all cursor-pointer"
+                  >
+                    <option value="tuesday">Tuesday</option>
+                    <option value="friday">Friday</option>
+                    <option value="saturday">Saturday</option>
+                    <option value="sunday">Sunday</option>
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                </div>
+
+                {/* Time slot grid for the selected day + duration */}
                 {(() => {
-                  const slotList = slotAvailability.length > 0
+                  const rawSlotList = slotAvailability.length > 0
                     ? slotAvailability
                     : SLOTS.map(s => ({
                         id: s.id, day: s.day, dayLabel: s.dayLabel, time: s.time, count: 0, max: MAX_PER_SLOT, available: true
                       }))
-                  const dayOrder = ['tuesday', 'friday', 'saturday', 'sunday']
-                  const grouped = dayOrder
-                    .map(day => ({ day, slots: slotList.filter(s => s.day === day) }))
-                    .filter(g => g.slots.length > 0)
+
+                  let displaySlotList: SlotAvailability[]
+                  if (enrollDurationTab === '1hr') {
+                    displaySlotList = rawSlotList.filter(s => s.day === enrollSelectedDay && !isTwoHourTime(s.time))
+                  } else {
+                    const twoHourOptions = getTwoHourSlotOptions().filter(s => s.day === enrollSelectedDay)
+                    const availMap = new Map<string, SlotAvailability>()
+                    for (const s of rawSlotList) availMap.set(`${s.day}|${s.time}`, s)
+                    displaySlotList = twoHourOptions.map(twoHr => {
+                      const slotsData = twoHr.constituentSlots.map(cs =>
+                        availMap.get(`${twoHr.day}|${cs.time}`) || { id: `${twoHr.day}-${cs.time}`, day: twoHr.day, dayLabel: twoHr.dayLabel, time: cs.time, count: 0, max: MAX_PER_SLOT, available: true }
+                      )
+                      const combinedCount = Math.max(...slotsData.map(s => s.count))
+                      const combinedAvailable = slotsData.every(s => s.count < (s.max || MAX_PER_SLOT))
+                      return {
+                        id: twoHr.id,
+                        day: twoHr.day,
+                        dayLabel: twoHr.dayLabel,
+                        time: twoHr.time,
+                        count: combinedCount,
+                        max: MAX_PER_SLOT,
+                        available: combinedAvailable,
+                      }
+                    })
+                  }
+
                   return (
-                    <div className="space-y-3">
-                      {grouped.map(({ day, slots }) => (
-                        <div key={day}>
-                          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                            {slots[0].dayLabel}
-                          </p>
-                          <div className="grid grid-cols-3 gap-2">
-                            {slots.map((slot) => {
-                              const isSelected = enrollSlotDay === slot.day && enrollSlotTime === slot.time
-                              const isFull = slot.count >= slot.max
-                              return (
-                                <button
-                                  key={slot.id}
-                                  type="button"
-                                  disabled={isFull && !isSelected}
-                                  onClick={() => handleSelectSlot(slot.day, slot.time)}
-                                  className={`relative text-center px-2 py-2.5 rounded-lg border text-xs transition-all ${
-                                    isSelected
-                                      ? 'bg-purple-500 text-white border-purple-500 shadow-sm'
-                                      : isFull
-                                      ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
-                                      : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
-                                  }`}
-                                >
-                                  <div className="font-semibold">{slot.time}</div>
-                                  {slotAvailability.length > 0 && (
-                                    <div className={`flex items-center justify-center gap-0.5 mt-1 text-[10px] font-medium ${
-                                      isSelected ? 'text-white/80' : isFull ? 'text-red-500' : 'text-green-600'
-                                    }`}>
-                                      <Users className="h-2.5 w-2.5" />
-                                      <span>{slot.count}/{slot.max}</span>
-                                    </div>
-                                  )}
-                                  {isFull && slotAvailability.length > 0 && !isSelected && (
-                                    <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>
-                                  )}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      ))}
+                    <div>
+                      <Label className="mb-2 block text-xs">
+                        Times — <span className="text-purple-600 font-semibold">
+                          {SLOTS.find(s => s.day === enrollSelectedDay)?.dayLabel || enrollSelectedDay}
+                        </span>
+                        {enrollDurationTab === '2hr' && (
+                          <span className="ml-1 text-[11px] text-gray-400 font-normal">(2-hour block)</span>
+                        )}
+                      </Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {displaySlotList.map((slot) => {
+                          const isSelected = enrollSlotDay === slot.day && enrollSlotTime === slot.time
+                          const isFull = slot.count >= slot.max
+                          return (
+                            <button
+                              key={slot.id}
+                              type="button"
+                              disabled={isFull && !isSelected}
+                              onClick={() => handleSelectSlot(slot.day, slot.time)}
+                              className={`relative text-center px-2 py-2.5 rounded-lg border text-xs transition-all ${
+                                isSelected
+                                  ? 'bg-purple-500 text-white border-purple-500 shadow-sm'
+                                  : isFull
+                                  ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
+                                  : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
+                              }`}
+                            >
+                              <div className="font-semibold">{slot.time}</div>
+                              {slotAvailability.length > 0 && (
+                                <div className={`flex items-center justify-center gap-0.5 mt-1 text-[10px] font-medium ${
+                                  isSelected ? 'text-white/80' : isFull ? 'text-red-500' : 'text-green-600'
+                                }`}>
+                                  <Users className="h-2.5 w-2.5" />
+                                  <span>{slot.count}/{slot.max}</span>
+                                </div>
+                              )}
+                              {isFull && slotAvailability.length > 0 && !isSelected && (
+                                <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
                   )
                 })()}
+
                 {enrollSlotDay && enrollSlotTime && (
-                  <p className="text-xs text-purple-600 mt-2 flex items-center gap-1">
+                  <p className="text-xs text-purple-600 flex items-center gap-1">
                     <CalendarDays className="w-3 h-3" />
-                    Selected: {SLOTS.find(s => s.day === enrollSlotDay && s.time === enrollSlotTime)?.dayLabel} {enrollSlotTime}
+                    Selected: {SLOTS.find(s => s.day === enrollSlotDay)?.dayLabel || enrollSlotDay} {enrollSlotTime}
                   </p>
                 )}
               </div>
@@ -1446,6 +1597,79 @@ export default function ParentsTab() {
           )}
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!pendingParentDelete}
+        onOpenChange={(o) => { if (!o) setPendingParentDelete(null) }}
+        itemType="parent"
+        itemName={pendingParentDelete?.name ?? ''}
+        consequences={[
+          'The parent record will be removed',
+          'Linked student records remain but will be detached',
+          'The parent will lose access to the parent portal',
+        ]}
+        onConfirm={async () => {
+          if (pendingParentDelete) await handleDeleteParent(pendingParentDelete._id)
+        }}
+        destructiveLabel="Delete parent"
+      />
+
+      <DeleteConfirmDialog
+        open={!!pendingStudentDelete}
+        onOpenChange={(o) => { if (!o) setPendingStudentDelete(null) }}
+        itemType="student"
+        itemName={
+          pendingStudentDelete
+            ? (pendingStudentDelete.nickname
+                ? `${pendingStudentDelete.name} (${pendingStudentDelete.nickname})`
+                : pendingStudentDelete.name)
+            : ''
+        }
+        confirmPhrase={pendingStudentDelete?.name ?? ''}
+        consequences={[
+          'The student record will be removed from the database',
+          'Their enrollments and slot assignments will be lost',
+          'Past attendance entries will become orphaned (the student name remains in session history)',
+        ]}
+        onConfirm={async () => {
+          if (pendingStudentDelete) await handleDeleteStudent(pendingStudentDelete._id)
+        }}
+        destructiveLabel="Delete student"
+      />
+
+      <DeleteConfirmDialog
+        open={!!pendingEnrollmentDelete}
+        onOpenChange={(o) => { if (!o) setPendingEnrollmentDelete(null) }}
+        itemType="enrollment"
+        itemName={
+          pendingEnrollmentDelete
+            ? (pendingEnrollmentDelete.student.enrollments[pendingEnrollmentDelete.idx]?.courseName
+                ?? 'this enrollment')
+            : ''
+        }
+        confirmPhrase="REMOVE"
+        description={
+          pendingEnrollmentDelete ? (
+            <p>
+              Removing the enrollment for{' '}
+              <strong className="text-gray-900">{pendingEnrollmentDelete.student.name}</strong>.
+            </p>
+          ) : null
+        }
+        consequences={[
+          'The course enrollment will be removed from this student',
+          'Slot assignment for this enrollment will be released',
+        ]}
+        onConfirm={async () => {
+          if (pendingEnrollmentDelete) {
+            await handleRemoveEnrollment(
+              pendingEnrollmentDelete.student,
+              pendingEnrollmentDelete.idx
+            )
+          }
+        }}
+        destructiveLabel="Remove enrollment"
+      />
     </div>
   )
 }

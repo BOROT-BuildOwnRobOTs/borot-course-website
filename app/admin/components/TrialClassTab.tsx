@@ -14,6 +14,7 @@ import {
   FlaskConical, RefreshCw,
 } from 'lucide-react'
 import { TRIAL_SLOTS } from '@/lib/slots'
+import { DeleteConfirmDialog } from '@/components/admin/delete-confirm-dialog'
 
 interface TrialRegistration {
   _id: string
@@ -50,6 +51,7 @@ export default function TrialClassTab() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all')
   const [slotFilter, setSlotFilter] = useState<string>('all')
   const [dateFilter, setDateFilter] = useState<string>('')
+  const [pendingDelete, setPendingDelete] = useState<TrialRegistration | null>(null)
 
   // Edit dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -168,7 +170,6 @@ export default function TrialClassTab() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this Trial Class registration?')) return
     try {
       await fetch(`/api/admin/trial-registrations/${id}`, { method: 'DELETE' })
       fetchRegistrations()
@@ -290,7 +291,7 @@ export default function TrialClassTab() {
           <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => openEdit(r)}>
             <Pencil className="w-3 h-3 text-gray-400" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => handleDelete(r._id)}>
+          <Button variant="ghost" size="sm" className="h-6 px-1.5" onClick={() => setPendingDelete(r)}>
             <Trash2 className="w-3 h-3 text-red-400" />
           </Button>
         </div>
@@ -723,6 +724,31 @@ export default function TrialClassTab() {
           )}
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null) }}
+        itemType="trial registration"
+        itemName={pendingDelete?.studentName ?? ''}
+        confirmPhrase="DELETE"
+        description={
+          pendingDelete ? (
+            <p>
+              {pendingDelete.courseName} on{' '}
+              <strong className="text-gray-900">{pendingDelete.trialDate}</strong> at{' '}
+              {pendingDelete.slotTime}
+            </p>
+          ) : null
+        }
+        consequences={[
+          'The trial registration will be permanently removed',
+          'The slot will become available again',
+        ]}
+        onConfirm={async () => {
+          if (pendingDelete) await handleDelete(pendingDelete._id)
+        }}
+        destructiveLabel="Delete registration"
+      />
     </div>
   )
 }

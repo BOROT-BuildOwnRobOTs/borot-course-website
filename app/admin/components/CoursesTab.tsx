@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Plus, Pencil, Trash2, BookOpen } from 'lucide-react'
+import { DeleteConfirmDialog } from '@/components/admin/delete-confirm-dialog'
 
 interface Course {
   _id: string
@@ -64,6 +65,7 @@ export default function CoursesTab() {
     hours: 0,
   })
   const [saving, setSaving] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<Course | null>(null)
 
   const fetchCourses = async () => {
     setLoading(true)
@@ -117,7 +119,6 @@ export default function CoursesTab() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this course?')) return
     await fetch(`/api/admin/courses/${id}`, { method: 'DELETE' })
     fetchCourses()
   }
@@ -157,7 +158,7 @@ export default function CoursesTab() {
                     <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
                       <Pencil className="w-4 h-4 text-gray-500" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(c._id)}>
+                    <Button variant="ghost" size="sm" onClick={() => setPendingDelete(c)}>
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </Button>
                   </div>
@@ -260,6 +261,29 @@ export default function CoursesTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null) }}
+        itemType="course"
+        itemName={pendingDelete?.name ?? ''}
+        confirmPhrase={pendingDelete?.level || pendingDelete?.name || ''}
+        description={
+          pendingDelete ? (
+            <p>
+              Level: <strong className="text-gray-900">{pendingDelete.level}</strong>
+            </p>
+          ) : null
+        }
+        consequences={[
+          'The course definition will be removed from the catalogue',
+          'Existing student enrollments referencing this course will keep stale data',
+        ]}
+        onConfirm={async () => {
+          if (pendingDelete) await handleDelete(pendingDelete._id)
+        }}
+        destructiveLabel="Delete course"
+      />
     </div>
   )
 }

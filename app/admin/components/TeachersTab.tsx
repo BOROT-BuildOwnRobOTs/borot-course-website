@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Pencil, Trash2, Mail, Phone, GraduationCap, Eye, EyeOff, Building2 } from 'lucide-react'
 import { useBranchContext, BranchSummary } from './BranchContext'
+import { DeleteConfirmDialog } from '@/components/admin/delete-confirm-dialog'
 
 interface Teacher {
   _id: string
@@ -44,6 +45,7 @@ export default function TeachersTab() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<Teacher | null>(null)
 
   const fetchTeachers = async () => {
     setLoading(true)
@@ -108,7 +110,6 @@ export default function TeachersTab() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this teacher?')) return
     await fetch(`/api/admin/teachers/${id}`, { method: 'DELETE' })
     fetchTeachers()
   }
@@ -158,7 +159,7 @@ export default function TeachersTab() {
                         <Button variant="ghost" size="sm" onClick={() => openEdit(t)}>
                           <Pencil className="w-3.5 h-3.5 text-gray-500" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(t._id)}>
+                        <Button variant="ghost" size="sm" onClick={() => setPendingDelete(t)}>
                           <Trash2 className="w-3.5 h-3.5 text-red-400" />
                         </Button>
                       </div>
@@ -267,6 +268,21 @@ export default function TeachersTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null) }}
+        itemType="teacher"
+        itemName={pendingDelete?.name ?? ''}
+        consequences={[
+          'The teacher record will be removed',
+          'Teacher assignments on courses, sessions, and student enrollments will keep stale references',
+        ]}
+        onConfirm={async () => {
+          if (pendingDelete) await handleDelete(pendingDelete._id)
+        }}
+        destructiveLabel="Delete teacher"
+      />
     </div>
   )
 }
