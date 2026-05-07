@@ -3,7 +3,9 @@ import connectDB from '@/lib/mongodb'
 import Parent from '@/models/Parent'
 import Teacher from '@/models/Teacher'
 import Student from '@/models/Student'
+import Branch from '@/models/Branch'
 import bcrypt from 'bcryptjs'
+import { bootstrapBranches } from '@/lib/bootstrapBranches'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,8 +17,9 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest) {
   try {
     await connectDB()
+    await bootstrapBranches()
     const body = await req.json()
-    const { role, name, email, phone, specialization, students } = body
+    const { role, name, email, phone, specialization, students, branch } = body
 
     if (!role || !['teacher', 'parent'].includes(role)) {
       return NextResponse.json(
@@ -28,6 +31,21 @@ export async function POST(req: NextRequest) {
     if (!name || !email) {
       return NextResponse.json(
         { success: false, error: 'กรุณากรอกชื่อและอีเมล' },
+        { status: 400 }
+      )
+    }
+
+    if (!branch) {
+      return NextResponse.json(
+        { success: false, error: 'กรุณาเลือกสาขา' },
+        { status: 400 }
+      )
+    }
+
+    const branchDoc = await Branch.findById(branch)
+    if (!branchDoc || branchDoc.status !== 'active') {
+      return NextResponse.json(
+        { success: false, error: 'สาขานี้ยังไม่เปิดให้บริการ' },
         { status: 400 }
       )
     }
@@ -54,6 +72,7 @@ export async function POST(req: NextRequest) {
         password: hashedPassword,
         phone: phone?.trim() || '',
         specialization: specialization?.trim() || '',
+        branch: branchDoc._id,
       })
 
       return NextResponse.json({
@@ -91,9 +110,10 @@ export async function POST(req: NextRequest) {
         email: lowerEmail,
         password: hashedPassword,
         phone: phone?.trim() || '',
+        branch: branchDoc._id,
       })
 
-      // Create students
+      // Create students — inherit parent's branch
       const createdStudents = []
       for (const s of students) {
         if (!s.name?.trim()) continue
@@ -102,6 +122,7 @@ export async function POST(req: NextRequest) {
           nickname: s.nickname?.trim() || '',
           age: s.age ? Number(s.age) : undefined,
           parent: parent._id,
+          branch: branchDoc._id,
           enrollments: [],
         })
         createdStudents.push(student)

@@ -13,10 +13,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Plus, Pencil, Trash2, Mail, Phone, Users, ChevronDown, ChevronUp,
   UserPlus, BookOpen, X, Eye, EyeOff, CalendarDays, Loader2, Search,
-  RefreshCw, PlusCircle,
+  RefreshCw, PlusCircle, Building2,
 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { SLOTS, MAX_PER_SLOT, getNextSlotDateStr, getSlotDayOfWeek, generateStampDates } from '@/lib/slots'
+import { useBranchContext, BranchSummary } from './BranchContext'
 
 interface Course {
   _id: string
@@ -63,6 +64,7 @@ interface Student {
   nickname?: string
   notes?: string
   enrollments: Enrollment[]
+  branch?: BranchSummary | string | null
 }
 
 interface Parent {
@@ -71,6 +73,7 @@ interface Parent {
   email: string
   phone: string
   createdAt: string
+  branch?: BranchSummary | string | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -87,7 +90,16 @@ const STATUS_LABELS: Record<string, string> = {
   pending: 'Pending',
 }
 
+function branchIdOf(value: BranchSummary | string | null | undefined): string {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  return value._id || ''
+}
+
 export default function ParentsTab() {
+  const { branches, selectedBranchId, scopeQuery, session } = useBranchContext()
+  const lockedBranchId = session?.role === 'branch' && session.branch ? session.branch._id : ''
+
   const [parents, setParents] = useState<Parent[]>([])
   const [studentsMap, setStudentsMap] = useState<Record<string, Student[]>>({})
   const [courses, setCourses] = useState<Course[]>([])
@@ -100,7 +112,7 @@ export default function ParentsTab() {
   // Parent dialog
   const [parentDialogOpen, setParentDialogOpen] = useState(false)
   const [editParent, setEditParent] = useState<Parent | null>(null)
-  const [parentForm, setParentForm] = useState({ name: '', email: '', password: '', phone: '' })
+  const [parentForm, setParentForm] = useState({ name: '', email: '', password: '', phone: '', branch: '' })
   const [parentError, setParentError] = useState('')
   const [savingParent, setSavingParent] = useState(false)
   const [showParentPassword, setShowParentPassword] = useState(false)
@@ -109,7 +121,8 @@ export default function ParentsTab() {
   const [studentDialogOpen, setStudentDialogOpen] = useState(false)
   const [editStudent, setEditStudent] = useState<Student | null>(null)
   const [studentParentId, setStudentParentId] = useState('')
-  const [studentForm, setStudentForm] = useState({ name: '', age: '', nickname: '', notes: '' })
+  const [studentForm, setStudentForm] = useState({ name: '', age: '', nickname: '', notes: '', branch: '' })
+  const [studentError, setStudentError] = useState('')
   const [savingStudent, setSavingStudent] = useState(false)
 
   // Enrollment dialog
@@ -147,10 +160,11 @@ export default function ParentsTab() {
 
   const fetchAll = async () => {
     setLoading(true)
+    const qs = scopeQuery ? `?${scopeQuery}` : ''
     const [parentsRes, coursesRes, studentsRes, teachersRes] = await Promise.all([
-      fetch('/api/admin/parents'),
+      fetch(`/api/admin/parents${qs}`),
       fetch('/api/admin/courses'),
-      fetch('/api/admin/students'),
+      fetch(`/api/admin/students${qs}`),
       fetch('/api/admin/teachers'),
     ])
     const [pj, cj, sj, tj] = await Promise.all([parentsRes.json(), coursesRes.json(), studentsRes.json(), teachersRes.json()])
@@ -171,19 +185,26 @@ export default function ParentsTab() {
     setLoading(false)
   }
 
-  useEffect(() => { fetchAll() }, [])
+  useEffect(() => { fetchAll() }, [scopeQuery])
 
   // ===== Parent CRUD =====
   const openAddParent = () => {
     setEditParent(null)
-    setParentForm({ name: '', email: '', password: '', phone: '' })
+    const defaultBranch = lockedBranchId || selectedBranchId || ''
+    setParentForm({ name: '', email: '', password: '', phone: '', branch: defaultBranch })
     setParentError('')
     setParentDialogOpen(true)
   }
 
   const openEditParent = (p: Parent) => {
     setEditParent(p)
-    setParentForm({ name: p.name, email: p.email, password: '', phone: p.phone })
+    setParentForm({
+      name: p.name,
+      email: p.email,
+      password: '',
+      phone: p.phone,
+      branch: branchIdOf(p.branch),
+    })
     setParentError('')
     setParentDialogOpen(true)
   }
@@ -191,13 +212,20 @@ export default function ParentsTab() {
   const handleSaveParent = async () => {
     if (!parentForm.name.trim() || !parentForm.email.trim()) return
     if (!editParent && !parentForm.password.trim()) { setParentError('Please enter a password'); return }
+    if (!parentForm.branch) { setParentError('Please select a branch'); return }
     setSavingParent(true)
     setParentError('')
     try {
       const url = editParent ? `/api/admin/parents/${editParent._id}` : '/api/admin/parents'
       const method = editParent ? 'PUT' : 'POST'
       const body = editParent
-        ? { name: parentForm.name, email: parentForm.email, phone: parentForm.phone, ...(parentForm.password ? { password: parentForm.password } : {}) }
+        ? {
+            name: parentForm.name,
+            email: parentForm.email,
+            phone: parentForm.phone,
+            branch: parentForm.branch,
+            ...(parentForm.password ? { password: parentForm.password } : {}),
+          }
         : parentForm
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const json = await res.json()
@@ -219,20 +247,35 @@ export default function ParentsTab() {
   const openAddStudent = (parentId: string) => {
     setEditStudent(null)
     setStudentParentId(parentId)
-    setStudentForm({ name: '', age: '', nickname: '', notes: '' })
+    const parent = parents.find((pp) => pp._id === parentId)
+    const defaultBranch = branchIdOf(parent?.branch) || lockedBranchId || selectedBranchId || ''
+    setStudentForm({ name: '', age: '', nickname: '', notes: '', branch: defaultBranch })
+    setStudentError('')
     setStudentDialogOpen(true)
   }
 
   const openEditStudent = (s: Student, parentId: string) => {
     setEditStudent(s)
     setStudentParentId(parentId)
-    setStudentForm({ name: s.name, age: s.age?.toString() || '', nickname: s.nickname || '', notes: s.notes || '' })
+    setStudentForm({
+      name: s.name,
+      age: s.age?.toString() || '',
+      nickname: s.nickname || '',
+      notes: s.notes || '',
+      branch: branchIdOf(s.branch),
+    })
+    setStudentError('')
     setStudentDialogOpen(true)
   }
 
   const handleSaveStudent = async () => {
     if (!studentForm.name.trim()) return
+    if (!studentForm.branch) {
+      setStudentError('Please select a branch')
+      return
+    }
     setSavingStudent(true)
+    setStudentError('')
     try {
       const url = editStudent ? `/api/admin/students/${editStudent._id}` : '/api/admin/students'
       const method = editStudent ? 'PUT' : 'POST'
@@ -242,6 +285,7 @@ export default function ParentsTab() {
         nickname: studentForm.nickname,
         notes: studentForm.notes,
         parentId: studentParentId,
+        branch: studentForm.branch,
       }
       await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       setStudentDialogOpen(false)
@@ -594,7 +638,23 @@ export default function ParentsTab() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="font-semibold text-gray-800">{p.name}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold text-gray-800">{p.name}</p>
+                            {(() => {
+                              // Only show the chip in "All branches" mode so a single-branch
+                              // view stays uncluttered; in mixed mode it's the visual cue
+                              // separating who belongs to which branch.
+                              if (selectedBranchId) return null
+                              const b = typeof p.branch === 'object' ? p.branch : null
+                              if (!b) return null
+                              return (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded">
+                                  <Building2 className="w-3 h-3" />
+                                  {b.name}
+                                </span>
+                              )
+                            })()}
+                          </div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
                             <span className="flex items-center gap-1 text-xs text-gray-500">
                               <Mail className="w-3 h-3" />{p.email}
@@ -841,6 +901,40 @@ export default function ParentsTab() {
           <div className="space-y-4">
             {parentError && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded">{parentError}</p>}
             <div>
+              <Label>Branch *</Label>
+              <Select
+                value={parentForm.branch}
+                onValueChange={(v) => setParentForm({ ...parentForm, branch: v })}
+                disabled={!!lockedBranchId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกสาขา..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map((b) => {
+                    const disabled = b.status !== 'active'
+                    return (
+                      <SelectItem key={b._id} value={b._id} disabled={disabled}>
+                        <span className="flex items-center gap-2">
+                          <span className={disabled ? 'text-gray-400' : ''}>{b.name}</span>
+                          {b.status === 'coming_soon' && (
+                            <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded">
+                              Coming Soon
+                            </span>
+                          )}
+                          {b.status === 'closed' && (
+                            <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">
+                              Closed
+                            </span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label>Full Name *</Label>
               <Input value={parentForm.name} onChange={(e) => setParentForm({ ...parentForm, name: e.target.value })} placeholder="Parent name" />
             </div>
@@ -888,6 +982,46 @@ export default function ParentsTab() {
             <DialogTitle>{editStudent ? 'Edit Student' : 'Add Student'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {studentError && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded">{studentError}</p>}
+            <div>
+              <Label>Branch *</Label>
+              <Select
+                value={studentForm.branch}
+                onValueChange={(v) => setStudentForm({ ...studentForm, branch: v })}
+                disabled={!!lockedBranchId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกสาขา..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map((b) => {
+                    const isComingSoon = b.status === 'coming_soon'
+                    const isClosed = b.status === 'closed'
+                    const disabled = isComingSoon || isClosed
+                    return (
+                      <SelectItem key={b._id} value={b._id} disabled={disabled}>
+                        <span className="flex items-center gap-2">
+                          <span className={disabled ? 'text-gray-400' : ''}>{b.name}</span>
+                          {isComingSoon && (
+                            <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded">
+                              Coming Soon
+                            </span>
+                          )}
+                          {isClosed && (
+                            <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">
+                              Closed
+                            </span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+              {lockedBranchId && (
+                <p className="text-[11px] text-gray-400 mt-1">Locked to your branch.</p>
+              )}
+            </div>
             <div>
               <Label>Full Name *</Label>
               <Input value={studentForm.name} onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })} placeholder="Student name" />

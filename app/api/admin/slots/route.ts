@@ -38,14 +38,20 @@ export async function GET(req: NextRequest) {
   try {
     await connectDB()
 
-    // Fetch ALL students who have at least one active/pending enrollment
-    const students = await Student.find({
+    // ── Optional branch scope ──
+    const branchParam = req.nextUrl.searchParams.get('branch')
+
+    // Fetch students who have at least one active/pending enrollment, scoped
+    // to a branch when requested.
+    const studentFilter: Record<string, unknown> = {
       enrollments: {
         $elemMatch: {
           status: { $in: ['active', 'pending'] },
         },
       },
-    }).lean()
+    }
+    if (branchParam) studentFilter.branch = branchParam
+    const students = await Student.find(studentFilter).lean()
 
     // ── Read weekOffset from query params (0 = this week, 1 = next week, etc.) ──
     const weekOffsetParam = req.nextUrl.searchParams.get('weekOffset')
@@ -215,6 +221,9 @@ export async function GET(req: NextRequest) {
     }
     if (trialDateParam) {
       trialFilter.trialDate = trialDateParam
+    }
+    if (branchParam) {
+      trialFilter.branch = branchParam
     }
 
     const trialRegs = await TrialRegistration.find(trialFilter)

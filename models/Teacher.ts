@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose'
+import mongoose, { Schema, Document, Types } from 'mongoose'
 
 export interface ITeacher extends Document {
   name: string
@@ -6,6 +6,7 @@ export interface ITeacher extends Document {
   password: string
   phone?: string
   specialization?: string
+  branch?: Types.ObjectId | null
   clerkId?: string | null
   createdAt: Date
   updatedAt: Date
@@ -18,6 +19,7 @@ const TeacherSchema = new Schema<ITeacher>(
     password: { type: String, required: true },
     phone: { type: String, default: '' },
     specialization: { type: String, default: '' },
+    branch: { type: Schema.Types.ObjectId, ref: 'Branch', default: null, index: true },
     clerkId: { type: String, default: null, sparse: true },
   },
   { timestamps: true }

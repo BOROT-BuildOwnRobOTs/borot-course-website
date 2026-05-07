@@ -9,7 +9,9 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     await connectDB()
-    const student = await Student.findById(params.id).populate('parent', 'name email phone')
+    const student = await Student.findById(params.id)
+      .populate('parent', 'name email phone branch')
+      .populate('branch', 'name slug status')
     if (!student) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
     return NextResponse.json({ success: true, data: student })
   } catch (error) {
@@ -21,7 +23,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   try {
     await connectDB()
     const body = await req.json()
-    const { name, age, nickname, parentId, notes, enrollments } = body
+    const { name, age, nickname, parentId, notes, enrollments, branch } = body
 
     const updateData: Record<string, unknown> = {}
     if (name) updateData.name = name
@@ -30,8 +32,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (parentId) updateData.parent = parentId
     if (notes !== undefined) updateData.notes = notes
     if (enrollments !== undefined) updateData.enrollments = enrollments
+    if (branch !== undefined) updateData.branch = branch || null
 
-    const student = await Student.findByIdAndUpdate(params.id, updateData, { new: true }).populate('parent', 'name email phone')
+    const student = await Student.findByIdAndUpdate(params.id, updateData, { new: true })
+      .populate('parent', 'name email phone branch')
+      .populate('branch', 'name slug status')
     if (!student) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
 
     setImmediate(() => {

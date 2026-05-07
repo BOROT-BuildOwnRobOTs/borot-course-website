@@ -12,12 +12,19 @@ export async function POST(req: NextRequest) {
     await connectDB()
 
     const body = await req.json()
-    const { studentName, age, phone, slotId, courseName, slipUrl, paymentMethod, trialDate } = body
+    const { studentName, age, phone, slotId, courseName, slipUrl, paymentMethod, trialDate, branch } = body
 
     // Validate required fields (slipUrl only required for transfer)
     if (!studentName || !age || !phone || !slotId || !courseName || !trialDate) {
       return NextResponse.json(
         { success: false, error: 'Please fill in all required fields.' },
+        { status: 400 }
+      )
+    }
+
+    if (!branch) {
+      return NextResponse.json(
+        { success: false, error: 'Please select a branch.' },
         { status: 400 }
       )
     }
@@ -69,10 +76,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check slot capacity — scoped to the specific date
+    // Check slot capacity — scoped to the specific date and branch
     const currentCount = await TrialRegistration.countDocuments({
       slotId,
       trialDate,
+      branch,
       status: { $in: ['pending', 'confirmed'] },
     })
 
@@ -94,6 +102,7 @@ export async function POST(req: NextRequest) {
       slotId,
       slotTime: slot.time,
       trialDate,
+      branch,
       status: 'pending',
     })
 

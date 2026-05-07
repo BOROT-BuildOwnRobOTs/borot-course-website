@@ -32,6 +32,7 @@ export interface IStudent extends Document {
   age?: number
   nickname?: string
   parent: Types.ObjectId
+  branch?: Types.ObjectId | null
   enrollments: IEnrollment[]
   notes?: string
   createdAt: Date
@@ -79,6 +80,7 @@ const StudentSchema = new Schema<IStudent>(
     age: { type: Number },
     nickname: { type: String, default: '' },
     parent: { type: Schema.Types.ObjectId, ref: 'Parent', required: true },
+    branch: { type: Schema.Types.ObjectId, ref: 'Branch', default: null, index: true },
     enrollments: [EnrollmentSchema],
     notes: { type: String, default: '' },
   },

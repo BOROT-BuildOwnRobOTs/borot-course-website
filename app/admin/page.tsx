@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import {
   Users, GraduationCap, BookOpen, CalendarDays, Shield, LogOut, Eye, EyeOff,
   MessageSquare, FlaskConical, RefreshCw, CheckCircle, XCircle, Box, Printer,
-  LayoutDashboard, Home, ArrowUpRight, Sparkles,
+  LayoutDashboard, Home, ArrowUpRight, Sparkles, Building2, ShieldCheck,
 } from 'lucide-react'
 import Image from 'next/image'
 import {
@@ -15,6 +15,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import ParentsTab from './components/ParentsTab'
 import StudentsTab from './components/StudentsTab'
 import TeachersTab from './components/TeachersTab'
@@ -25,6 +26,9 @@ import TrialClassTab from './components/TrialClassTab'
 import ParentViewSimulatorTab from './components/ParentViewSimulatorTab'
 import OrdersTab from './components/OrdersTab'
 import PrintQueueTab from './components/PrintQueueTab'
+import BranchesTab from './components/BranchesTab'
+import AdminsTab from './components/AdminsTab'
+import { BranchProvider, useBranchContext, AdminSession } from './components/BranchContext'
 
 type ViewId =
   | 'overview'
@@ -38,6 +42,8 @@ type ViewId =
   | 'print-queue'
   | 'trial-class'
   | 'parent-view'
+  | 'branches'
+  | 'admins'
 
 interface Stats {
   parents: number
@@ -86,31 +92,57 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { id: 'parent-view', label: 'Parent View', icon: Eye, iconClass: 'text-gray-500' },
     ],
   },
+  {
+    label: 'Settings',
+    items: [
+      { id: 'branches', label: 'Branches', icon: Building2, iconClass: 'text-orange-500' },
+      { id: 'admins', label: 'Admins', icon: ShieldCheck, iconClass: 'text-purple-500' },
+    ],
+  },
 ]
 
 const FLAT_NAV: NavItem[] = NAV_GROUPS.flatMap((g) => g.items)
 
 // ─── Login Screen ────────────────────────────────────────────────────────────
-function LoginScreen({ onLogin }: { onLogin: () => void }) {
-  const [username, setUsername] = useState('')
+function LoginScreen({ onLogin }: { onLogin: (session: AdminSession) => void }) {
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [shaking, setShaking] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   // SECURITY (phase 2 — must fix before processing real payments via /print):
-  // Hardcoded credentials + sessionStorage flag is acceptable for the course CMS,
-  // but the 3D-print order flow handles money. Replace with Clerk-gated admin
-  // role check (see middleware.ts) and remove this client-side auth before launch.
-  const handleSubmit = (e: React.FormEvent) => {
+  // sessionStorage flag is acceptable for the course CMS, but the 3D-print
+  // order flow handles money. Move to a signed cookie + server-side check
+  // before launch.
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (username === 'admin' && password === 'admin') {
+    if (!identifier.trim() || !password) return
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password }),
+      })
+      const json = await res.json()
+      if (!json.success) {
+        setError(json.error || 'Incorrect email or password')
+        setShaking(true)
+        setTimeout(() => setShaking(false), 500)
+        return
+      }
       sessionStorage.setItem('admin_auth', '1')
-      onLogin()
-    } else {
-      setError('Incorrect username or password')
+      sessionStorage.setItem('admin_session', JSON.stringify(json.data))
+      onLogin(json.data)
+    } catch {
+      setError('Login failed — please try again')
       setShaking(true)
       setTimeout(() => setShaking(false), 500)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -138,12 +170,12 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1.5">Username</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1.5">Email or Username</label>
               <input
                 type="text"
-                value={username}
-                onChange={(e) => { setUsername(e.target.value); setError('') }}
-                placeholder="Enter username"
+                value={identifier}
+                onChange={(e) => { setIdentifier(e.target.value); setError('') }}
+                placeholder="admin@example.com หรือ admin"
                 autoComplete="username"
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm transition-all"
               />
@@ -178,9 +210,10 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
             <button
               type="submit"
-              className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold py-2.5 rounded-lg transition-colors mt-2"
+              disabled={submitting}
+              className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 disabled:bg-orange-300 text-white font-semibold py-2.5 rounded-lg transition-colors mt-2"
             >
-              Sign In
+              {submitting ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
         </div>
@@ -311,9 +344,46 @@ function OverviewView({
   )
 }
 
+// ─── Branch selector for top bar ────────────────────────────────────────────
+function BranchSelector() {
+  const { branches, selectedBranchId, setSelectedBranchId, session } = useBranchContext()
+  const isSuper = session?.role === 'super'
+
+  if (!isSuper) {
+    if (session?.branch) {
+      return (
+        <Badge variant="secondary" className="bg-orange-50 text-orange-600 border border-orange-200 gap-1">
+          <Building2 className="w-3 h-3" />
+          <span className="hidden sm:inline">Branch:</span>
+          {session.branch.name}
+        </Badge>
+      )
+    }
+    return null
+  }
+
+  return (
+    <Select value={selectedBranchId || '__all__'} onValueChange={(v) => setSelectedBranchId(v === '__all__' ? '' : v)}>
+      <SelectTrigger className="h-8 text-xs gap-1.5 min-w-[150px]">
+        <Building2 className="w-3.5 h-3.5 text-orange-500" />
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__all__">All branches</SelectItem>
+        {branches.map((b) => (
+          <SelectItem key={b._id} value={b._id}>
+            {b.name}
+            {b.status !== 'active' && <span className="text-gray-400 ml-1">({b.status === 'coming_soon' ? 'Soon' : b.status})</span>}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 // ─── Main Admin Page ────────────────────────────────────────────────────────
-export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+function AdminPageInner({ session, onLogout }: { session: AdminSession; onLogout: () => void }) {
+  const { scopeQuery } = useBranchContext()
   const [stats, setStats] = useState<Stats>({ parents: 0, students: 0, teachers: 0, courses: 0, sessions: 0 })
   const [statsLoading, setStatsLoading] = useState(true)
   const [activeView, setActiveView] = useState<ViewId>('overview')
@@ -336,18 +406,13 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    const auth = sessionStorage.getItem('admin_auth')
-    setIsAuthenticated(auth === '1')
-  }, [])
-
-  useEffect(() => {
-    if (!isAuthenticated) return
     const fetchStats = async () => {
       setStatsLoading(true)
       try {
+        const qs = scopeQuery ? `?${scopeQuery}` : ''
         const [pRes, sRes, tRes, cRes, sessRes] = await Promise.all([
-          fetch('/api/admin/parents'),
-          fetch('/api/admin/students'),
+          fetch(`/api/admin/parents${qs}`),
+          fetch(`/api/admin/students${qs}`),
           fetch('/api/admin/teachers'),
           fetch('/api/admin/courses'),
           fetch('/api/admin/sessions'),
@@ -367,17 +432,19 @@ export default function AdminPage() {
       }
     }
     fetchStats()
-  }, [isAuthenticated])
+  }, [scopeQuery])
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('admin_auth')
-    setIsAuthenticated(false)
-  }
+  const NAV_VISIBLE = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => {
+      // Branch admins can't manage other admins.
+      if (item.id === 'admins' && session.role !== 'super') return false
+      return true
+    }),
+  })).filter((g) => g.items.length > 0)
 
-  if (isAuthenticated === null) return null
-  if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} />
-
-  const activeItem = FLAT_NAV.find((i) => i.id === activeView) ?? FLAT_NAV[0]
+  const FLAT_VISIBLE = NAV_VISIBLE.flatMap((g) => g.items)
+  const activeItem = FLAT_VISIBLE.find((i) => i.id === activeView) ?? FLAT_VISIBLE[0]
 
   return (
     <SidebarProvider>
@@ -395,7 +462,7 @@ export default function AdminPage() {
         </SidebarHeader>
 
         <SidebarContent>
-          {NAV_GROUPS.map((group) => (
+          {NAV_VISIBLE.map((group) => (
             <SidebarGroup key={group.label}>
               <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                 {group.label}
@@ -439,8 +506,17 @@ export default function AdminPage() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
+              <div className="px-2 py-1.5 group-data-[collapsible=icon]:hidden">
+                <p className="text-xs font-medium text-gray-700 truncate">{session.name}</p>
+                <p className="text-[10px] text-gray-400 truncate">{session.email}</p>
+                <p className="text-[10px] text-orange-500 mt-0.5">
+                  {session.role === 'super' ? 'Super admin' : `Branch: ${session.branch?.name ?? '—'}`}
+                </p>
+              </div>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
               <SidebarMenuButton
-                onClick={handleLogout}
+                onClick={onLogout}
                 tooltip="Sign Out"
                 className="text-red-500 hover:text-red-600 hover:bg-red-50"
               >
@@ -473,6 +549,7 @@ export default function AdminPage() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              <BranchSelector />
               <Button
                 onClick={handleSyncSheet}
                 disabled={syncing}
@@ -525,9 +602,46 @@ export default function AdminPage() {
             {activeView === 'parent-view'  && <ParentViewSimulatorTab />}
             {activeView === 'print-orders' && <OrdersTab />}
             {activeView === 'print-queue'  && <PrintQueueTab />}
+            {activeView === 'branches'     && <BranchesTab />}
+            {activeView === 'admins'       && session.role === 'super' && <AdminsTab />}
           </div>
         </main>
       </SidebarInset>
     </SidebarProvider>
+  )
+}
+
+// ─── Page wrapper: handles auth + session bootstrapping ─────────────────────
+export default function AdminPage() {
+  const [session, setSession] = useState<AdminSession | null>(null)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    const auth = sessionStorage.getItem('admin_auth')
+    const raw = sessionStorage.getItem('admin_session')
+    if (auth === '1' && raw) {
+      try {
+        setSession(JSON.parse(raw) as AdminSession)
+      } catch {
+        sessionStorage.removeItem('admin_auth')
+        sessionStorage.removeItem('admin_session')
+      }
+    }
+    setReady(true)
+  }, [])
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('admin_auth')
+    sessionStorage.removeItem('admin_session')
+    setSession(null)
+  }
+
+  if (!ready) return null
+  if (!session) return <LoginScreen onLogin={(s) => setSession(s)} />
+
+  return (
+    <BranchProvider session={session}>
+      <AdminPageInner session={session} onLogout={handleLogout} />
+    </BranchProvider>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { X, Users, Clock, Calendar, RefreshCw, Loader2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, BookOpen, Coffee, ArrowLeft, CheckCircle2, User, Phone, Baby, GraduationCap, Upload, ImageIcon, Trash2 } from "lucide-react"
+import { X, Users, Clock, Calendar, RefreshCw, Loader2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, BookOpen, Coffee, ArrowLeft, CheckCircle2, User, Phone, Baby, GraduationCap, Upload, ImageIcon, Trash2, Building2, MapPin } from "lucide-react"
 
 // ── Trial-eligible courses ──
 const TRIAL_COURSES = [
@@ -46,10 +46,21 @@ interface TrialSlotData {
 
 type ActiveTab = "regular" | "trial"
 
+interface BranchOption {
+  _id: string
+  name: string
+  slug: string
+  status: "active" | "coming_soon" | "closed"
+  address?: string
+  phone?: string
+}
+
 interface SlotStatusModalProps {
   isOpen: boolean
   onClose: () => void
 }
+
+const SELECTED_BRANCH_KEY = "borot_selected_branch_id"
 
 /** Truncate course name to maxLen characters */
 function truncateCourse(name: string, maxLen = 22): string {
@@ -133,13 +144,44 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const [slipUrl, setSlipUrl] = useState<string | null>(null)
   const slipInputRef = useRef<HTMLInputElement>(null)
 
-  const fetchSlots = async (dateOverride?: string, weekOffsetOverride?: number) => {
+  // ── Branch selection state ──
+  const [branches, setBranches] = useState<BranchOption[]>([])
+  const [branchesLoading, setBranchesLoading] = useState(false)
+  const [branchesError, setBranchesError] = useState<string | null>(null)
+  const [selectedBranch, setSelectedBranch] = useState<BranchOption | null>(null)
+
+  const fetchBranches = async () => {
+    setBranchesLoading(true)
+    setBranchesError(null)
+    try {
+      const res = await fetch("/api/branches", { cache: "no-store" })
+      const json = await res.json()
+      if (json.success) setBranches(json.data)
+      else setBranchesError("Unable to load branches")
+    } catch {
+      setBranchesError("Connection error")
+    } finally {
+      setBranchesLoading(false)
+    }
+  }
+
+  const fetchSlots = async (dateOverride?: string, weekOffsetOverride?: number, branchOverride?: BranchOption | null) => {
+    const branch = branchOverride !== undefined ? branchOverride : selectedBranch
+    if (!branch || branch.status !== "active") {
+      // Don't fetch slot data until an active branch is chosen
+      setSlots([])
+      setTrialSlots([])
+      return
+    }
     setLoading(true)
     setError(null)
     try {
       const dateParam = dateOverride ?? trialDate
       const wo = weekOffsetOverride ?? weekOffset
-      const res = await fetch(`/api/admin/slots?trialDate=${dateParam}&weekOffset=${wo}`, { cache: "no-store" })
+      const res = await fetch(
+        `/api/admin/slots?trialDate=${dateParam}&weekOffset=${wo}&branch=${branch._id}`,
+        { cache: "no-store" }
+      )
       const json = await res.json()
       if (json.success) {
         setSlots(json.data)
@@ -161,6 +203,33 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
     setSelectedTrialSlot(null)
     setRegSuccess(false)
     fetchSlots(newDate)
+  }
+
+  const handleSelectBranch = (b: BranchOption) => {
+    if (b.status !== "active") return
+    setSelectedBranch(b)
+    if (typeof window !== "undefined") {
+      localStorage.setItem(SELECTED_BRANCH_KEY, b._id)
+    }
+    // Reset transient state then fetch slots scoped to the chosen branch
+    setWeekOffset(0)
+    setSelectedDay(null)
+    setExpandedSlots(new Set())
+    setExpandedTrialSlots(new Set())
+    setSelectedTrialSlot(null)
+    setRegSuccess(false)
+    fetchSlots(undefined, 0, b)
+  }
+
+  const handleChangeBranch = () => {
+    setSelectedBranch(null)
+    setSlots([])
+    setTrialSlots([])
+    setSelectedTrialSlot(null)
+    setRegSuccess(false)
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(SELECTED_BRANCH_KEY)
+    }
   }
 
   // ── Lock body scroll when modal is open (prevent background scrolling on mobile) ──
@@ -201,7 +270,6 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
     if (isOpen) {
       setWeekOffset(0)
       setSelectedDay(null)
-      fetchSlots(undefined, 0)
       setExpandedSlots(new Set())
       setExpandedTrialSlots(new Set())
       setSelectedTrialSlot(null)
@@ -212,6 +280,34 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
       setSlipPreview(null)
       setSlipUrl(null)
       setSlipUploading(false)
+      // Always refresh the branches list when the modal opens, then auto-restore
+      // the previously chosen branch (if it's still active) so the user doesn't
+      // have to re-pick on every open.
+      ;(async () => {
+        setBranchesLoading(true)
+        setBranchesError(null)
+        try {
+          const res = await fetch("/api/branches", { cache: "no-store" })
+          const json = await res.json()
+          if (json.success) {
+            setBranches(json.data)
+            const stored = typeof window !== "undefined" ? localStorage.getItem(SELECTED_BRANCH_KEY) : null
+            const restored = stored ? (json.data as BranchOption[]).find((b) => b._id === stored && b.status === "active") : null
+            if (restored) {
+              setSelectedBranch(restored)
+              fetchSlots(undefined, 0, restored)
+            } else {
+              setSelectedBranch(null)
+            }
+          } else {
+            setBranchesError("Unable to load branches")
+          }
+        } catch {
+          setBranchesError("Connection error")
+        } finally {
+          setBranchesLoading(false)
+        }
+      })()
     }
   }, [isOpen])
 
@@ -471,6 +567,10 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
   const handleRegSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedTrialSlot) return
+    if (!selectedBranch) {
+      setRegError("Please select a branch first.")
+      return
+    }
 
     setRegSubmitting(true)
     setRegError(null)
@@ -488,6 +588,7 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           paymentMethod,
           slotId: selectedTrialSlot.id,
           trialDate,
+          branch: selectedBranch._id,
         }),
       })
       const json = await res.json()
@@ -652,8 +753,26 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
           </div>
 
 
+          {/* Branch indicator + change button */}
+          {selectedBranch && (
+            <div className="mt-3 flex items-center justify-between gap-2 bg-white/15 rounded-xl px-3 py-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Building2 className="w-4 h-4 text-white/80 shrink-0" />
+                <span className="text-white text-xs font-semibold truncate">
+                  Branch: {selectedBranch.name}
+                </span>
+              </div>
+              <button
+                onClick={handleChangeBranch}
+                className="text-[11px] text-white/90 hover:text-white underline underline-offset-2 transition-colors shrink-0"
+              >
+                เปลี่ยนสาขา
+              </button>
+            </div>
+          )}
+
           {/* Trial tab summary */}
-          {activeTab === "trial" && !loading && (
+          {selectedBranch && activeTab === "trial" && !loading && (
             <div className="mt-3 bg-white/12 rounded-xl px-3.5 py-2.5">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
@@ -672,7 +791,8 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
             </div>
           )}
 
-          {/* Tab Switcher */}
+          {/* Tab Switcher — only show after a branch is selected */}
+          {selectedBranch && (
           <div className="flex mt-4 bg-white/15 rounded-xl p-1 gap-1">
             <button
               onClick={() => setActiveTab("regular")}
@@ -697,11 +817,91 @@ export function SlotStatusModal({ isOpen, onClose }: SlotStatusModalProps) {
               Trial Class
             </button>
           </div>
+          )}
         </div>
 
         {/* Body */}
         <div className="px-6 py-5 max-h-[70vh] sm:max-h-[60vh] overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-          {loading ? (
+          {!selectedBranch ? (
+            /* ── Branch Picker — must select before viewing schedule/trial ── */
+            <div className="space-y-4">
+              <div className="text-center py-2">
+                <Building2 className="w-10 h-10 mx-auto mb-2 text-orange-400" />
+                <h3 className="text-base font-bold text-gray-800">เลือกสาขา</h3>
+                <p className="text-xs text-gray-500 mt-1">เลือกสาขาเพื่อดูตารางเรียนและจอง Trial Class</p>
+              </div>
+              {branchesLoading ? (
+                <div className="flex flex-col items-center py-8 text-gray-400">
+                  <Loader2 className="w-7 h-7 animate-spin mb-2 text-orange-400" />
+                  <p className="text-xs">Loading branches...</p>
+                </div>
+              ) : branchesError ? (
+                <div className="flex flex-col items-center py-8 text-red-400">
+                  <p className="text-sm mb-3">{branchesError}</p>
+                  <button
+                    onClick={fetchBranches}
+                    className="text-xs underline text-orange-500 hover:text-orange-700"
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : branches.length === 0 ? (
+                <p className="text-center text-xs text-gray-400 py-6">No branches available.</p>
+              ) : (
+                <div className="space-y-2">
+                  {branches.map((b) => {
+                    const isActive = b.status === "active"
+                    return (
+                      <button
+                        key={b._id}
+                        type="button"
+                        disabled={!isActive}
+                        onClick={() => handleSelectBranch(b)}
+                        className={`w-full text-left rounded-xl border-2 px-4 py-3 transition-all flex items-start gap-3 ${
+                          isActive
+                            ? "border-orange-200 bg-white hover:border-orange-400 hover:bg-orange-50/50 cursor-pointer"
+                            : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                        }`}
+                      >
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                            isActive ? "bg-orange-100 text-orange-600" : "bg-gray-200 text-gray-400"
+                          }`}
+                        >
+                          <Building2 className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`font-semibold text-sm ${isActive ? "text-gray-800" : "text-gray-400"}`}>
+                              {b.name}
+                            </span>
+                            {!isActive && (
+                              <span className="text-[10px] font-bold uppercase tracking-wide bg-yellow-100 text-yellow-700 border border-yellow-200 px-1.5 py-0.5 rounded">
+                                Coming Soon
+                              </span>
+                            )}
+                          </div>
+                          {b.address && (
+                            <p className={`text-[11px] mt-0.5 flex items-start gap-1 ${isActive ? "text-gray-500" : "text-gray-400"}`}>
+                              <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
+                              <span className="break-words">{b.address}</span>
+                            </p>
+                          )}
+                          {b.phone && (
+                            <p className={`text-[11px] mt-0.5 flex items-center gap-1 ${isActive ? "text-gray-500" : "text-gray-400"}`}>
+                              <Phone className="w-3 h-3" />
+                              {b.phone}
+                            </p>
+                          )}
+                        </div>
+                        {isActive && <ChevronRight className="w-4 h-4 text-orange-400 mt-3 shrink-0" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          ) : loading ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
               <Loader2 className={`w-8 h-8 animate-spin mb-3 ${activeTab === "trial" ? "text-blue-400" : "text-orange-400"}`} />
               <p className="text-sm">Loading...</p>

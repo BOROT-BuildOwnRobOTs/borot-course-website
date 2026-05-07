@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useUser, useClerk } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
@@ -18,12 +18,24 @@ import {
   Plus,
   CheckCircle2,
   LogOut,
+  Building2,
+  MapPin,
+  Phone as PhoneIcon,
 } from "lucide-react"
 
 interface StudentForm {
   name: string
   nickname: string
   age: string
+}
+
+interface BranchOption {
+  _id: string
+  name: string
+  slug: string
+  status: "active" | "coming_soon" | "closed"
+  address?: string
+  phone?: string
 }
 
 const EMPTY_STUDENT: StudentForm = { name: "", nickname: "", age: "" }
@@ -35,9 +47,16 @@ export default function OnboardingPage() {
   const { user: clerkUser, isLoaded } = useUser()
   const { signOut } = useClerk()
 
-  // Step: 1 = choose role, 2 = personal info, 3 = student info (parent only), 4 = done
+  // Step: 1 = choose role, 2 = choose branch, 3 = personal info,
+  // 4 = student info (parent only) / done (teacher), 5 = done (parent)
   const [step, setStep] = useState(1)
   const [selectedRole, setSelectedRole] = useState<SelectedRole>(null)
+
+  // Branch state
+  const [branches, setBranches] = useState<BranchOption[]>([])
+  const [branchesLoading, setBranchesLoading] = useState(false)
+  const [branchesError, setBranchesError] = useState("")
+  const [selectedBranch, setSelectedBranch] = useState<BranchOption | null>(null)
 
   // Shared form
   const [name, setName] = useState(clerkUser?.fullName || "")
@@ -54,12 +73,25 @@ export default function OnboardingPage() {
 
   const email = clerkUser?.primaryEmailAddress?.emailAddress || ""
 
-  // ── Validation ──────────────────────────────────────────────
-  const isStep2Valid = name.trim().length > 0
-  const isStep3Valid = students.some((s) => s.name.trim().length > 0)
+  // ── Fetch branches when entering branch step ──────────────────
+  useEffect(() => {
+    if (step !== 2 || branches.length > 0) return
+    setBranchesLoading(true)
+    setBranchesError("")
+    fetch("/api/branches", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success) setBranches(j.data)
+        else setBranchesError("ไม่สามารถโหลดรายการสาขาได้")
+      })
+      .catch(() => setBranchesError("การเชื่อมต่อขัดข้อง"))
+      .finally(() => setBranchesLoading(false))
+  }, [step, branches.length])
 
-  // Total steps depends on role
-  const totalSteps = selectedRole === "parent" ? 3 : 2
+  // ── Validation ──────────────────────────────────────────────
+  const isBranchStepValid = !!selectedBranch && selectedBranch.status === "active"
+  const isPersonalStepValid = name.trim().length > 0
+  const isStudentStepValid = students.some((s) => s.name.trim().length > 0)
 
   // ── Student helpers ─────────────────────────────────────────
   const addStudent = () => setStudents((prev) => [...prev, { ...EMPTY_STUDENT }])
@@ -80,6 +112,7 @@ export default function OnboardingPage() {
         name: name.trim(),
         email,
         phone: phone.trim(),
+        branch: selectedBranch?._id,
       }
 
       if (selectedRole === "teacher") {
@@ -104,7 +137,7 @@ export default function OnboardingPage() {
       const j = await res.json()
       if (j.success && j.user) {
         sessionStorage.setItem("borot_user", JSON.stringify(j.user))
-        setStep(selectedRole === "parent" ? 4 : 3)
+        setStep(selectedRole === "parent" ? 5 : 4)
       } else {
         setError(j.error || "เกิดข้อผิดพลาด กรุณาลองใหม่")
       }
@@ -133,8 +166,8 @@ export default function OnboardingPage() {
   // ── Step indicator ──────────────────────────────────────────
   const stepLabels =
     selectedRole === "parent"
-      ? ["เลือกบทบาท", "ข้อมูลผู้ปกครอง", "ข้อมูลนักเรียน"]
-      : ["เลือกบทบาท", "ข้อมูลครูผู้สอน"]
+      ? ["เลือกบทบาท", "เลือกสาขา", "ข้อมูลผู้ปกครอง", "ข้อมูลนักเรียน"]
+      : ["เลือกบทบาท", "เลือกสาขา", "ข้อมูลครูผู้สอน"]
 
   const StepIndicator = () => (
     <div className="flex items-center justify-center gap-2 mb-8">
@@ -172,7 +205,7 @@ export default function OnboardingPage() {
   )
 
   // ── Success step ────────────────────────────────────────────
-  const doneStep = selectedRole === "parent" ? 4 : 3
+  const doneStep = selectedRole === "parent" ? 5 : 4
   if (step === doneStep) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/10 flex items-center justify-center px-4">
@@ -240,6 +273,7 @@ export default function OnboardingPage() {
                 </div>
               </button>
 
+              {/* (placeholder marker for next button) */}
               <button
                 onClick={() => {
                   setSelectedRole("teacher")
@@ -274,8 +308,119 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {/* ── Step 2: Personal Info (Parent) ─────────────────── */}
-        {step === 2 && selectedRole === "parent" && (
+        {/* ── Step 2: Choose Branch ───────────────────────────── */}
+        {step === 2 && selectedRole && (
+          <Card className="border-2">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-3 h-14 w-14 rounded-full bg-orange-100 flex items-center justify-center">
+                <Building2 className="h-7 w-7 text-orange-600" />
+              </div>
+              <CardTitle className="text-xl">เลือกสาขา</CardTitle>
+              <CardDescription>
+                สาขาที่จะใช้บริการเป็นหลัก (สามารถเปลี่ยนภายหลังได้)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {branchesLoading ? (
+                <div className="flex flex-col items-center py-8 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin mb-2 text-orange-400" />
+                  <p className="text-sm">กำลังโหลดรายการสาขา...</p>
+                </div>
+              ) : branchesError ? (
+                <p className="text-sm text-destructive text-center bg-destructive/10 p-3 rounded-lg">
+                  {branchesError}
+                </p>
+              ) : branches.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  ยังไม่มีสาขาที่เปิดให้บริการ
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {branches.map((b) => {
+                    const isActive = b.status === "active"
+                    const isSelected = selectedBranch?._id === b._id
+                    return (
+                      <button
+                        key={b._id}
+                        type="button"
+                        disabled={!isActive}
+                        onClick={() => isActive && setSelectedBranch(b)}
+                        className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                          !isActive
+                            ? "bg-muted/40 border-muted cursor-not-allowed"
+                            : isSelected
+                            ? "border-primary bg-primary/5 shadow-sm"
+                            : "hover:border-primary hover:bg-primary/5"
+                        }`}
+                      >
+                        <div
+                          className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${
+                            isActive ? "bg-orange-100 text-orange-600" : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          <Building2 className="h-6 w-6" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className={`font-semibold ${isActive ? "" : "text-muted-foreground"}`}>
+                              {b.name}
+                            </p>
+                            {!isActive && (
+                              <span className="text-[10px] font-bold uppercase tracking-wide bg-yellow-100 text-yellow-700 border border-yellow-200 px-1.5 py-0.5 rounded">
+                                Coming Soon
+                              </span>
+                            )}
+                            {isSelected && (
+                              <CheckCircle2 className="h-4 w-4 text-primary" />
+                            )}
+                          </div>
+                          {b.address && (
+                            <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1">
+                              <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
+                              <span>{b.address}</span>
+                            </p>
+                          )}
+                          {b.phone && (
+                            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                              <PhoneIcon className="h-3 w-3" />
+                              {b.phone}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setStep(1)
+                    setSelectedRole(null)
+                    setSelectedBranch(null)
+                  }}
+                  className="gap-2"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  ย้อนกลับ
+                </Button>
+                <Button
+                  onClick={() => setStep(3)}
+                  disabled={!isBranchStepValid}
+                  className="gap-2"
+                >
+                  ถัดไป
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Step 3: Personal Info (Parent) ─────────────────── */}
+        {step === 3 && selectedRole === "parent" && (
           <Card className="border-2">
             <CardHeader className="text-center">
               <div className="mx-auto mb-3 h-14 w-14 rounded-full bg-blue-100 flex items-center justify-center">
@@ -323,18 +468,15 @@ export default function OnboardingPage() {
               <div className="flex items-center justify-between pt-2">
                 <Button
                   variant="ghost"
-                  onClick={() => {
-                    setStep(1)
-                    setSelectedRole(null)
-                  }}
+                  onClick={() => setStep(2)}
                   className="gap-2"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   ย้อนกลับ
                 </Button>
                 <Button
-                  onClick={() => setStep(3)}
-                  disabled={!isStep2Valid}
+                  onClick={() => setStep(4)}
+                  disabled={!isPersonalStepValid}
                   className="gap-2"
                 >
                   ถัดไป
@@ -345,8 +487,8 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {/* ── Step 2: Personal Info (Teacher) ────────────────── */}
-        {step === 2 && selectedRole === "teacher" && (
+        {/* ── Step 3: Personal Info (Teacher) ────────────────── */}
+        {step === 3 && selectedRole === "teacher" && (
           <Card className="border-2">
             <CardHeader className="text-center">
               <div className="mx-auto mb-3 h-14 w-14 rounded-full bg-orange-100 flex items-center justify-center">
@@ -410,10 +552,7 @@ export default function OnboardingPage() {
               <div className="flex items-center justify-between pt-2">
                 <Button
                   variant="ghost"
-                  onClick={() => {
-                    setStep(1)
-                    setSelectedRole(null)
-                  }}
+                  onClick={() => setStep(2)}
                   className="gap-2"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -421,7 +560,7 @@ export default function OnboardingPage() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={!isStep2Valid || submitting}
+                  disabled={!isPersonalStepValid || submitting}
                   className="gap-2"
                 >
                   {submitting ? (
@@ -441,8 +580,8 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {/* ── Step 3: Student Info (Parent only) ─────────────── */}
-        {step === 3 && selectedRole === "parent" && (
+        {/* ── Step 4: Student Info (Parent only) ─────────────── */}
+        {step === 4 && selectedRole === "parent" && (
           <Card className="border-2">
             <CardHeader className="text-center">
               <div className="mx-auto mb-3 h-14 w-14 rounded-full bg-green-100 flex items-center justify-center">
@@ -530,7 +669,7 @@ export default function OnboardingPage() {
               <div className="flex items-center justify-between pt-2">
                 <Button
                   variant="ghost"
-                  onClick={() => setStep(2)}
+                  onClick={() => setStep(3)}
                   className="gap-2"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -538,7 +677,7 @@ export default function OnboardingPage() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={!isStep3Valid || submitting}
+                  disabled={!isStudentStepValid || submitting}
                   className="gap-2"
                 >
                   {submitting ? (

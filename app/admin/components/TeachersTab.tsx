@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Plus, Pencil, Trash2, Mail, Phone, GraduationCap, Eye, EyeOff } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Pencil, Trash2, Mail, Phone, GraduationCap, Eye, EyeOff, Building2 } from 'lucide-react'
+import { useBranchContext, BranchSummary } from './BranchContext'
 
 interface Teacher {
   _id: string
@@ -16,38 +18,62 @@ interface Teacher {
   phone: string
   specialization: string
   createdAt: string
+  branch?: BranchSummary | string | null
+}
+
+function branchIdOf(value: BranchSummary | string | null | undefined): string {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  return value._id || ''
+}
+
+function branchObjOf(value: BranchSummary | string | null | undefined): BranchSummary | null {
+  if (!value || typeof value === 'string') return null
+  return value
 }
 
 export default function TeachersTab() {
+  const { branches, selectedBranchId, scopeQuery, session } = useBranchContext()
+  const lockedBranchId = session?.role === 'branch' && session.branch ? session.branch._id : ''
+
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editTeacher, setEditTeacher] = useState<Teacher | null>(null)
-  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', specialization: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', specialization: '', branch: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
   const fetchTeachers = async () => {
     setLoading(true)
-    const res = await fetch('/api/admin/teachers')
+    const qs = scopeQuery ? `?${scopeQuery}` : ''
+    const res = await fetch(`/api/admin/teachers${qs}`)
     const json = await res.json()
     if (json.success) setTeachers(json.data)
     setLoading(false)
   }
 
-  useEffect(() => { fetchTeachers() }, [])
+  useEffect(() => { fetchTeachers() }, [scopeQuery])
 
   const openAdd = () => {
     setEditTeacher(null)
-    setForm({ name: '', email: '', password: '', phone: '', specialization: '' })
+    const defaultBranch = lockedBranchId || selectedBranchId || ''
+    setForm({ name: '', email: '', password: '', phone: '', specialization: '', branch: defaultBranch })
     setError('')
     setDialogOpen(true)
   }
 
   const openEdit = (t: Teacher) => {
     setEditTeacher(t)
-    setForm({ name: t.name, email: t.email, password: '', phone: t.phone, specialization: t.specialization })
+    setForm({
+      name: t.name,
+      email: t.email,
+      password: '',
+      phone: t.phone,
+      specialization: t.specialization,
+      branch: branchIdOf(t.branch),
+    })
     setError('')
     setDialogOpen(true)
   }
@@ -55,13 +81,21 @@ export default function TeachersTab() {
   const handleSave = async () => {
     if (!form.name.trim() || !form.email.trim()) return
     if (!editTeacher && !form.password.trim()) { setError('Please enter a password'); return }
+    if (!form.branch) { setError('Please select a branch'); return }
     setSaving(true)
     setError('')
     try {
       const url = editTeacher ? `/api/admin/teachers/${editTeacher._id}` : '/api/admin/teachers'
       const method = editTeacher ? 'PUT' : 'POST'
       const body = editTeacher
-        ? { name: form.name, email: form.email, phone: form.phone, specialization: form.specialization, ...(form.password ? { password: form.password } : {}) }
+        ? {
+            name: form.name,
+            email: form.email,
+            phone: form.phone,
+            specialization: form.specialization,
+            branch: form.branch,
+            ...(form.password ? { password: form.password } : {}),
+          }
         : form
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const json = await res.json()
@@ -108,10 +142,16 @@ export default function TeachersTab() {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold text-gray-800">{t.name}</p>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-800 truncate">{t.name}</p>
                         {t.specialization && (
                           <p className="text-xs text-orange-500">{t.specialization}</p>
+                        )}
+                        {branchObjOf(t.branch) && (
+                          <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded">
+                            <Building2 className="w-3 h-3" />
+                            {branchObjOf(t.branch)?.name}
+                          </span>
                         )}
                       </div>
                       <div className="flex gap-1">
@@ -148,6 +188,41 @@ export default function TeachersTab() {
           </DialogHeader>
           <div className="space-y-4">
             {error && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded">{error}</p>}
+            <div>
+              <Label>Branch *</Label>
+              <Select
+                value={form.branch}
+                onValueChange={(v) => setForm({ ...form, branch: v })}
+                disabled={!!lockedBranchId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกสาขา..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map((b) => {
+                    const disabled = b.status !== 'active'
+                    return (
+                      <SelectItem key={b._id} value={b._id} disabled={disabled}>
+                        <span className="flex items-center gap-2">
+                          <span className={disabled ? 'text-gray-400' : ''}>{b.name}</span>
+                          {b.status === 'coming_soon' && (
+                            <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded">
+                              Coming Soon
+                            </span>
+                          )}
+                          {b.status === 'closed' && (
+                            <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">
+                              Closed
+                            </span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+              {lockedBranchId && <p className="text-[11px] text-gray-400 mt-1">Locked to your branch.</p>}
+            </div>
             <div>
               <Label>Full Name *</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Teacher name" />

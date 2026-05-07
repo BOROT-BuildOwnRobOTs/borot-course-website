@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose'
+import mongoose, { Schema, Document, Types } from 'mongoose'
 
 export interface ITrialRegistration extends Document {
   studentName: string
@@ -10,6 +10,7 @@ export interface ITrialRegistration extends Document {
   slotId: string
   slotTime: string
   trialDate: string          // YYYY-MM-DD — the specific date for the trial
+  branch?: Types.ObjectId | null
   status: 'pending' | 'confirmed' | 'cancelled'
   createdAt: Date
   updatedAt: Date
@@ -30,6 +31,7 @@ const TrialRegistrationSchema = new Schema<ITrialRegistration>(
     slotId: { type: String, required: true },
     slotTime: { type: String, required: true },
     trialDate: { type: String, required: true },   // YYYY-MM-DD
+    branch: { type: Schema.Types.ObjectId, ref: 'Branch', default: null, index: true },
     status: {
       type: String,
       enum: ['pending', 'confirmed', 'cancelled'],
