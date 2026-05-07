@@ -918,7 +918,7 @@ export default function ParentsTab() {
 
       {/* Enrollment Dialog */}
       <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Enroll in Course — {enrollStudent?.name}</DialogTitle>
           </DialogHeader>
@@ -959,45 +959,67 @@ export default function ParentsTab() {
             {enrollCourseId && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <Label>Select Class Time Slot</Label>
+                  <Label className="text-sm font-medium">Select Class Time Slot</Label>
                   {loadingSlots && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {(slotAvailability.length > 0 ? slotAvailability : SLOTS.map(s => ({
-                    id: s.id, day: s.day, dayLabel: s.dayLabel, time: s.time, count: 0, max: MAX_PER_SLOT, available: true
-                  }))).map((slot) => {
-                    const isSelected = enrollSlotDay === slot.day && enrollSlotTime === slot.time
-                    const isFull = slot.count >= slot.max
-                    return (
-                      <button
-                        key={slot.id}
-                        type="button"
-                        disabled={isFull && !isSelected}
-                        onClick={() => handleSelectSlot(slot.day, slot.time)}
-                        className={`relative text-center px-2 py-2.5 rounded-lg border text-xs transition-all ${
-                          isSelected
-                            ? 'bg-purple-500 text-white border-purple-500 shadow-sm'
-                            : isFull
-                            ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
-                            : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
-                        }`}
-                      >
-                        <div className="font-semibold">{slot.dayLabel}</div>
-                        <div className="text-[10px] mt-0.5 opacity-80">{slot.time}</div>
-                        <div className={`text-[10px] mt-1 font-medium ${
-                          isSelected ? 'text-white/80' : isFull ? 'text-red-400' : 'text-green-600'
-                        }`}>
-                          {slot.count}/{slot.max} seats
+                {(() => {
+                  const slotList = slotAvailability.length > 0
+                    ? slotAvailability
+                    : SLOTS.map(s => ({
+                        id: s.id, day: s.day, dayLabel: s.dayLabel, time: s.time, count: 0, max: MAX_PER_SLOT, available: true
+                      }))
+                  const dayOrder = ['tuesday', 'friday', 'saturday', 'sunday']
+                  const grouped = dayOrder
+                    .map(day => ({ day, slots: slotList.filter(s => s.day === day) }))
+                    .filter(g => g.slots.length > 0)
+                  return (
+                    <div className="space-y-3">
+                      {grouped.map(({ day, slots }) => (
+                        <div key={day}>
+                          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                            {slots[0].dayLabel}
+                          </p>
+                          <div className="grid grid-cols-3 gap-2">
+                            {slots.map((slot) => {
+                              const isSelected = enrollSlotDay === slot.day && enrollSlotTime === slot.time
+                              const isFull = slot.count >= slot.max
+                              return (
+                                <button
+                                  key={slot.id}
+                                  type="button"
+                                  disabled={isFull && !isSelected}
+                                  onClick={() => handleSelectSlot(slot.day, slot.time)}
+                                  className={`relative text-center px-2 py-2.5 rounded-lg border text-xs transition-all ${
+                                    isSelected
+                                      ? 'bg-purple-500 text-white border-purple-500 shadow-sm'
+                                      : isFull
+                                      ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
+                                      : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
+                                  }`}
+                                >
+                                  <div className="font-semibold">{slot.time}</div>
+                                  {slotAvailability.length > 0 && (
+                                    <div className={`flex items-center justify-center gap-0.5 mt-1 text-[10px] font-medium ${
+                                      isSelected ? 'text-white/80' : isFull ? 'text-red-500' : 'text-green-600'
+                                    }`}>
+                                      <Users className="h-2.5 w-2.5" />
+                                      <span>{slot.count}/{slot.max}</span>
+                                    </div>
+                                  )}
+                                  {isFull && slotAvailability.length > 0 && !isSelected && (
+                                    <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
                         </div>
-                        {isFull && !isSelected && (
-                          <span className="absolute top-1 right-1 text-[9px] bg-red-100 text-red-500 px-1 rounded">Full</span>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
+                      ))}
+                    </div>
+                  )
+                })()}
                 {enrollSlotDay && enrollSlotTime && (
-                  <p className="text-xs text-purple-600 mt-1.5 flex items-center gap-1">
+                  <p className="text-xs text-purple-600 mt-2 flex items-center gap-1">
                     <CalendarDays className="w-3 h-3" />
                     Selected: {SLOTS.find(s => s.day === enrollSlotDay && s.time === enrollSlotTime)?.dayLabel} {enrollSlotTime}
                   </p>

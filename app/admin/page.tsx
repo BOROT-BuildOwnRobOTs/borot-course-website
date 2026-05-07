@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import ParentsTab from './components/ParentsTab'
+import StudentsTab from './components/StudentsTab'
 import TeachersTab from './components/TeachersTab'
 import CoursesTab from './components/CoursesTab'
 import SessionsTab from './components/SessionsTab'
@@ -28,6 +29,7 @@ import PrintQueueTab from './components/PrintQueueTab'
 type ViewId =
   | 'overview'
   | 'parents'
+  | 'students'
   | 'teachers'
   | 'courses'
   | 'sessions'
@@ -63,6 +65,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: 'Course Management',
     items: [
       { id: 'parents', label: 'Parents & Students', icon: Users, iconClass: 'text-orange-500' },
+      { id: 'students', label: 'Students', icon: Users, iconClass: 'text-sky-500' },
       { id: 'teachers', label: 'Teachers', icon: GraduationCap, iconClass: 'text-emerald-500' },
       { id: 'courses', label: 'Courses', icon: BookOpen, iconClass: 'text-purple-500' },
       { id: 'sessions', label: 'Class Sessions', icon: CalendarDays, iconClass: 'text-pink-500' },
@@ -216,7 +219,7 @@ function OverviewView({
     text: string
   }[] = [
     { id: 'parents',  label: 'Parents',  value: stats.parents,  icon: Users,         accent: 'from-orange-500 to-orange-400',   bg: 'bg-orange-50',   text: 'text-orange-600' },
-    { id: 'parents',  label: 'Students', value: stats.students, icon: Users,         accent: 'from-sky-500 to-sky-400',         bg: 'bg-sky-50',      text: 'text-sky-600' },
+    { id: 'students', label: 'Students', value: stats.students, icon: Users,         accent: 'from-sky-500 to-sky-400',         bg: 'bg-sky-50',      text: 'text-sky-600' },
     { id: 'teachers', label: 'Teachers', value: stats.teachers, icon: GraduationCap, accent: 'from-emerald-500 to-emerald-400', bg: 'bg-emerald-50',  text: 'text-emerald-600' },
     { id: 'courses',  label: 'Courses',  value: stats.courses,  icon: BookOpen,      accent: 'from-purple-500 to-purple-400',   bg: 'bg-purple-50',   text: 'text-purple-600' },
     { id: 'sessions', label: 'Sessions', value: stats.sessions, icon: CalendarDays,  accent: 'from-pink-500 to-pink-400',       bg: 'bg-pink-50',     text: 'text-pink-600' },
@@ -513,6 +516,7 @@ export default function AdminPage() {
               <OverviewView stats={stats} loading={statsLoading} onNavigate={setActiveView} />
             )}
             {activeView === 'parents'      && <ParentsTab />}
+            {activeView === 'students'     && <StudentsTab />}
             {activeView === 'teachers'     && <TeachersTab />}
             {activeView === 'courses'      && <CoursesTab />}
             {activeView === 'sessions'     && <SessionsTab />}
