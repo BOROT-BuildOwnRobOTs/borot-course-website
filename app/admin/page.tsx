@@ -5,6 +5,7 @@ import {
   Users, GraduationCap, BookOpen, CalendarDays, Shield, LogOut, Eye, EyeOff,
   MessageSquare, FlaskConical, RefreshCw, CheckCircle, XCircle, Box, Printer,
   LayoutDashboard, Home, ArrowUpRight, Sparkles, Building2, ShieldCheck,
+  CloudUpload, Clock, ArrowRight, AlertTriangle, AlertCircle,
 } from 'lucide-react'
 import Image from 'next/image'
 import {
@@ -16,6 +17,8 @@ import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import ParentsTab from './components/ParentsTab'
 import StudentsTab from './components/StudentsTab'
 import TeachersTab from './components/TeachersTab'
@@ -389,6 +392,18 @@ function AdminPageInner({ session, onLogout }: { session: AdminSession; onLogout
   const [activeView, setActiveView] = useState<ViewId>('overview')
   const [syncing, setSyncing] = useState(false)
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [importing, setImporting] = useState(false)
+  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [importStage, setImportStage] = useState<'confirm' | 'result'>('confirm')
+  const [importResult, setImportResult] = useState<{
+    attendanceUpdates: Array<{ studentName: string; nickname: string; courseName: string; courseLevel: string; date: string; hours: number }>
+    leaveReschedules: Array<{ studentName: string; nickname: string; courseName: string; courseLevel: string; fromDate: string; toDate: string; cascadedCount: number }>
+    moveReschedules: Array<{ studentName: string; nickname: string; courseName: string; courseLevel: string; fromDate: string; fromTime: string; toDate: string; toTime: string }>
+    errors: string[]
+    warnings: string[]
+  } | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
 
   const handleSyncSheet = async () => {
     setSyncing(true)
@@ -402,6 +417,45 @@ function AdminPageInner({ session, onLogout }: { session: AdminSession; onLogout
     } finally {
       setSyncing(false)
       setTimeout(() => setSyncStatus('idle'), 4000)
+    }
+  }
+
+  const openImportDialog = () => {
+    setImportStage('confirm')
+    setImportResult(null)
+    setImportError(null)
+    setImportDialogOpen(true)
+  }
+
+  const runImport = async () => {
+    setImporting(true)
+    setImportStatus('idle')
+    setImportError(null)
+    try {
+      const res = await fetch('/api/admin/sync-from-sheet', { method: 'POST' })
+      const j = await res.json()
+      if (!j.success) {
+        setImportStatus('error')
+        setImportError(j.error ?? 'Unknown error')
+        setImportStage('result')
+        return
+      }
+      setImportResult({
+        attendanceUpdates: j.attendanceUpdates ?? [],
+        leaveReschedules: j.leaveReschedules ?? [],
+        moveReschedules: j.moveReschedules ?? [],
+        errors: j.errors ?? [],
+        warnings: j.warnings ?? [],
+      })
+      setImportStatus('success')
+      setImportStage('result')
+    } catch (e: any) {
+      setImportStatus('error')
+      setImportError(e?.message ?? String(e))
+      setImportStage('result')
+    } finally {
+      setImporting(false)
+      setTimeout(() => setImportStatus('idle'), 4000)
     }
   }
 
@@ -582,6 +636,38 @@ function AdminPageInner({ session, onLogout }: { session: AdminSession; onLogout
                     : 'Sync Sheet'}
                 </span>
               </Button>
+              <Button
+                onClick={openImportDialog}
+                disabled={importing}
+                variant="outline"
+                size="sm"
+                className={`gap-1.5 text-xs h-8 ${
+                  importStatus === 'success'
+                    ? 'border-blue-300 text-blue-600 hover:text-blue-700'
+                    : importStatus === 'error'
+                    ? 'border-red-300 text-red-600 hover:text-red-700'
+                    : 'border-blue-200 text-blue-600 hover:border-blue-400 hover:bg-blue-50'
+                }`}
+              >
+                {importing ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : importStatus === 'success' ? (
+                  <CheckCircle className="w-3.5 h-3.5" />
+                ) : importStatus === 'error' ? (
+                  <XCircle className="w-3.5 h-3.5" />
+                ) : (
+                  <CloudUpload className="w-3.5 h-3.5" />
+                )}
+                <span className="hidden sm:inline">
+                  {importing
+                    ? 'กำลังอัปเดต...'
+                    : importStatus === 'success'
+                    ? 'อัปเดตสำเร็จ!'
+                    : importStatus === 'error'
+                    ? 'อัปเดตล้มเหลว'
+                    : 'Sync to Web'}
+                </span>
+              </Button>
             </div>
           </div>
         </header>
@@ -607,6 +693,204 @@ function AdminPageInner({ session, onLogout }: { session: AdminSession; onLogout
           </div>
         </main>
       </SidebarInset>
+
+      <Dialog open={importDialogOpen} onOpenChange={(o) => { if (!importing) setImportDialogOpen(o) }}>
+        <DialogContent className="sm:max-w-2xl">
+          {importStage === 'confirm' ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <CloudUpload className="w-5 h-5 text-blue-600" />
+                  Sync to Web — ยืนยันการอัปเดต
+                </DialogTitle>
+                <DialogDescription>
+                  ระบบจะอ่านชีท "สัปดาห์นี้" และอัปเดตฐานข้อมูลตามแถวที่ติ๊กคอนเฟิร์มแล้วเท่านั้น
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 py-2">
+                <div className="rounded-lg border border-green-200 bg-green-50/50 p-3">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium text-green-900">ติ๊กคอนเฟิร์ม + เข้าเรียนปกติ</p>
+                      <p className="text-green-700/80 text-xs mt-0.5">บันทึกชั่วโมงเรียน + reschedule ถ้าเปลี่ยนวัน/เวลาในชีท</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-pink-200 bg-pink-50/50 p-3">
+                  <div className="flex items-start gap-2">
+                    <Clock className="w-4 h-4 text-pink-600 mt-0.5 shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium text-pink-900">ติ๊กคอนเฟิร์ม + ลา</p>
+                      <p className="text-pink-700/80 text-xs mt-0.5">เลื่อนเรียนของคนนั้นออกไป 1 สัปดาห์</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setImportDialogOpen(false)} disabled={importing}>ยกเลิก</Button>
+                <Button onClick={runImport} disabled={importing} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  {importing ? <><RefreshCw className="w-4 h-4 mr-1.5 animate-spin" /> กำลังอัปเดต...</> : <>ยืนยัน</>}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {importError ? (
+                    <><XCircle className="w-5 h-5 text-red-600" /> Sync to Web ล้มเหลว</>
+                  ) : (
+                    <><CheckCircle className="w-5 h-5 text-green-600" /> Sync to Web สำเร็จ</>
+                  )}
+                </DialogTitle>
+                <DialogDescription>
+                  {importError
+                    ? 'ไม่สามารถอัปเดตฐานข้อมูลจากชีทได้'
+                    : 'อัปเดตเรียบร้อย — ชีทถูก refresh ใหม่แล้ว'}
+                </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="max-h-[60vh] pr-3">
+                <div className="space-y-4 py-2">
+                  {importError && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                      {importError}
+                    </div>
+                  )}
+                  {importResult && (
+                    <>
+                      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div className="rounded-lg bg-green-50 border border-green-200 p-2">
+                          <div className="text-2xl font-bold text-green-700">{importResult.attendanceUpdates.length}</div>
+                          <div className="text-green-700/80">ชั่วโมงเรียน</div>
+                        </div>
+                        <div className="rounded-lg bg-pink-50 border border-pink-200 p-2">
+                          <div className="text-2xl font-bold text-pink-700">{importResult.leaveReschedules.length}</div>
+                          <div className="text-pink-700/80">เลื่อน (ลา)</div>
+                        </div>
+                        <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-2">
+                          <div className="text-2xl font-bold text-yellow-700">{importResult.moveReschedules.length}</div>
+                          <div className="text-yellow-700/80">ปรับวัน/เวลา</div>
+                        </div>
+                      </div>
+
+                      {importResult.attendanceUpdates.length > 0 && (
+                        <section>
+                          <h3 className="text-xs font-semibold text-green-800 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                            <CheckCircle className="w-3.5 h-3.5" /> บันทึกชั่วโมงเรียน
+                          </h3>
+                          <ul className="space-y-1.5">
+                            {importResult.attendanceUpdates.map((r, i) => (
+                              <li key={i} className="text-sm rounded-md bg-green-50/60 border border-green-100 px-3 py-1.5 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <span className="font-medium text-gray-900">{r.studentName}</span>
+                                  {r.nickname && <span className="text-gray-500"> ({r.nickname})</span>}
+                                  <span className="text-gray-500"> · {r.courseName}{r.courseLevel ? ` / ${r.courseLevel}` : ''}</span>
+                                </div>
+                                <div className="text-xs text-gray-600 shrink-0">
+                                  {r.date} <span className="font-semibold text-green-700">{r.hours} ชม.</span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </section>
+                      )}
+
+                      {importResult.leaveReschedules.length > 0 && (
+                        <section>
+                          <h3 className="text-xs font-semibold text-pink-800 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" /> เลื่อนเรียน (ลา) — เลื่อนต่อเนื่องทั้งหมด
+                          </h3>
+                          <ul className="space-y-1.5">
+                            {importResult.leaveReschedules.map((r, i) => (
+                              <li key={i} className="text-sm rounded-md bg-pink-50/60 border border-pink-100 px-3 py-1.5">
+                                <div className="font-medium text-gray-900">
+                                  {r.studentName}{r.nickname && <span className="text-gray-500"> ({r.nickname})</span>}
+                                  <span className="text-gray-500 font-normal"> · {r.courseName}{r.courseLevel ? ` / ${r.courseLevel}` : ''}</span>
+                                </div>
+                                <div className="text-xs text-gray-600 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                                  <span>{r.fromDate}</span>
+                                  <ArrowRight className="w-3 h-3 text-pink-500" />
+                                  <span className="font-semibold text-pink-700">{r.toDate}</span>
+                                  {r.cascadedCount > 1 && (
+                                    <span className="text-pink-600/70 ml-1">
+                                      (+ เลื่อนคาบที่เหลืออีก {r.cascadedCount - 1} คาบ)
+                                    </span>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </section>
+                      )}
+
+                      {importResult.moveReschedules.length > 0 && (
+                        <section>
+                          <h3 className="text-xs font-semibold text-yellow-800 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" /> ปรับวัน/เวลาเรียน
+                          </h3>
+                          <ul className="space-y-1.5">
+                            {importResult.moveReschedules.map((r, i) => (
+                              <li key={i} className="text-sm rounded-md bg-yellow-50/60 border border-yellow-100 px-3 py-1.5">
+                                <div className="font-medium text-gray-900">
+                                  {r.studentName}{r.nickname && <span className="text-gray-500"> ({r.nickname})</span>}
+                                  <span className="text-gray-500 font-normal"> · {r.courseName}{r.courseLevel ? ` / ${r.courseLevel}` : ''}</span>
+                                </div>
+                                <div className="text-xs text-gray-600 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                                  <span>{r.fromDate} {r.fromTime}</span>
+                                  <ArrowRight className="w-3 h-3 text-yellow-600" />
+                                  <span className="font-semibold text-yellow-800">{r.toDate} {r.toTime}</span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </section>
+                      )}
+
+                      {importResult.errors.length > 0 && (
+                        <section>
+                          <h3 className="text-xs font-semibold text-red-800 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5" /> ข้อผิดพลาด
+                          </h3>
+                          <ul className="space-y-1">
+                            {importResult.errors.map((e, i) => (
+                              <li key={i} className="text-xs text-red-700 bg-red-50/60 border border-red-100 rounded px-2 py-1">{e}</li>
+                            ))}
+                          </ul>
+                        </section>
+                      )}
+
+                      {importResult.warnings.length > 0 && (
+                        <section>
+                          <h3 className="text-xs font-semibold text-orange-800 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5" /> คำเตือน
+                          </h3>
+                          <ul className="space-y-1">
+                            {importResult.warnings.map((w, i) => (
+                              <li key={i} className="text-xs text-orange-700 bg-orange-50/60 border border-orange-100 rounded px-2 py-1">{w}</li>
+                            ))}
+                          </ul>
+                        </section>
+                      )}
+
+                      {importResult.attendanceUpdates.length === 0 &&
+                        importResult.leaveReschedules.length === 0 &&
+                        importResult.moveReschedules.length === 0 &&
+                        importResult.errors.length === 0 &&
+                        importResult.warnings.length === 0 && (
+                          <p className="text-sm text-gray-500 text-center py-4">ไม่มีแถวที่ติ๊กคอนเฟิร์ม — ไม่มีอะไรอัปเดต</p>
+                        )}
+                    </>
+                  )}
+                </div>
+              </ScrollArea>
+              <DialogFooter>
+                <Button onClick={() => setImportDialogOpen(false)}>ปิด</Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   )
 }

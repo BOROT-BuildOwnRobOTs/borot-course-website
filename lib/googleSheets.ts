@@ -391,7 +391,7 @@ export async function syncScheduleToSheet(): Promise<void> {
   const scheduleTabId = await ensureTab(sheets, TAB_SCHEDULE, tabIds)
   await deleteUnusedTabs(sheets, tabIds)
 
-  await writeWeekTab(sheets, weekTabId, students)
+  await writeWeekTab(sheets, weekTabId, students, courseHoursMap, findAttendance)
   await writeOverviewTab(sheets, overviewTabId, students, courseHoursMap, findAttendance)
   await writeScheduleTab(sheets, scheduleTabId, students)
 }
@@ -402,13 +402,22 @@ export async function syncScheduleToSheet(): Promise<void> {
 async function writeWeekTab(
   sheets: ReturnType<typeof google.sheets>,
   sheetId: number,
-  students: any[]
+  students: any[],
+  courseHoursMap: Map<string, number>,
+  findAttendance: (c: string, s: string, d: Date) => any
 ) {
   const header = [
-    'วันที่', 'วัน', 'เวลา', 'ชื่อนักเรียน', 'ชื่อเล่น',
-    'คอร์ส', 'ระดับ', 'ครู', 'ผู้ปกครอง', 'เบอร์โทร', 'สถานะคอนเฟิร์ม',
+    'วันที่', 'วัน', 'เวลา', 'ระยะเวลา', 'ชื่อนักเรียน', 'ชื่อเล่น',
+    'คอร์ส', 'ระดับ', 'ครู', 'ผู้ปกครอง', 'เบอร์โทร',
+    'ชั่วโมงทั้งหมด', 'เรียนแล้ว (ชม.)', 'สถานะคอนเฟิร์ม',
+    'สถานะการเรียน',
   ]
   const CONFIRM_COL_INDEX = header.indexOf('สถานะคอนเฟิร์ม')
+  const STATUS_COL_INDEX = header.indexOf('สถานะการเรียน')
+  const NAME_COL_INDEX = header.indexOf('ชื่อนักเรียน')
+  const COURSE_COL_INDEX = header.indexOf('คอร์ส')
+  const STATUS_DEFAULT = 'เข้าเรียนปกติ'
+  const STATUS_LEAVE = 'ลา'
   const monday = getMonday(new Date())
   const sunday = new Date(monday)
   sunday.setDate(monday.getDate() + 6)
@@ -422,17 +431,31 @@ async function writeWeekTab(
       if (enrollment.status !== 'active' && enrollment.status !== 'pending') continue
       const insts = effectiveAttendances(enrollment)
       const parent = student.parent as any
+      const courseId = enrollment.course.toString()
+      const totalCourseHours = courseHoursMap.get(courseId) ?? 0
+
+      // Cumulative attended hours across the whole enrollment (matches Overview tab)
+      let attendedHoursTotal = 0
+      for (const inst of insts) {
+        const att = findAttendance(courseId, student._id.toString(), inst.date)
+        attendedHoursTotal += att?.attendedHours ?? 0
+      }
+
       for (const inst of insts) {
         if (inst.date < monday || inst.date > sunday) continue
+        const dayName = inst.slotDay ? dayLabel(inst.slotDay) : ''
+        const sessionHours = hoursPerSession(inst.slotTime)
         rows.push({
           date: inst.date,
           values: [
             // Apostrophe forces Sheets to keep this as plain text under
             // USER_ENTERED, otherwise "05/05/2569" gets parsed as a date.
             "'" + formatDate(inst.date),
-            inst.slotDay ? dayLabel(inst.slotDay) : '',
+            // "วัน" prefix so cell value matches the dropdown options below
+            dayName ? `วัน${dayName}` : '',
             // Same treatment — Sheets parses "10:00-11:00" as a duration.
             "'" + inst.slotTime,
+            `${sessionHours} ชม.`,
             student.name ?? '',
             student.nickname ?? '',
             enrollment.courseName ?? '',
@@ -441,7 +464,10 @@ async function writeWeekTab(
             parent?.name ?? '',
             // Phone numbers — keep leading 0 by forcing text
             "'" + (parent?.phone ?? ''),
+            String(totalCourseHours),
+            String(attendedHoursTotal),
             'FALSE', // checkbox default: unchecked
+            STATUS_DEFAULT,
           ],
         })
       }
@@ -464,20 +490,39 @@ async function writeWeekTab(
     existingValues = []
   }
   const oldConfirms = new Map<string, boolean>()
+  const oldStatuses = new Map<string, string>()
   // Old layouts: row 0 = title, row 1 = header, row 2+ = data — start scanning at row 2
   for (let i = 2; i < existingValues.length; i++) {
     const r = existingValues[i] || []
     const oldDate = (r[0] ?? '').toString()
     const oldTime = (r[2] ?? '').toString()
-    const oldName = (r[3] ?? '').toString().trim()
-    const oldCourse = (r[5] ?? '').toString().trim()
-    const raw = r[CONFIRM_COL_INDEX]
-    // Checkbox stored values come back as strings "TRUE"/"FALSE" or booleans
-    const isChecked =
-      raw === true ||
-      (typeof raw === 'string' && raw.toUpperCase() === 'TRUE')
-    if (!isChecked) continue
-    oldConfirms.set(`${oldDate}|${oldTime}|${oldName}|${oldCourse}`, true)
+    // Name/course indices shifted across schema versions:
+    //   pre-hours, pre-duration:  name@3, course@5
+    //   post-duration (current):  name@4, course@6
+    // Add a key for both layouts — only the correct one will match a real row.
+    const preName = (r[3] ?? '').toString().trim()
+    const preCourse = (r[5] ?? '').toString().trim()
+    const curName = (r[4] ?? '').toString().trim()
+    const curCourse = (r[6] ?? '').toString().trim()
+    // Check current confirm column, plus legacy positions for prior schemas.
+    // Numeric/text columns at these indices are never "TRUE", so this is safe:
+    //   v1 confirm @10, v2 confirm @12 (after hours cols), v3 confirm @13 (after duration col)
+    const candidates = [r[CONFIRM_COL_INDEX], r[10], r[11], r[12]]
+    const isChecked = candidates.some(
+      (raw) => raw === true || (typeof raw === 'string' && raw.toUpperCase() === 'TRUE')
+    )
+    if (isChecked) {
+      oldConfirms.set(`${oldDate}|${oldTime}|${preName}|${preCourse}`, true)
+      oldConfirms.set(`${oldDate}|${oldTime}|${curName}|${curCourse}`, true)
+    }
+
+    // Preserve "สถานะการเรียน" — only at current index (didn't exist in older schemas).
+    // Only "ลา" needs preservation; the default ("เข้าเรียนปกติ") is what new rows get anyway.
+    const statusRaw = (r[STATUS_COL_INDEX] ?? '').toString().trim()
+    if (statusRaw === STATUS_LEAVE || statusRaw === STATUS_DEFAULT) {
+      oldStatuses.set(`${oldDate}|${oldTime}|${preName}|${preCourse}`, statusRaw)
+      oldStatuses.set(`${oldDate}|${oldTime}|${curName}|${curCourse}`, statusRaw)
+    }
   }
 
   // Strip leading apostrophe (text-format marker) when building lookup keys
@@ -486,28 +531,60 @@ async function writeWeekTab(
     const key = [
       stripQuote(row.values[0]),
       stripQuote(row.values[2]),
-      (row.values[3] || '').trim(),
-      (row.values[5] || '').trim(),
+      (row.values[NAME_COL_INDEX] || '').trim(),
+      (row.values[COURSE_COL_INDEX] || '').trim(),
     ].join('|')
     if (oldConfirms.get(key)) row.values[CONFIRM_COL_INDEX] = 'TRUE'
+    const preservedStatus = oldStatuses.get(key)
+    if (preservedStatus) row.values[STATUS_COL_INDEX] = preservedStatus
+  }
+
+  // ── Hidden helper columns power the dependent "เวลา" dropdown ──────────────
+  // Per-row formulas in helper cells switch between the 1-hr and 2-hr time
+  // lists based on the row's "ระยะเวลา" cell. The "เวลา" dropdown is then a
+  // ONE_OF_RANGE pointing at that row's helper range, so changing the duration
+  // cell live-updates the time options without re-syncing.
+  const HELPER_START_COL = header.length // 0-based column index where helpers begin
+  const NUM_HELPER_COLS = 6              // max length of either list
+  const TOTAL_COLS = HELPER_START_COL + NUM_HELPER_COLS
+  const DURATION_COL_LETTER = colLetter(header.indexOf('ระยะเวลา') + 1)
+  const HELPER_LETTER_START = colLetter(HELPER_START_COL + 1)
+  const HELPER_LETTER_END = colLetter(TOTAL_COLS)
+
+  function timeHelperFormulas(sheetRow1Based: number): string[] {
+    const d = `$${DURATION_COL_LETTER}${sheetRow1Based}`
+    // 2-hr list (3 items, then blanks) | 1-hr list (6 items)
+    return [
+      `=IF(${d}="2 ชม.","10:00-12:00","10:00-11:00")`,
+      `=IF(${d}="2 ชม.","13:00-15:00","11:00-12:00")`,
+      `=IF(${d}="2 ชม.","15:00-17:00","13:00-14:00")`,
+      `=IF(${d}="2 ชม.","","14:00-15:00")`,
+      `=IF(${d}="2 ชม.","","15:00-16:00")`,
+      `=IF(${d}="2 ชม.","","16:00-17:00")`,
+    ]
   }
 
   const titleRow = [`สัปดาห์ ${weekRangeLabel(monday)} — ${rows.length} คาบ`]
   const values: any[][] = [titleRow, header]
   if (rows.length === 0) {
-    values.push(['—', '—', '—', '(ไม่มีนักเรียนเรียนสัปดาห์นี้)', '', '', '', '', '', '', 'FALSE'])
+    values.push(['—', '—', '—', '—', '(ไม่มีนักเรียนเรียนสัปดาห์นี้)', '', '', '', '', '', '', '', '', 'FALSE', ''])
   } else {
-    for (const r of rows) values.push(r.values)
+    for (let i = 0; i < rows.length; i++) {
+      // Sheet row is 1-based: title=1, header=2, data starts at 3
+      const sheetRowNum = 3 + i
+      values.push([...rows[i].values, ...timeHelperFormulas(sheetRowNum)])
+    }
   }
 
   // Reset BEFORE writing so leftover merges/formatting don't swallow the
   // header row or shift cell content
   await resetTab(sheets, sheetId)
   // USER_ENTERED so the "TRUE"/"FALSE" strings in the confirm column become
-  // real booleans that the checkbox data validation can toggle. Other columns
-  // (e.g. Thai-formatted dates "05/05/2569") stay as text since they don't
-  // parse as numbers/dates in any locale.
-  await clearAndWrite(sheets, TAB_WEEK, values, header.length, 'USER_ENTERED')
+  // real booleans that the checkbox data validation can toggle, AND so the
+  // helper cells' "=IF(...)" formulas evaluate. Other columns (e.g.
+  // Thai-formatted dates "05/05/2569") stay as text since they don't parse
+  // as numbers/dates in any locale.
+  await clearAndWrite(sheets, TAB_WEEK, values, TOTAL_COLS, 'USER_ENTERED')
 
   // Confirm column setup — first compute its 0-indexed cell range
   const confirmStartRow = 2 // row index of first data row (0-based: title=0, header=1, data=2+)
@@ -515,6 +592,17 @@ async function writeWeekTab(
 
   const requests: any[] = [
     freezeRows(sheetId, 2),
+    // Unhide visible columns first — when the schema grows (e.g. a former
+    // helper column is now a visible column), the previous sync's hide flag
+    // would otherwise leave the new visible column hidden. resetTab doesn't
+    // touch column visibility.
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: header.length },
+        properties: { hiddenByUser: false },
+        fields: 'hiddenByUser',
+      },
+    },
     {
       mergeCells: {
         range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: header.length },
@@ -536,6 +624,14 @@ async function writeWeekTab(
     },
   ]
 
+  // Center-align data cells. Done via static styleRange because conditional
+  // formatting rules can't carry alignment (API restriction).
+  if (confirmEndRow > confirmStartRow) {
+    requests.push(styleRange(sheetId, confirmStartRow, confirmEndRow, 0, header.length, {
+      align: 'CENTER', vAlign: 'MIDDLE',
+    }))
+  }
+
   // Convert "สถานะคอนเฟิร์ม" column to checkboxes for data rows
   if (confirmEndRow > confirmStartRow) {
     requests.push({
@@ -553,9 +649,206 @@ async function writeWeekTab(
         },
       },
     })
+
+    // Dropdown for "วัน" column (index 1) so admins can edit in the sheet.
+    // strict: false → don't block other values (e.g. legacy days outside
+    // school's operating Tue/Fri/Sat/Sun); UI still shows the dropdown chip.
+    const DAY_COL_INDEX = header.indexOf('วัน')
+    requests.push({
+      setDataValidation: {
+        range: {
+          sheetId,
+          startRowIndex: confirmStartRow,
+          endRowIndex: confirmEndRow,
+          startColumnIndex: DAY_COL_INDEX,
+          endColumnIndex: DAY_COL_INDEX + 1,
+        },
+        rule: {
+          condition: {
+            type: 'ONE_OF_LIST',
+            values: [
+              { userEnteredValue: 'วันอังคาร' },
+              { userEnteredValue: 'วันศุกร์' },
+              { userEnteredValue: 'วันเสาร์' },
+              { userEnteredValue: 'วันอาทิตย์' },
+            ],
+          },
+          strict: false,
+          showCustomUi: true,
+        },
+      },
+    })
+
+    // Dropdown for "ระยะเวลา" column — drives the per-row "เวลา" dropdown.
+    const DURATION_COL_INDEX = header.indexOf('ระยะเวลา')
+    requests.push({
+      setDataValidation: {
+        range: {
+          sheetId,
+          startRowIndex: confirmStartRow,
+          endRowIndex: confirmEndRow,
+          startColumnIndex: DURATION_COL_INDEX,
+          endColumnIndex: DURATION_COL_INDEX + 1,
+        },
+        rule: {
+          condition: {
+            type: 'ONE_OF_LIST',
+            values: [
+              { userEnteredValue: '1 ชม.' },
+              { userEnteredValue: '2 ชม.' },
+            ],
+          },
+          strict: false,
+          showCustomUi: true,
+        },
+      },
+    })
+
+    // Per-row "เวลา" dropdown — ONE_OF_RANGE pointing at the row's helper
+    // range. Helpers contain IF() formulas keyed off the duration cell, so
+    // changing duration → time options swap live (no re-sync needed).
+    const TIME_COL_INDEX = header.indexOf('เวลา')
+    for (let i = 0; i < rows.length; i++) {
+      const rowIdx = confirmStartRow + i
+      const sheetRowNum = rowIdx + 1 // 1-based for formula
+      requests.push({
+        setDataValidation: {
+          range: {
+            sheetId,
+            startRowIndex: rowIdx,
+            endRowIndex: rowIdx + 1,
+            startColumnIndex: TIME_COL_INDEX,
+            endColumnIndex: TIME_COL_INDEX + 1,
+          },
+          rule: {
+            condition: {
+              type: 'ONE_OF_RANGE',
+              values: [{
+                userEnteredValue: `='${TAB_WEEK}'!$${HELPER_LETTER_START}$${sheetRowNum}:$${HELPER_LETTER_END}$${sheetRowNum}`,
+              }],
+            },
+            strict: false,
+            showCustomUi: true,
+          },
+        },
+      })
+    }
+
+    // Dropdown for "สถานะการเรียน" column
+    requests.push({
+      setDataValidation: {
+        range: {
+          sheetId,
+          startRowIndex: confirmStartRow,
+          endRowIndex: confirmEndRow,
+          startColumnIndex: STATUS_COL_INDEX,
+          endColumnIndex: STATUS_COL_INDEX + 1,
+        },
+        rule: {
+          condition: {
+            type: 'ONE_OF_LIST',
+            values: [
+              { userEnteredValue: STATUS_DEFAULT },
+              { userEnteredValue: STATUS_LEAVE },
+            ],
+          },
+          strict: true,
+          showCustomUi: true,
+        },
+      },
+    })
+
+    // Hide the helper columns so they don't clutter the sheet
+    requests.push({
+      updateDimensionProperties: {
+        range: { sheetId, dimension: 'COLUMNS', startIndex: HELPER_START_COL, endIndex: TOTAL_COLS },
+        properties: { hiddenByUser: true },
+        fields: 'hiddenByUser',
+      },
+    })
+
+    // ── Conditional formatting (react to user edits in dropdown cells) ──────
+    // Static cell formatting only paints once at sync time. Conditional rules
+    // re-evaluate on every cell change, so e.g. ticking "ลา" in the dropdown
+    // turns the cell pink immediately without re-syncing.
+    const TOTAL_HOURS_COL = header.indexOf('ชั่วโมงทั้งหมด')
+    const STUDIED_COL = header.indexOf('เรียนแล้ว (ชม.)')
+    const dataRange = { sheetId, startRowIndex: confirmStartRow, endRowIndex: confirmEndRow }
+    const firstDataRow1Based = confirmStartRow + 1 // for relative-row formulas
+    const dCol = colLetter(DURATION_COL_INDEX + 1) // 'D' (ระยะเวลา)
+    const lCol = colLetter(TOTAL_HOURS_COL + 1)    // 'L' (ชั่วโมงทั้งหมด)
+    const mCol = colLetter(STUDIED_COL + 1)        // 'M' (เรียนแล้ว)
+
+    type Rgb = { red: number; green: number; blue: number }
+    // Sheets API rejects alignment fields in conditional-format formats —
+    // only bold/italic/strikethrough/foregroundColor/backgroundColor allowed.
+    // Cell-level alignment is handled by the static styleRange on data rows
+    // below (or inherits the column default).
+    const cfFormat = (bg: Rgb) => ({
+      backgroundColor: bg,
+      textFormat: { bold: true, foregroundColor: TEXT_DARK },
+    })
+    function addCfRule(colIdx: number, condition: any, bg: Rgb) {
+      requests.push({
+        addConditionalFormatRule: {
+          rule: {
+            ranges: [{ ...dataRange, startColumnIndex: colIdx, endColumnIndex: colIdx + 1 }],
+            booleanRule: { condition, format: cfFormat(bg) },
+          },
+        },
+      })
+    }
+    const textEq = (v: string) => ({ type: 'TEXT_EQ', values: [{ userEnteredValue: v }] })
+    const customFormula = (f: string) => ({ type: 'CUSTOM_FORMULA', values: [{ userEnteredValue: f }] })
+
+    // วัน — Thai day-color tradition
+    addCfRule(DAY_COL_INDEX, textEq('วันอังคาร'), HDR_PASTEL_PINK)
+    addCfRule(DAY_COL_INDEX, textEq('วันศุกร์'), HDR_PASTEL_BLUE)
+    addCfRule(DAY_COL_INDEX, textEq('วันเสาร์'), HDR_PASTEL_LAVENDER)
+    addCfRule(DAY_COL_INDEX, textEq('วันอาทิตย์'), HDR_PASTEL_PEACH)
+
+    // ระยะเวลา — mint for 1hr, yellow for 2hr
+    addCfRule(DURATION_COL_INDEX, textEq('1 ชม.'), HDR_PASTEL_MINT)
+    addCfRule(DURATION_COL_INDEX, textEq('2 ชม.'), HDR_PASTEL_YELLOW)
+
+    // เวลา — same color as the row's ระยะเวลา (drives off $D{row})
+    addCfRule(TIME_COL_INDEX, customFormula(`=$${dCol}${firstDataRow1Based}="1 ชม."`), HDR_PASTEL_MINT)
+    addCfRule(TIME_COL_INDEX, customFormula(`=$${dCol}${firstDataRow1Based}="2 ชม."`), HDR_PASTEL_YELLOW)
+
+    // เรียนแล้ว — progress tint by ratio (mutually exclusive bands so order is moot)
+    const ratio = `$${mCol}${firstDataRow1Based}/$${lCol}${firstDataRow1Based}`
+    const guard = `$${lCol}${firstDataRow1Based}>0`
+    addCfRule(STUDIED_COL, customFormula(`=AND(${guard}, $${mCol}${firstDataRow1Based}>0, ${ratio}<0.5)`), HDR_PASTEL_MINT)
+    addCfRule(STUDIED_COL, customFormula(`=AND(${guard}, ${ratio}>=0.5, ${ratio}<0.9)`), HDR_PASTEL_YELLOW)
+    addCfRule(STUDIED_COL, customFormula(`=AND(${guard}, ${ratio}>=0.9)`), HDR_PASTEL_PEACH)
+
+    // สถานะการเรียน — mint for normal, pink for ลา (the exception)
+    addCfRule(STATUS_COL_INDEX, textEq(STATUS_DEFAULT), HDR_PASTEL_MINT)
+    addCfRule(STATUS_COL_INDEX, textEq(STATUS_LEAVE), HDR_PASTEL_PINK)
   }
 
-  await sheets.spreadsheets.batchUpdate({ spreadsheetId: SHEET_ID, requestBody: { requests } })
+  // Existing conditional format rules from prior syncs would otherwise stack
+  // up indefinitely. Read the current count and prepend deletes (in reverse
+  // index order so each delete doesn't shift the next index).
+  const cfMeta = await sheets.spreadsheets.get({
+    spreadsheetId: SHEET_ID,
+    fields: 'sheets(properties(sheetId),conditionalFormats)',
+  })
+  const targetSheetMeta = (cfMeta.data.sheets ?? []).find((s) => s.properties?.sheetId === sheetId)
+  const oldCfCount = targetSheetMeta?.conditionalFormats?.length ?? 0
+  const deleteCfRequests: any[] = []
+  for (let i = oldCfCount - 1; i >= 0; i--) {
+    deleteCfRequests.push({ deleteConditionalFormatRule: { sheetId, index: i } })
+  }
+  const finalRequests = [...deleteCfRequests, ...requests]
+
+  // Send formatting in chunks to stay within Sheets API request limits
+  for (let i = 0; i < finalRequests.length; i += 200) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SHEET_ID,
+      requestBody: { requests: finalRequests.slice(i, i + 200) },
+    })
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -973,4 +1266,359 @@ async function writeScheduleTab(
       requestBody: { requests: chunk },
     })
   }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Sheet → DB import (for the "Sync to Web" admin button)
+//
+// Reads the "สัปดาห์นี้" tab and applies confirmed rows back to MongoDB:
+//   • confirm + เข้าเรียนปกติ → set Session.attendance.attendedHours; if the
+//     row's date/time was edited, also write a reschedule for that stamp.
+//   • confirm + ลา → push the lesson out by 7 days from its current effective
+//     date (replace existing reschedule for that stamp, or add a new one).
+//
+// After processing, kicks off syncScheduleToSheet so the sheet refreshes —
+// rescheduled "ลา" rows will then disappear from the current week.
+// ──────────────────────────────────────────────────────────────────────────────
+
+// Sheet column indexes for the visible (post-status) schema.
+// Helpers are after these but never read here.
+const WEEK_COL = {
+  DATE: 0,
+  DAY: 1,
+  TIME: 2,
+  DURATION: 3,
+  NAME: 4,
+  NICK: 5,
+  COURSE: 6,
+  LEVEL: 7,
+  TEACHER: 8,
+  PARENT: 9,
+  PHONE: 10,
+  TOTAL_HOURS: 11,
+  STUDIED: 12,
+  CONFIRM: 13,
+  STATUS: 14,
+}
+
+const STATUS_DEFAULT_VALUE = 'เข้าเรียนปกติ'
+const STATUS_LEAVE_VALUE = 'ลา'
+
+// Parse "DD/MM/YYYY" Buddhist-year date as written by formatDate(). Returns
+// a JS Date set to midnight in the runtime's local TZ (matches how stamp
+// dates compare via isSameDay).
+function parseBuddhistDate(s: string): Date | null {
+  const m = s.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (!m) return null
+  const day = parseInt(m[1], 10)
+  const month = parseInt(m[2], 10) - 1
+  const year = parseInt(m[3], 10) - 543
+  const d = new Date(year, month, day, 0, 0, 0, 0)
+  return isNaN(d.getTime()) ? null : d
+}
+
+function gregorianDayKey(d: Date): string {
+  return ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][d.getDay()]
+}
+
+function startOfDay(d: Date): Date {
+  const x = new Date(d); x.setHours(0, 0, 0, 0); return x
+}
+function endOfDay(d: Date): Date {
+  const x = new Date(d); x.setHours(23, 59, 59, 999); return x
+}
+
+export type ImportAttendanceRecord = {
+  studentName: string
+  nickname: string
+  courseName: string
+  courseLevel: string
+  date: string
+  hours: number
+}
+export type ImportLeaveRecord = {
+  studentName: string
+  nickname: string
+  courseName: string
+  courseLevel: string
+  fromDate: string
+  toDate: string
+  cascadedCount: number
+}
+export type ImportMoveRecord = {
+  studentName: string
+  nickname: string
+  courseName: string
+  courseLevel: string
+  fromDate: string
+  fromTime: string
+  toDate: string
+  toTime: string
+}
+
+export type ImportResult = {
+  success: boolean
+  attendanceUpdates: ImportAttendanceRecord[]
+  leaveReschedules: ImportLeaveRecord[]
+  moveReschedules: ImportMoveRecord[]
+  errors: string[]
+  warnings: string[]
+}
+
+export async function syncFromSheetToDb(): Promise<ImportResult> {
+  await connectDB()
+
+  const auth = getAuth()
+  const sheets = google.sheets({ version: 'v4', auth })
+
+  // Read visible columns A:O (helper columns past O are formula-derived)
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: `${TAB_WEEK}!A1:O`,
+    valueRenderOption: 'UNFORMATTED_VALUE',
+  })
+  const sheetRows = res.data.values ?? []
+
+  const result: ImportResult = {
+    success: true,
+    attendanceUpdates: [],
+    leaveReschedules: [],
+    moveReschedules: [],
+    errors: [],
+    warnings: [],
+  }
+
+  // Skip title (0) and header (1)
+  const dataRows = sheetRows.slice(2)
+
+  for (const row of dataRows) {
+    const confirmRaw = row[WEEK_COL.CONFIRM]
+    const isConfirmed =
+      confirmRaw === true ||
+      (typeof confirmRaw === 'string' && confirmRaw.toUpperCase() === 'TRUE')
+    if (!isConfirmed) continue
+
+    const dateStr = String(row[WEEK_COL.DATE] ?? '').trim()
+    const timeStr = String(row[WEEK_COL.TIME] ?? '').trim()
+    const durationStr = String(row[WEEK_COL.DURATION] ?? '').trim()
+    const studentName = String(row[WEEK_COL.NAME] ?? '').trim()
+    const courseName = String(row[WEEK_COL.COURSE] ?? '').trim()
+    const courseLevel = String(row[WEEK_COL.LEVEL] ?? '').trim()
+    const status = String(row[WEEK_COL.STATUS] ?? STATUS_DEFAULT_VALUE).trim() || STATUS_DEFAULT_VALUE
+
+    const rowLabel = `${studentName} / ${courseName} / ${dateStr}`
+
+    if (!studentName || !courseName) {
+      result.errors.push(`ข้อมูลแถวไม่ครบ: ${rowLabel}`)
+      continue
+    }
+
+    const sheetDate = parseBuddhistDate(dateStr)
+    if (!sheetDate) {
+      result.errors.push(`รูปแบบวันที่ไม่ถูกต้อง: ${rowLabel}`)
+      continue
+    }
+
+    // Resolve student + enrollment by (name, courseName, courseLevel)
+    const candidates = await Student.find({ name: studentName })
+    const matches = candidates
+      .map((s) => {
+        const idx = s.enrollments.findIndex(
+          (e: any) => e.courseName === courseName && (e.courseLevel ?? '') === courseLevel,
+        )
+        return idx >= 0 ? { student: s, enrollmentIdx: idx } : null
+      })
+      .filter((x): x is { student: any; enrollmentIdx: number } => x !== null)
+
+    if (matches.length === 0) {
+      result.errors.push(`ไม่พบ enrollment: ${rowLabel}`)
+      continue
+    }
+    if (matches.length > 1) {
+      result.errors.push(`มี enrollment ตรงหลายรายการ — ข้าม: ${rowLabel}`)
+      continue
+    }
+
+    const { student, enrollmentIdx } = matches[0]
+    const enrollment = student.enrollments[enrollmentIdx]
+
+    if (!enrollment.startDate || !enrollment.slot || !enrollment.courseDurationWeeks) {
+      result.errors.push(`enrollment ไม่มี slot/startDate/durationWeeks: ${rowLabel}`)
+      continue
+    }
+
+    // Find which stamp this row corresponds to (effective date matches sheet)
+    const stamps = generateStampDates(enrollment.startDate, enrollment.courseDurationWeeks, enrollment.slot)
+    const reschedules = enrollment.reschedules ?? []
+    let originalStamp: Date | null = null
+    let currentReschedule: any = null
+    let effectiveDate: Date | null = null
+    for (const stampDate of stamps) {
+      const r = reschedules.find((x: any) => isSameDay(new Date(x.originalDate), stampDate))
+      const eff = r ? new Date(r.newDate) : stampDate
+      if (isSameDay(eff, sheetDate)) {
+        originalStamp = stampDate
+        currentReschedule = r
+        effectiveDate = eff
+        break
+      }
+    }
+
+    if (!originalStamp || !effectiveDate) {
+      result.errors.push(`จับคู่ stamp ไม่ได้: ${rowLabel}`)
+      continue
+    }
+
+    const currentSlot = currentReschedule?.newSlot ?? enrollment.slot
+    // Snapshot "from" values BEFORE any mutation. Mongoose's setter on
+    // `subdoc.newSlot = ...` mutates the existing object in place, so
+    // reading `currentSlot.time` AFTER mutation would already return the
+    // new value — which made the result dialog show "11→11" instead of
+    // "12→11". Capture primitives now and use them in the result.
+    const fromTimeSnapshot: string = currentSlot.time ?? ''
+    const fromDateLabel: string = formatDate(effectiveDate)
+
+    if (status === STATUS_LEAVE_VALUE) {
+      // Cascade: push the ลา stamp AND every subsequent stamp by 7 days from
+      // their current effective dates. Without the cascade, the ลา stamp
+      // would land on next week's regular stamp date and collide. End effect:
+      // the remaining schedule shifts forward by one week.
+      const stampIndex = stamps.findIndex((s) => isSameDay(s, originalStamp!))
+      if (stampIndex < 0) {
+        result.errors.push(`stamp index lookup failed: ${rowLabel}`)
+        continue
+      }
+      const laIso = effectiveDate.toISOString().slice(0, 10)
+      let firstNewDate: Date | null = null
+      let cascadedCount = 0
+
+      for (let i = stampIndex; i < stamps.length; i++) {
+        const stamp = stamps[i]
+        const r = reschedules.find((x: any) => isSameDay(new Date(x.originalDate), stamp))
+        const currentEff = r ? new Date(r.newDate) : stamp
+        const slotForReschedule = r?.newSlot ?? enrollment.slot
+
+        const shifted = new Date(currentEff)
+        shifted.setDate(shifted.getDate() + 7)
+
+        if (r) {
+          r.newDate = shifted
+          if (i === stampIndex) {
+            r.reason = `ลา - เลื่อนจาก ${laIso}`
+          }
+        } else {
+          const list = student.enrollments[enrollmentIdx].reschedules || []
+          list.push({
+            originalDate: stamp,
+            newDate: shifted,
+            newSlot: { day: slotForReschedule.day, time: slotForReschedule.time },
+            reason: i === stampIndex
+              ? `ลา - เลื่อนจาก ${laIso}`
+              : `เลื่อนต่อเนื่องจากการลา ${laIso}`,
+          } as any)
+          student.enrollments[enrollmentIdx].reschedules = list
+        }
+
+        if (i === stampIndex) firstNewDate = new Date(shifted)
+        cascadedCount++
+      }
+
+      student.markModified('enrollments')
+      await student.save()
+      result.leaveReschedules.push({
+        studentName,
+        nickname: student.nickname ?? '',
+        courseName,
+        courseLevel,
+        fromDate: fromDateLabel,
+        toDate: formatDate(firstNewDate!),
+        cascadedCount,
+      })
+      continue
+    }
+
+    // status === เข้าเรียนปกติ
+    // 1) If sheet's date or time differs from current effective, apply as reschedule
+    const sheetDayKey = gregorianDayKey(sheetDate)
+    const dateChanged = !isSameDay(sheetDate, effectiveDate)
+    const timeChanged = !!timeStr && timeStr !== fromTimeSnapshot
+    if (dateChanged || timeChanged) {
+      const newSlotInfo = {
+        day: dateChanged ? sheetDayKey : currentSlot.day,
+        time: timeStr || fromTimeSnapshot,
+      }
+      if (currentReschedule) {
+        currentReschedule.newDate = sheetDate
+        currentReschedule.newSlot = newSlotInfo
+      } else {
+        const list = student.enrollments[enrollmentIdx].reschedules || []
+        list.push({
+          originalDate: originalStamp,
+          newDate: sheetDate,
+          newSlot: newSlotInfo,
+        } as any)
+        student.enrollments[enrollmentIdx].reschedules = list
+      }
+      student.markModified('enrollments')
+      await student.save()
+      result.moveReschedules.push({
+        studentName,
+        nickname: student.nickname ?? '',
+        courseName,
+        courseLevel,
+        fromDate: fromDateLabel,
+        fromTime: fromTimeSnapshot,
+        toDate: formatDate(sheetDate),
+        toTime: newSlotInfo.time,
+      })
+    }
+
+    // 2) Update Session.attendance.attendedHours to match the duration column
+    const hours = parseInt(durationStr, 10)
+    if (!hours || hours < 1) {
+      result.warnings.push(`อ่าน "ระยะเวลา" ไม่ออก: ${rowLabel} (${durationStr})`)
+      continue
+    }
+
+    const session = await Session.findOne({
+      course: enrollment.course,
+      scheduledAt: { $gte: startOfDay(sheetDate), $lte: endOfDay(sheetDate) },
+    })
+    if (!session) {
+      result.warnings.push(`ไม่พบ Session สำหรับ ${rowLabel} — ข้าม attendedHours`)
+      continue
+    }
+
+    const att = (session.attendance as any[]).find(
+      (a: any) => a.student.toString() === student._id.toString(),
+    )
+    if (!att) {
+      result.warnings.push(`ไม่พบ attendance entry: ${rowLabel} — ข้าม attendedHours`)
+      continue
+    }
+    att.attendedHours = hours
+    if (!att.checkedIn) {
+      att.checkedIn = true
+      att.checkedInAt = new Date()
+    }
+    session.markModified('attendance')
+    await session.save()
+    result.attendanceUpdates.push({
+      studentName,
+      nickname: student.nickname ?? '',
+      courseName,
+      courseLevel,
+      date: formatDate(sheetDate),
+      hours,
+    })
+  }
+
+  // Refresh the sheet so rescheduled "ลา" rows leave this week's view
+  try {
+    await syncScheduleToSheet()
+  } catch (e: any) {
+    result.warnings.push(`Sync sheet หลัง import ล้มเหลว: ${e?.message ?? e}`)
+  }
+
+  return result
 }

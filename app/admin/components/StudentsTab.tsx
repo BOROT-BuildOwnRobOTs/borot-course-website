@@ -165,12 +165,12 @@ export default function StudentsTab() {
         if (!hasMatching) return false
       }
       if (!q) return true
-      if (s.name.toLowerCase().includes(q)) return true
+      if (s.name?.toLowerCase().includes(q)) return true
       if (s.nickname?.toLowerCase().includes(q)) return true
       const parent = getParent(s)
       if (parent) {
-        if (parent.name.toLowerCase().includes(q)) return true
-        if (parent.email.toLowerCase().includes(q)) return true
+        if (parent.name?.toLowerCase().includes(q)) return true
+        if (parent.email?.toLowerCase().includes(q)) return true
         if (parent.phone?.toLowerCase().includes(q)) return true
       }
       if (s.enrollments?.some((e) => e.courseName?.toLowerCase().includes(q))) return true

@@ -103,12 +103,12 @@ export default function ParentViewSimulatorTab() {
     const q = searchQuery.trim().toLowerCase()
     if (!q) return parents
     return parents.filter(p => {
-      if (p.name.toLowerCase().includes(q)) return true
-      if (p.email.toLowerCase().includes(q)) return true
+      if (p.name?.toLowerCase().includes(q)) return true
+      if (p.email?.toLowerCase().includes(q)) return true
       if (p.phone?.toLowerCase().includes(q)) return true
       const children = studentsMap[p._id] || []
       return children.some(s =>
-        s.name.toLowerCase().includes(q) ||
+        s.name?.toLowerCase().includes(q) ||
         (s.nickname && s.nickname.toLowerCase().includes(q))
       )
     })
