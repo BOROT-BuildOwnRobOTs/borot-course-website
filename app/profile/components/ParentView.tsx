@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import {
   AlertCircle, BookOpen, CalendarDays, CheckCircle2, ChevronDown,
-  ChevronUp, Clock, Loader2, MessageSquare, RefreshCw, Trophy, Users, XCircle,
+  ChevronUp, Clock, FolderOpen, Loader2, MessageSquare, RefreshCw, Trophy, Users, XCircle,
 } from "lucide-react"
+import Link from "next/link"
 import { SLOTS, generateStampDates, isSameDay, getSlotLabel as libGetSlotLabel } from "@/lib/slots"
 
 // ── Compute weekly status info from stamps & sessions ─────────────────────────
@@ -83,7 +84,6 @@ import SlotDialog from "./SlotDialog"
 import RescheduleDialog from "./RescheduleDialog"
 import FeedbackDialog from "./FeedbackDialog"
 import LearningProgressDashboard from "./LearningProgressDashboard"
-import StudentPortfolio from "./StudentPortfolio"
 import AIRecommendation from "./AIRecommendation"
 
 // STATUS_ICONS defined locally (needs JSX)
@@ -105,7 +105,7 @@ interface Props {
   loadingSessions: boolean
 }
 
-type ParentTab = "students" | "dashboard" | "portfolio" | "ai"
+type ParentTab = "students" | "dashboard" | "ai"
 
 export default function ParentView({ user, setUser, sessions, loadingSessions }: Props) {
   const [activeTab, setActiveTab] = useState<ParentTab>("students")
@@ -234,21 +234,6 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
           </span>
         </button>
         <button
-          onClick={() => setActiveTab("portfolio")}
-          className={[
-            "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-semibold transition-all border-b-2",
-            activeTab === "portfolio"
-              ? "border-primary text-primary bg-primary/5"
-              : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
-          ].join(" ")}
-        >
-          <span className="text-base leading-none">📁</span>
-          Student Portfolio
-          <span className="text-[10px] bg-amber-100 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full font-semibold">
-            Coming Soon
-          </span>
-        </button>
-        <button
           onClick={() => setActiveTab("ai")}
           className={[
             "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-semibold transition-all border-b-2",
@@ -268,11 +253,6 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
       {/* Dashboard tab */}
       {activeTab === "dashboard" && (
         <LearningProgressDashboard students={user.students ?? []} />
-      )}
-
-      {/* Portfolio tab */}
-      {activeTab === "portfolio" && (
-        <StudentPortfolio studentName={user.students?.[0]?.name} />
       )}
 
       {/* AI Recommendation tab */}
@@ -356,7 +336,18 @@ export default function ParentView({ user, setUser, sessions, loadingSessions }:
                       </p>
                     </div>
                   </div>
-                  <Badge variant="secondary">{filteredEnrollments.length} courses</Badge>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/portfolio/${student._id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-violet-500 to-indigo-500 hover:from-violet-600 hover:to-indigo-600 transition-all shadow-sm hover:shadow-md"
+                    >
+                      <FolderOpen className="h-3.5 w-3.5" />
+                      Portfolio
+                    </Link>
+                    <Badge variant="secondary">{filteredEnrollments.length} courses</Badge>
+                  </div>
                 </div>
                 {total > 0 && (
                   <div className="mt-3">

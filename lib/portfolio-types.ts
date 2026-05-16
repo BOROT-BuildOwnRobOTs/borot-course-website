@@ -1,0 +1,267 @@
+// Pure types + client-safe helpers for the portfolio.
+// Kept separate from `portfolio.ts` because that file imports mongoose, which
+// pulls in Node-only modules ("net", "tls") that webpack can't bundle for the
+// client.
+
+export interface PortfolioSession {
+  weekNumber: number
+  scheduledDate: string
+  actualDate: string
+  rescheduled: boolean
+  topic: string
+  teacherName: string
+  checkedIn: boolean
+  attendedHours: number
+  rating: number | null
+  feedback: string
+  imageUrls: string[]
+  videoUrl: string
+  artwork: {
+    name: string
+    description: string
+    imageUrl: string
+  } | null
+}
+
+export interface PortfolioCourse {
+  courseId: string
+  courseName: string
+  courseLevel: string
+  status: string
+  startDate: string | null
+  totalWeeks: number
+  totalHours: number
+  attendedHours: number
+  attendedSessions: number
+  sessions: PortfolioSession[]
+}
+
+export interface PortfolioData {
+  student: {
+    _id: string
+    name: string
+    nickname: string
+    age: number | null
+  }
+  stats: {
+    totalCourses: number
+    completedCourses: number
+    totalSessions: number
+    attendedSessions: number
+    totalAttendedHours: number
+    photoCount: number
+    videoCount: number
+    artworkCount: number
+  }
+  courses: PortfolioCourse[]
+  generatedAt: string
+}
+
+// ── Flat helpers for the showcase view ──────────────────────────────────────
+
+export interface PortfolioWork {
+  id: string
+  kind: 'artwork' | 'photo' | 'video'
+  url: string
+  title: string
+  description: string
+  date: string
+  courseName: string
+  teacherName: string
+  rating: number | null
+  aspect?: 'portrait' | 'landscape' | 'square'
+}
+
+export interface PortfolioComment {
+  id: string
+  text: string
+  rating: number | null
+  date: string
+  courseName: string
+  teacherName: string
+  topic: string
+  commentsOnly: boolean
+}
+
+/**
+ * One showcase entry per session. Groups every image/video produced in a single
+ * class session under one "work" so the gallery doesn't repeat the same title
+ * four times for four photos taken on the same day.
+ *
+ * `hero` is the image that headlines the card — artwork.imageUrl when present,
+ * otherwise the first session photo. `thumbnails` are the rest (artwork dedup'd).
+ */
+export interface PortfolioSessionWork {
+  id: string
+  title: string
+  description: string
+  feedback: string
+  rating: number | null
+  date: string
+  courseName: string
+  teacherName: string
+  hero: { url: string; isVideo: boolean } | null
+  thumbnails: { url: string; isVideo: boolean }[]
+  hasArtwork: boolean
+}
+
+/**
+ * Rewrite a Cloudinary URL to apply auto-format + auto-quality.
+ *   .../upload/v123/folder/x.heic  →  .../upload/f_auto,q_auto/v123/folder/x.heic
+ */
+export function optimizeMediaUrl(url: string): string {
+  if (!url || !url.includes('res.cloudinary.com')) return url
+  if (/\/upload\/(?:[a-z]_[^/]+,?)*[a-z]_[^/]+\//.test(url)) return url
+  return url.replace('/image/upload/', '/image/upload/f_auto,q_auto/')
+}
+
+/** Flatten all artworks + photos into a single array, newest first. */
+export function flattenWorks(data: PortfolioData): PortfolioWork[] {
+  const out: PortfolioWork[] = []
+  for (const course of data.courses) {
+    for (const s of course.sessions) {
+      const baseId = `${course.courseId}-${s.actualDate}`
+      if (s.artwork?.imageUrl) {
+        out.push({
+          id: `${baseId}-art`,
+          kind: 'artwork',
+          url: s.artwork.imageUrl,
+          title: s.artwork.name || s.topic || 'Project',
+          description: s.artwork.description || '',
+          date: s.actualDate,
+          courseName: course.courseName,
+          teacherName: s.teacherName,
+          rating: s.rating,
+        })
+      }
+      s.imageUrls.forEach((url, i) => {
+        if (!url) return
+        if (s.artwork?.imageUrl && url === s.artwork.imageUrl) return
+        out.push({
+          id: `${baseId}-img-${i}`,
+          kind: 'photo',
+          url,
+          title: s.artwork?.name || s.topic || '',
+          description: '',
+          date: s.actualDate,
+          courseName: course.courseName,
+          teacherName: s.teacherName,
+          rating: s.rating,
+        })
+      })
+      if (s.videoUrl) {
+        out.push({
+          id: `${baseId}-vid`,
+          kind: 'video',
+          url: s.videoUrl,
+          title: s.artwork?.name || s.topic || 'Session video',
+          description: '',
+          date: s.actualDate,
+          courseName: course.courseName,
+          teacherName: s.teacherName,
+          rating: s.rating,
+        })
+      }
+    }
+  }
+  out.sort((a, b) => +new Date(b.date) - +new Date(a.date))
+  return out
+}
+
+/**
+ * Group works by session — one card per session containing:
+ *   - hero (artwork if present, else first photo)
+ *   - thumbnails (other photos/videos from the same session)
+ *   - title, description, feedback, rating, course, date, teacher
+ *
+ * Sessions with no media at all are skipped — those still show up in
+ * `flattenComments()` so they're not lost.
+ */
+export function flattenSessions(data: PortfolioData): PortfolioSessionWork[] {
+  const out: PortfolioSessionWork[] = []
+  for (const course of data.courses) {
+    for (const s of course.sessions) {
+      const baseId = `${course.courseId}-${s.actualDate}`
+      const artworkUrl = s.artwork?.imageUrl || ''
+
+      // Collect every distinct media item, artwork first
+      const media: { url: string; isVideo: boolean }[] = []
+      if (artworkUrl) media.push({ url: artworkUrl, isVideo: false })
+      for (const u of s.imageUrls) {
+        if (u && u !== artworkUrl) media.push({ url: u, isVideo: false })
+      }
+      if (s.videoUrl) media.push({ url: s.videoUrl, isVideo: true })
+
+      if (media.length === 0) continue
+
+      const hero = media[0]
+      const thumbnails = media.slice(1)
+
+      const title =
+        s.artwork?.name ||
+        s.topic ||
+        `Session ${formatShortDate(s.actualDate)}`
+      const description = s.artwork?.description || ''
+
+      out.push({
+        id: baseId,
+        title,
+        description,
+        feedback: s.feedback || '',
+        rating: s.rating,
+        date: s.actualDate,
+        courseName: course.courseName,
+        teacherName: s.teacherName,
+        hero,
+        thumbnails,
+        hasArtwork: !!s.artwork?.imageUrl,
+      })
+    }
+  }
+  out.sort((a, b) => +new Date(b.date) - +new Date(a.date))
+  return out
+}
+
+function formatShortDate(iso: string): string {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
+/** Collect every feedback / rating into a single comments stream. */
+export function flattenComments(data: PortfolioData): PortfolioComment[] {
+  const out: PortfolioComment[] = []
+  for (const course of data.courses) {
+    for (const s of course.sessions) {
+      const hasFeedback = !!(s.feedback && s.feedback.trim())
+      const hasRating = (s.rating ?? 0) > 0
+      if (!hasFeedback && !hasRating) continue
+      const hasMedia =
+        s.imageUrls.length > 0 || !!s.videoUrl || !!s.artwork?.imageUrl
+      out.push({
+        id: `${course.courseId}-${s.actualDate}-c`,
+        text: s.feedback || '',
+        rating: s.rating,
+        date: s.actualDate,
+        courseName: course.courseName,
+        teacherName: s.teacherName,
+        topic: s.artwork?.name || s.topic || '',
+        commentsOnly: !hasMedia,
+      })
+    }
+  }
+  out.sort((a, b) => +new Date(b.date) - +new Date(a.date))
+  return out
+}
+
+/** Distinct course names in the order encountered — used as filter chips. */
+export function listCourseNames(data: PortfolioData): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const c of data.courses) {
+    if (!seen.has(c.courseName)) {
+      seen.add(c.courseName)
+      out.push(c.courseName)
+    }
+  }
+  return out
+}

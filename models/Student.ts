@@ -35,6 +35,8 @@ export interface IStudent extends Document {
   branch?: Types.ObjectId | null
   enrollments: IEnrollment[]
   notes?: string
+  portfolioShareToken?: string
+  portfolioSharedAt?: Date
   createdAt: Date
   updatedAt: Date
 }
@@ -83,6 +85,8 @@ const StudentSchema = new Schema<IStudent>(
     branch: { type: Schema.Types.ObjectId, ref: 'Branch', default: null, index: true },
     enrollments: [EnrollmentSchema],
     notes: { type: String, default: '' },
+    portfolioShareToken: { type: String, default: null, index: true },
+    portfolioSharedAt: { type: Date, default: null },
   },
   { timestamps: true }
 )

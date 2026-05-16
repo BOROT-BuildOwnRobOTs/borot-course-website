@@ -2,9 +2,37 @@ import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
+import { Sarabun, Prompt, Playfair_Display, Bebas_Neue } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { BorotFooter } from "@/components/borot-footer"
+
+// Thai-friendly typefaces. Sarabun = body / paragraphs, Prompt = display.
+const sarabun = Sarabun({
+  subsets: ['latin', 'thai'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-sarabun',
+  display: 'swap',
+})
+const prompt = Prompt({
+  subsets: ['latin', 'thai'],
+  weight: ['500', '600', '700', '800', '900'],
+  variable: '--font-prompt',
+  display: 'swap',
+})
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '500', '700', '900'],
+  style: ['normal', 'italic'],
+  variable: '--font-playfair',
+  display: 'swap',
+})
+const bebas = Bebas_Neue({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-bebas',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.borot.co.th'),
@@ -43,7 +71,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+        <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} ${sarabun.variable} ${prompt.variable} ${playfair.variable} ${bebas.variable}`}>
           {children}
           <Analytics />
           <BorotFooter />
