@@ -443,7 +443,9 @@ async function writeWeekTab(
 
       for (const inst of insts) {
         if (inst.date < monday || inst.date > sunday) continue
-        const dayName = inst.slotDay ? dayLabel(inst.slotDay) : ''
+        // Derive day name from the actual stamp/reschedule date — slotDay can
+        // drift when a ลา cascade shifts newDate without updating newSlot.day.
+        const dayName = dayLabel(gregorianDayKey(inst.date))
         const sessionHours = hoursPerSession(inst.slotTime)
         rows.push({
           date: inst.date,
@@ -1503,6 +1505,16 @@ export async function syncFromSheetToDb(): Promise<ImportResult> {
 
         if (r) {
           r.newDate = shifted
+          // Resync newSlot.day to the actual weekday of the shifted date.
+          // Without this, ลา cascade can leave newSlot.day pointing at a
+          // different day than newDate (e.g. shifting Sun → next Sat keeps
+          // the stale "sunday" label), which then makes Sheet+slot lookups
+          // mis-attribute the row.
+          if (r.newSlot) {
+            r.newSlot.day = gregorianDayKey(shifted)
+          } else {
+            r.newSlot = { day: gregorianDayKey(shifted), time: enrollment.slot.time }
+          }
           if (i === stampIndex) {
             r.reason = `ลา - เลื่อนจาก ${laIso}`
           }
@@ -1543,8 +1555,11 @@ export async function syncFromSheetToDb(): Promise<ImportResult> {
     const dateChanged = !isSameDay(sheetDate, effectiveDate)
     const timeChanged = !!timeStr && timeStr !== fromTimeSnapshot
     if (dateChanged || timeChanged) {
+      // Always derive day from the actual sheet date — currentSlot.day can be
+      // stale (e.g. left over from a prior reschedule whose newDate has since
+      // been shifted by a ลา cascade without re-syncing the day field).
       const newSlotInfo = {
-        day: dateChanged ? sheetDayKey : currentSlot.day,
+        day: sheetDayKey,
         time: timeStr || fromTimeSnapshot,
       }
       if (currentReschedule) {
