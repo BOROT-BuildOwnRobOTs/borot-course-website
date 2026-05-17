@@ -1396,6 +1396,9 @@ export type ImportMoveRecord = {
   fromTime: string
   toDate: string
   toTime: string
+  // Number of stamps shifted when the move crossed a day-of-week boundary
+  // (cascade). Omitted for plain same-day-of-week moves.
+  cascadedCount?: number
 }
 
 export type ImportResult = {
@@ -1606,14 +1609,78 @@ export async function syncFromSheetToDb(): Promise<ImportResult> {
     }
 
     // status === เข้าเรียนปกติ
-    // 1) If sheet's date or time differs from current effective, apply as reschedule
+    // Apply date/time edits as reschedules. Two flavors:
+    //   • day-of-week change (Sat↔Sun, Tue↔Fri, …) → cascade: shift this
+    //     stamp AND every later stamp by the same number of days, so the
+    //     student's weekly slot effectively moves to the new day going
+    //     forward. Existing reschedules on later stamps are overwritten.
+    //   • same-day-of-week move (date or time only) → single-stamp move,
+    //     existing behavior — no cascade.
     const sheetDayKey = gregorianDayKey(sheetDate)
+    const currentDayKey = currentSlot.day ?? ''
     const dateChanged = !isSameDay(sheetDate, effectiveDate)
     const timeChanged = !!timeStr && timeStr !== fromTimeSnapshot
-    if (dateChanged || timeChanged) {
-      // Always derive day from the actual sheet date — currentSlot.day can be
-      // stale (e.g. left over from a prior reschedule whose newDate has since
-      // been shifted by a ลา cascade without re-syncing the day field).
+    const dayChanged = !!currentDayKey && sheetDayKey !== currentDayKey
+
+    if (dayChanged) {
+      // Compute the shift in whole local days between the original stamp and
+      // the sheet date. setDate(getDate() + delta) preserves the stamp's
+      // baked-in time-of-day (e.g. 10:00) while moving the calendar date.
+      const dayMs = 24 * 60 * 60 * 1000
+      const stampMidnight = new Date(originalStamp.getFullYear(), originalStamp.getMonth(), originalStamp.getDate())
+      const sheetMidnight = new Date(sheetDate.getFullYear(), sheetDate.getMonth(), sheetDate.getDate())
+      const deltaDays = Math.round((sheetMidnight.getTime() - stampMidnight.getTime()) / dayMs)
+      const newTime = timeStr || fromTimeSnapshot
+
+      const stampIndex = stamps.findIndex((s) => isSameDay(s, originalStamp!))
+      if (stampIndex < 0) {
+        result.errors.push(`stamp index lookup failed: ${rowLabel}`)
+        continue
+      }
+
+      let firstShifted: Date | null = null
+      let cascadedCount = 0
+      const list = student.enrollments[enrollmentIdx].reschedules || []
+
+      for (let i = stampIndex; i < stamps.length; i++) {
+        const stamp = stamps[i]
+        const shifted = new Date(stamp)
+        shifted.setDate(shifted.getDate() + deltaDays)
+        const shiftedDayKey = gregorianDayKey(shifted)
+        const newSlotInfo = { day: shiftedDayKey, time: newTime }
+
+        const r = list.find((x: any) => isSameDay(new Date(x.originalDate), stamp))
+        if (r) {
+          r.newDate = shifted
+          r.newSlot = newSlotInfo
+        } else {
+          list.push({
+            originalDate: stamp,
+            newDate: shifted,
+            newSlot: newSlotInfo,
+          } as any)
+        }
+
+        if (i === stampIndex) firstShifted = new Date(shifted)
+        cascadedCount++
+      }
+
+      student.enrollments[enrollmentIdx].reschedules = list
+      student.markModified('enrollments')
+      await student.save()
+      result.moveReschedules.push({
+        studentName,
+        nickname: student.nickname ?? '',
+        courseName,
+        courseLevel,
+        fromDate: fromDateLabel,
+        fromTime: fromTimeSnapshot,
+        toDate: formatDate(firstShifted!),
+        toTime: newTime,
+        cascadedCount,
+      })
+    } else if (dateChanged || timeChanged) {
+      // Same day-of-week — single-stamp move (no cascade).
       const newSlotInfo = {
         day: sheetDayKey,
         time: timeStr || fromTimeSnapshot,

@@ -399,7 +399,7 @@ function AdminPageInner({ session, onLogout }: { session: AdminSession; onLogout
   const [importResult, setImportResult] = useState<{
     attendanceUpdates: Array<{ studentName: string; nickname: string; courseName: string; courseLevel: string; date: string; hours: number }>
     leaveReschedules: Array<{ studentName: string; nickname: string; courseName: string; courseLevel: string; fromDate: string; toDate: string; cascadedCount: number }>
-    moveReschedules: Array<{ studentName: string; nickname: string; courseName: string; courseLevel: string; fromDate: string; fromTime: string; toDate: string; toTime: string }>
+    moveReschedules: Array<{ studentName: string; nickname: string; courseName: string; courseLevel: string; fromDate: string; fromTime: string; toDate: string; toTime: string; cascadedCount?: number }>
     errors: string[]
     warnings: string[]
   } | null>(null)
@@ -840,6 +840,11 @@ function AdminPageInner({ session, onLogout }: { session: AdminSession; onLogout
                                   <span>{r.fromDate} {r.fromTime}</span>
                                   <ArrowRight className="w-3 h-3 text-yellow-600" />
                                   <span className="font-semibold text-yellow-800">{r.toDate} {r.toTime}</span>
+                                  {r.cascadedCount && r.cascadedCount > 1 && (
+                                    <span className="text-[11px] text-yellow-700 bg-yellow-100 border border-yellow-200 rounded px-1.5 py-0.5">
+                                      (+ ย้ายวันคาบที่เหลืออีก {r.cascadedCount - 1} คาบ)
+                                    </span>
+                                  )}
                                 </div>
                               </li>
                             ))}
