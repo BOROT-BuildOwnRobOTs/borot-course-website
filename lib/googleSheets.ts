@@ -318,8 +318,10 @@ async function resetTab(
   })
 }
 
-// Per-enrollment list of expected attendance dates with their effective slot
-type AttendInstance = { date: Date; slotTime: string; slotDay: string }
+// Per-enrollment list of expected attendance dates with their effective slot.
+// `originalStamp` is the canonical stamp date (pre-reschedule); it's the
+// immutable identity of the row when round-tripping through the sheet.
+type AttendInstance = { date: Date; slotTime: string; slotDay: string; originalStamp: Date }
 
 function effectiveAttendances(enrollment: any): AttendInstance[] {
   if (!enrollment.startDate || !enrollment.slot || !enrollment.courseDurationWeeks) return []
@@ -333,9 +335,15 @@ function effectiveAttendances(enrollment: any): AttendInstance[] {
         date: new Date(r.newDate),
         slotTime: r.newSlot?.time ?? '',
         slotDay: r.newSlot?.day ?? '',
+        originalStamp: stampDate,
       }
     }
-    return { date: stampDate, slotTime: enrollment.slot.time ?? '', slotDay: enrollment.slot.day ?? '' }
+    return {
+      date: stampDate,
+      slotTime: enrollment.slot.time ?? '',
+      slotDay: enrollment.slot.day ?? '',
+      originalStamp: stampDate,
+    }
   })
 }
 
@@ -423,7 +431,7 @@ async function writeWeekTab(
   sunday.setDate(monday.getDate() + 6)
   sunday.setHours(23, 59, 59, 999)
 
-  type Row = { date: Date; values: string[] }
+  type Row = { date: Date; values: string[]; originalStamp: Date }
   const rows: Row[] = []
 
   for (const student of students) {
@@ -449,6 +457,7 @@ async function writeWeekTab(
         const sessionHours = hoursPerSession(inst.slotTime)
         rows.push({
           date: inst.date,
+          originalStamp: inst.originalStamp,
           values: [
             // Apostrophe forces Sheets to keep this as plain text under
             // USER_ENTERED, otherwise "05/05/2569" gets parsed as a date.
@@ -541,13 +550,18 @@ async function writeWeekTab(
     if (preservedStatus) row.values[STATUS_COL_INDEX] = preservedStatus
   }
 
-  // ── Hidden helper columns power the dependent "เวลา" dropdown ──────────────
-  // Per-row formulas in helper cells switch between the 1-hr and 2-hr time
-  // lists based on the row's "ระยะเวลา" cell. The "เวลา" dropdown is then a
-  // ONE_OF_RANGE pointing at that row's helper range, so changing the duration
-  // cell live-updates the time options without re-syncing.
-  const HELPER_START_COL = header.length // 0-based column index where helpers begin
-  const NUM_HELPER_COLS = 6              // max length of either list
+  // ── Hidden helper columns ──────────────────────────────────────────────────
+  // First hidden column (ANCHOR): stores the row's *original stamp date* as
+  // ISO YYYY-MM-DD. This is the immutable identity used to round-trip the row
+  // back to a specific stamp on sync — without it, editing the visible "วันที่"
+  // cell would orphan the row (no stamp in DB has the new effective date).
+  //
+  // Time-dropdown helpers: per-row IF() formulas switch between the 1-hr and
+  // 2-hr time lists based on the row's "ระยะเวลา" cell. The "เวลา" dropdown
+  // is then a ONE_OF_RANGE pointing at that row's helper range.
+  const ANCHOR_COL = header.length // 0-based column index of the anchor column
+  const HELPER_START_COL = ANCHOR_COL + 1
+  const NUM_HELPER_COLS = 6              // max length of either time list
   const TOTAL_COLS = HELPER_START_COL + NUM_HELPER_COLS
   const DURATION_COL_LETTER = colLetter(header.indexOf('ระยะเวลา') + 1)
   const HELPER_LETTER_START = colLetter(HELPER_START_COL + 1)
@@ -566,6 +580,11 @@ async function writeWeekTab(
     ]
   }
 
+  // Leading apostrophe forces Sheets to keep the ISO date as plain text under
+  // USER_ENTERED — otherwise "2026-05-17" gets reformatted as a date number.
+  const formatStampAnchor = (d: Date) =>
+    "'" + `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
   const titleRow = [`สัปดาห์ ${weekRangeLabel(monday)} — ${rows.length} คาบ`]
   const values: any[][] = [titleRow, header]
   if (rows.length === 0) {
@@ -574,7 +593,11 @@ async function writeWeekTab(
     for (let i = 0; i < rows.length; i++) {
       // Sheet row is 1-based: title=1, header=2, data starts at 3
       const sheetRowNum = 3 + i
-      values.push([...rows[i].values, ...timeHelperFormulas(sheetRowNum)])
+      values.push([
+        ...rows[i].values,
+        formatStampAnchor(rows[i].originalStamp),
+        ...timeHelperFormulas(sheetRowNum),
+      ])
     }
   }
 
@@ -761,9 +784,11 @@ async function writeWeekTab(
     })
 
     // Hide the helper columns so they don't clutter the sheet
+    // (covers ANCHOR_COL through TOTAL_COLS — anchor is hidden too because it's
+    // only used internally for round-trip identity, never displayed to admins)
     requests.push({
       updateDimensionProperties: {
-        range: { sheetId, dimension: 'COLUMNS', startIndex: HELPER_START_COL, endIndex: TOTAL_COLS },
+        range: { sheetId, dimension: 'COLUMNS', startIndex: ANCHOR_COL, endIndex: TOTAL_COLS },
         properties: { hiddenByUser: true },
         fields: 'hiddenByUser',
       },
@@ -1284,7 +1309,9 @@ async function writeScheduleTab(
 // ──────────────────────────────────────────────────────────────────────────────
 
 // Sheet column indexes for the visible (post-status) schema.
-// Helpers are after these but never read here.
+// ANCHOR (15) is the first hidden helper column — stores the original stamp
+// date as YYYY-MM-DD so sync can identify the row even if the visible date is
+// edited. Time-dropdown helpers follow after.
 const WEEK_COL = {
   DATE: 0,
   DAY: 1,
@@ -1301,6 +1328,7 @@ const WEEK_COL = {
   STUDIED: 12,
   CONFIRM: 13,
   STATUS: 14,
+  ANCHOR: 15,
 }
 
 const STATUS_DEFAULT_VALUE = 'เข้าเรียนปกติ'
@@ -1321,6 +1349,18 @@ function parseBuddhistDate(s: string): Date | null {
 
 function gregorianDayKey(d: Date): string {
   return ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][d.getDay()]
+}
+
+// Parse the hidden anchor cell (YYYY-MM-DD, optionally prefixed with the
+// text-format apostrophe). Returns midnight in local TZ to match how stamp
+// dates compare via isSameDay. Returns null for old sheets that don't have
+// the anchor column yet — caller should fall back to date-based matching.
+function parseStampAnchor(s: string): Date | null {
+  const cleaned = s.trim().replace(/^'/, '')
+  const m = cleaned.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (!m) return null
+  const d = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10), 0, 0, 0, 0)
+  return isNaN(d.getTime()) ? null : d
 }
 
 function startOfDay(d: Date): Date {
@@ -1373,10 +1413,12 @@ export async function syncFromSheetToDb(): Promise<ImportResult> {
   const auth = getAuth()
   const sheets = google.sheets({ version: 'v4', auth })
 
-  // Read visible columns A:O (helper columns past O are formula-derived)
+  // Read A:P — visible columns plus the hidden ANCHOR column (P) that holds
+  // the original stamp date for each row. Time-dropdown helper columns past P
+  // are formula-derived and not needed here.
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: `${TAB_WEEK}!A1:O`,
+    range: `${TAB_WEEK}!A1:P`,
     valueRenderOption: 'UNFORMATTED_VALUE',
   })
   const sheetRows = res.data.values ?? []
@@ -1449,20 +1491,34 @@ export async function syncFromSheetToDb(): Promise<ImportResult> {
       continue
     }
 
-    // Find which stamp this row corresponds to (effective date matches sheet)
+    // Identify which stamp this row corresponds to. Preferred: read the hidden
+    // ANCHOR column written at sync-out time — this is the original (canonical)
+    // stamp date and stays valid even if the admin edits the visible "วันที่"
+    // cell to move the lesson. Fallback (old sheets without the anchor): match
+    // by effective date == sheetDate (legacy behavior, breaks on date edits).
     const stamps = generateStampDates(enrollment.startDate, enrollment.courseDurationWeeks, enrollment.slot)
     const reschedules = enrollment.reschedules ?? []
+    const anchorDate = parseStampAnchor(String(row[WEEK_COL.ANCHOR] ?? ''))
     let originalStamp: Date | null = null
     let currentReschedule: any = null
     let effectiveDate: Date | null = null
-    for (const stampDate of stamps) {
-      const r = reschedules.find((x: any) => isSameDay(new Date(x.originalDate), stampDate))
-      const eff = r ? new Date(r.newDate) : stampDate
-      if (isSameDay(eff, sheetDate)) {
+    if (anchorDate) {
+      const stampDate = stamps.find((s) => isSameDay(s, anchorDate))
+      if (stampDate) {
         originalStamp = stampDate
-        currentReschedule = r
-        effectiveDate = eff
-        break
+        currentReschedule = reschedules.find((x: any) => isSameDay(new Date(x.originalDate), stampDate))
+        effectiveDate = currentReschedule ? new Date(currentReschedule.newDate) : stampDate
+      }
+    } else {
+      for (const stampDate of stamps) {
+        const r = reschedules.find((x: any) => isSameDay(new Date(x.originalDate), stampDate))
+        const eff = r ? new Date(r.newDate) : stampDate
+        if (isSameDay(eff, sheetDate)) {
+          originalStamp = stampDate
+          currentReschedule = r
+          effectiveDate = eff
+          break
+        }
       }
     }
 
