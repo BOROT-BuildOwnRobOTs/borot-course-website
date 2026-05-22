@@ -191,6 +191,7 @@ export default function TeacherStampDialog({
   }, [])
 
   const isCheckedIn = attendee?.checkedIn === true
+  const hoursValid = attendedHours > 0
 
   // Pre-populate form with existing feedback whenever dialog opens or attendee changes.
   useEffect(() => {
@@ -324,6 +325,7 @@ export default function TeacherStampDialog({
 
   const handleSaveFeedback = async () => {
     if (!session) return
+    if (attendedHours <= 0) return
     lockDialog()
     setSavingFeedback(true)
     try {
@@ -397,8 +399,9 @@ export default function TeacherStampDialog({
                 )}
                 <button
                   onClick={() => handleCheckin(!isCheckedIn)}
-                  disabled={checkinLoading}
-                  className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                  disabled={checkinLoading || (!isCheckedIn && !hoursValid)}
+                  title={!isCheckedIn && !hoursValid ? "กรุณาใส่ชั่วโมงเรียนก่อน Check In" : undefined}
+                  className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-all border disabled:opacity-50 disabled:cursor-not-allowed ${
                     isCheckedIn
                       ? "bg-green-500 text-white border-green-500 hover:bg-red-500 hover:border-red-500"
                       : "bg-white text-gray-500 border-gray-300 hover:bg-green-50 hover:border-green-400 hover:text-green-600"
@@ -560,19 +563,25 @@ export default function TeacherStampDialog({
 
             {/* ── Hours attended this session ──────────────────────────────────── */}
             <div>
-              <Label htmlFor="attended-hours" className="text-sm font-medium">Hours Attended This Session</Label>
+              <Label htmlFor="attended-hours" className="text-sm font-medium">
+                Hours Attended This Session <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="attended-hours"
                 type="number"
                 min={0}
                 max={24}
                 step={0.5}
+                required
                 value={attendedHours || ""}
                 onChange={(e) => setAttendedHours(e.target.value ? parseFloat(e.target.value) : 0)}
                 placeholder="e.g. 1.5"
-                className="mt-1.5 w-28"
+                className={`mt-1.5 w-28 ${!hoursValid ? "border-red-400 focus-visible:ring-red-300" : ""}`}
               />
               <p className="text-[10px] text-muted-foreground mt-1">ชั่วโมงที่เข้าเรียนในวันนี้</p>
+              {!hoursValid && (
+                <p className="text-[10px] text-red-500 mt-0.5">* จำเป็นต้องกรอกชั่วโมงเรียน</p>
+              )}
             </div>
 
             {/* ── Artwork / Project Section ──────────────────────────────────── */}
@@ -659,7 +668,8 @@ export default function TeacherStampDialog({
             </Button>
             <Button
               onClick={handleSaveFeedback}
-              disabled={savingFeedback || uploadingVideo || uploadingImage || uploadingArtwork || !session}
+              disabled={savingFeedback || uploadingVideo || uploadingImage || uploadingArtwork || !session || !hoursValid}
+              title={!hoursValid ? "กรุณาใส่ชั่วโมงเรียนก่อนบันทึก" : undefined}
               className="bg-blue-500 hover:bg-blue-600 text-white"
             >
               {savingFeedback ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : "Save Feedback"}
