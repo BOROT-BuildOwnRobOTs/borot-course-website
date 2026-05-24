@@ -34,6 +34,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       attendanceEntry.checkedIn = checkedIn ?? true
       if (checkedIn !== false) {
         attendanceEntry.checkedInAt = new Date()
+      } else {
+        attendanceEntry.checkedInAt = undefined
       }
     }
 
