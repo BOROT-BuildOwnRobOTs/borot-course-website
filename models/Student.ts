@@ -37,6 +37,11 @@ export interface IStudent extends Document {
   notes?: string
   portfolioShareToken?: string
   portfolioSharedAt?: Date
+  portfolioAssessment?: {
+    data: any
+    sessionsCount: number
+    generatedAt: Date
+  } | null
   createdAt: Date
   updatedAt: Date
 }
@@ -87,6 +92,7 @@ const StudentSchema = new Schema<IStudent>(
     notes: { type: String, default: '' },
     portfolioShareToken: { type: String, default: null, index: true },
     portfolioSharedAt: { type: Date, default: null },
+    portfolioAssessment: { type: Schema.Types.Mixed, default: null },
   },
   { timestamps: true }
 )

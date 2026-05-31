@@ -2,7 +2,7 @@
 
 import type { jsPDF } from 'jspdf'
 import {
-  flattenWorks, flattenSessions, flattenComments, optimizeMediaUrl,
+  flattenWorks, flattenSessions, flattenComments, optimizeMediaUrl, abbrFor,
   type PortfolioData, type PortfolioWork, type PortfolioSessionWork, type PortfolioComment,
 } from './portfolio-types'
 
@@ -477,6 +477,14 @@ function drawSessionCard(
   x: number, y: number, w: number, h: number,
   imageMap: Map<string, LoadedImage>,
 ) {
+  const hasText = !!(session.description || session.feedback)
+
+  // ── Media-forward card (no teacher comment) — full-bleed image + caption ──
+  if (!hasText) {
+    drawMediaCard(pdf, session, x, y, w, h, imageMap)
+    return
+  }
+
   // Card frame
   pdf.setFillColor(255, 255, 255)
   pdf.setDrawColor(...SOFT_BORDER)
@@ -631,6 +639,119 @@ function drawSessionCard(
   pdf.text(meta, bodyX, y + h - 5)
 }
 
+/** Image-forward card for sessions with no teacher comment. Photos fill the
+ *  card (hero + up to a small tile rail) with a dark caption strip at bottom —
+ *  mirrors the web `.session-card--media` so there's no empty text column. */
+function drawMediaCard(
+  pdf: jsPDF,
+  session: PortfolioSessionWork,
+  x: number, y: number, w: number, h: number,
+  imageMap: Map<string, LoadedImage>,
+) {
+  const r = 3.5
+  // Build the tile list (hero + thumbnails), capped.
+  const all = [session.hero, ...session.thumbnails].filter(Boolean) as { url: string; isVideo: boolean }[]
+  const tiles = all.slice(0, 4)
+  const overflow = all.length - tiles.length
+
+  // Dark base
+  pdf.setFillColor(26, 26, 26)
+  pdf.roundedRect(x, y, w, h, r, r, 'F')
+
+  const gap = 1.5
+  // Layout: 1 tile → full; 2 → split; 3+ → big hero (left ~62%) + side rail.
+  const rects: { tx: number; ty: number; tw: number; th: number; tile: typeof tiles[number] }[] = []
+  if (tiles.length === 1) {
+    rects.push({ tx: x, ty: y, tw: w, th: h, tile: tiles[0] })
+  } else if (tiles.length === 2) {
+    const cw = (w - gap) / 2
+    rects.push({ tx: x, ty: y, tw: cw, th: h, tile: tiles[0] })
+    rects.push({ tx: x + cw + gap, ty: y, tw: cw, th: h, tile: tiles[1] })
+  } else {
+    const heroW = w * 0.62
+    const railX = x + heroW + gap
+    const railW = w - heroW - gap
+    rects.push({ tx: x, ty: y, tw: heroW, th: h, tile: tiles[0] })
+    const rest = tiles.slice(1)
+    const rh = (h - gap * (rest.length - 1)) / rest.length
+    rest.forEach((t, i) => {
+      rects.push({ tx: railX, ty: y + i * (rh + gap), tw: railW, th: rh, tile: t })
+    })
+  }
+
+  // Draw each tile. Use contain (fitImage) on a dark background — jsPDF has no
+  // easy clip, so cover-overscale would bleed into neighbouring tiles.
+  rects.forEach((rc, idx) => {
+    if (!rc.tile.isVideo && imageMap.has(rc.tile.url)) {
+      const img = imageMap.get(rc.tile.url)!
+      fitImage(pdf, img, rc.tx, rc.ty, rc.tw, rc.th, [26, 26, 26])
+    } else if (rc.tile.isVideo) {
+      pdf.setFillColor(15, 15, 15)
+      pdf.rect(rc.tx, rc.ty, rc.tw, rc.th, 'F')
+      pdf.setFillColor(255, 255, 255)
+      pdf.circle(rc.tx + rc.tw / 2, rc.ty + rc.th / 2, 5, 'F')
+      setPrompt(pdf)
+      pdf.setFontSize(11)
+      pdf.setTextColor(...BRAND)
+      pdf.text('▶', rc.tx + rc.tw / 2 + 0.4, rc.ty + rc.th / 2 + 1.2, { align: 'center' })
+    }
+    // Overflow badge on the last tile
+    if (idx === rects.length - 1 && overflow > 0) {
+      pdf.setFillColor(0, 0, 0)
+      pdf.setGState(pdf.GState({ opacity: 0.55 }))
+      pdf.rect(rc.tx, rc.ty, rc.tw, rc.th, 'F')
+      pdf.setGState(pdf.GState({ opacity: 1 }))
+      setPrompt(pdf)
+      pdf.setFontSize(14)
+      pdf.setTextColor(255, 255, 255)
+      pdf.text(`+${overflow}`, rc.tx + rc.tw / 2, rc.ty + rc.th / 2 + 2, { align: 'center' })
+    }
+  })
+
+  // Caption gradient bar (approximated with a solid translucent band)
+  const capH = 20
+  pdf.setFillColor(0, 0, 0)
+  pdf.setGState(pdf.GState({ opacity: 0.55 }))
+  pdf.rect(x, y + h - capH, w, capH, 'F')
+  pdf.setGState(pdf.GState({ opacity: 1 }))
+
+  let cy = y + h - capH + 7
+  if (session.hasArtwork) {
+    pdf.setFillColor(...BRAND)
+    pdf.roundedRect(x + 5, y + h - capH + 3, 22, 5.5, 1.2, 1.2, 'F')
+    setSarabun(pdf, 'bold')
+    pdf.setFontSize(6)
+    pdf.setTextColor(255, 255, 255)
+    pdf.setCharSpace(0.4)
+    pdf.text('PROJECT', x + 16, y + h - capH + 6.7, { align: 'center' })
+    pdf.setCharSpace(0)
+    cy = y + h - capH + 13
+  }
+
+  // Title
+  setPrompt(pdf)
+  pdf.setFontSize(12)
+  pdf.setTextColor(255, 255, 255)
+  const title = wrap(pdf, session.title || 'Untitled', w - 12)[0] || ''
+  pdf.text(title, x + 5, cy)
+
+  // Stars (right)
+  if ((session.rating ?? 0) > 0) {
+    pdf.setFontSize(9)
+    pdf.setTextColor(255, 180, 0)
+    const stars = '★'.repeat(session.rating!) + '☆'.repeat(5 - session.rating!)
+    pdf.text(stars, x + w - 5, cy, { align: 'right' })
+  }
+
+  // Meta line
+  setSarabun(pdf, 'normal')
+  pdf.setFontSize(7.5)
+  pdf.setTextColor(220, 220, 220)
+  const meta = `${fmtDate(session.date)}  ·  ${session.courseName}` +
+    (session.teacherName ? `  ·  with ${session.teacherName}` : '')
+  pdf.text(meta, x + 5, y + h - 4)
+}
+
 function renderCommentsPages(
   pdf: jsPDF,
   comments: PortfolioComment[],
@@ -778,6 +899,241 @@ function renderClosingPage(pdf: jsPDF, data: PortfolioData, pageNum: number) {
   pdf.setCharSpace(0)
 }
 
+// ── Assessment pages (mirror the web ASSESSMENT + SKILLS pages) ──────────────
+
+/** Draw a radar/spider chart of the skills, centred at (cx,cy) with radius R. */
+function drawSkillRadar(
+  pdf: jsPDF,
+  skills: { name: string; score: number }[],
+  cx: number, cy: number, R: number,
+) {
+  const n = skills.length
+  if (n < 3) return
+  const angleAt = (i: number) => (-90 + (360 / n) * i) * (Math.PI / 180)
+  const ptAt = (i: number, radius: number) => ({
+    x: cx + radius * Math.cos(angleAt(i)),
+    y: cy + radius * Math.sin(angleAt(i)),
+  })
+
+  // Concentric grid rings (20/40/60/80/100)
+  pdf.setDrawColor(229, 213, 194)
+  pdf.setLineWidth(0.2)
+  for (let ring = 1; ring <= 5; ring++) {
+    const rr = (R * ring) / 5
+    for (let i = 0; i < n; i++) {
+      const a = ptAt(i, rr)
+      const b = ptAt((i + 1) % n, rr)
+      pdf.line(a.x, a.y, b.x, b.y)
+    }
+  }
+  // Spokes
+  for (let i = 0; i < n; i++) {
+    const p = ptAt(i, R)
+    pdf.line(cx, cy, p.x, p.y)
+  }
+
+  // Data polygon
+  const pts = skills.map((s, i) => ptAt(i, (Math.max(0, Math.min(100, s.score)) / 100) * R))
+  pdf.setFillColor(...BRAND)
+  pdf.setDrawColor(...BRAND)
+  pdf.setLineWidth(0.8)
+  try {
+    pdf.setGState(pdf.GState({ opacity: 0.35 }))
+    // Build a closed path via lines() with relative deltas
+    const deltas: [number, number][] = []
+    for (let i = 1; i < pts.length; i++) {
+      deltas.push([pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y])
+    }
+    deltas.push([pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y])
+    pdf.lines(deltas, pts[0].x, pts[0].y, [1, 1], 'F', true)
+    pdf.setGState(pdf.GState({ opacity: 1 }))
+    pdf.lines(deltas, pts[0].x, pts[0].y, [1, 1], 'S', true)
+  } catch {
+    pdf.setGState(pdf.GState({ opacity: 1 }))
+  }
+  // Vertex dots
+  pdf.setFillColor(...BRAND)
+  pts.forEach((p) => pdf.circle(p.x, p.y, 0.9, 'F'))
+
+  // Axis labels
+  setSarabun(pdf, 'bold')
+  pdf.setFontSize(8)
+  pdf.setTextColor(...TEXT)
+  skills.forEach((s, i) => {
+    const lp = ptAt(i, R + 8)
+    const a = angleAt(i)
+    const align = Math.cos(a) > 0.25 ? 'left' : Math.cos(a) < -0.25 ? 'right' : 'center'
+    pdf.text(s.name, lp.x, lp.y + 1, { align: align as any })
+  })
+}
+
+/** Single A4 SUMMARY page: student-info header, AI summary, radar (left, abbr
+ *  axes) + skill bars "Name (ABBR)" with short reasons (right), strengths/growth
+ *  + recommendation at the bottom. */
+function renderSummaryPage(pdf: jsPDF, data: PortfolioData, pageNum: number): number {
+  const a = data.assessment
+  if (!a) return pageNum
+  pdf.addPage()
+  let y = drawSectionHeader(pdf, 'SUMMARY', 'STUDENT PROFILE & ASSESSMENT')
+  const fullW = A4_W - MARGIN * 2
+
+  // ── Student info header band ──
+  {
+    const s = data.student
+    const initial = (s.nickname?.[0] || s.name?.[0] || '?').toUpperCase()
+    const works = data.stats.photoCount + data.stats.artworkCount + data.stats.videoCount
+    const courseNames: string[] = []
+    for (const c of data.courses) if (!courseNames.includes(c.courseName)) courseNames.push(c.courseName)
+
+    const bandH = 22
+    pdf.setFillColor(...SOFT)
+    pdf.roundedRect(MARGIN, y, fullW, bandH, 3, 3, 'F')
+    // Avatar
+    pdf.setFillColor(...BRAND)
+    pdf.roundedRect(MARGIN + 3, y + 3, 16, 16, 2.5, 2.5, 'F')
+    setPrompt(pdf)
+    pdf.setFontSize(14)
+    pdf.setTextColor(255, 255, 255)
+    pdf.text(initial, MARGIN + 11, y + 13.5, { align: 'center' })
+    // Name + nickname
+    const idX = MARGIN + 23
+    setPrompt(pdf)
+    pdf.setFontSize(13)
+    pdf.setTextColor(...TEXT)
+    const nameStr = (s.name || 'Unnamed') + (s.nickname ? `  (${s.nickname})` : '')
+    pdf.text(nameStr, idX, y + 9)
+    // Course names line
+    setSarabun(pdf, 'normal')
+    pdf.setFontSize(8)
+    pdf.setTextColor(...GREY)
+    const coursesStr = courseNames.length ? courseNames.join('  ·  ') : 'No courses yet'
+    pdf.text(wrap(pdf, coursesStr, fullW * 0.5).slice(0, 1), idX, y + 15.5)
+    // Stats trio on the right
+    const stat = (v: string, l: string, cx: number) => {
+      setPrompt(pdf); pdf.setFontSize(13); pdf.setTextColor(...BRAND)
+      pdf.text(v, cx, y + 10, { align: 'center' })
+      setSarabun(pdf, 'bold'); pdf.setFontSize(6); pdf.setTextColor(...GREY)
+      pdf.setCharSpace(0.3); pdf.text(l, cx, y + 15, { align: 'center' }); pdf.setCharSpace(0)
+    }
+    stat(String(data.stats.totalAttendedHours), 'HOURS', A4_W - MARGIN - 42)
+    stat(String(data.stats.attendedSessions), 'SESSIONS', A4_W - MARGIN - 24)
+    stat(String(works), 'WORKS', A4_W - MARGIN - 8)
+    y += bandH + 6
+  }
+
+  // Summary box (compact — 3 lines max)
+  if (a.summary) {
+    setSarabun(pdf, 'normal')
+    pdf.setFontSize(9.5)
+    const lines = wrap(pdf, a.summary, fullW - 12).slice(0, 3)
+    const boxH = lines.length * 4.6 + 8
+    pdf.setFillColor(...SOFT)
+    pdf.roundedRect(MARGIN, y, fullW, boxH, 2.5, 2.5, 'F')
+    pdf.setFillColor(...BRAND)
+    pdf.rect(MARGIN, y, 1.4, boxH, 'F')
+    pdf.setTextColor(...TEXT)
+    pdf.text(lines, MARGIN + 6, y + 6)
+    y += boxH + 7
+  }
+
+  // ── Left radar / right skill bars ──
+  const colGap = 8
+  const leftW = fullW * 0.42
+  const rightX = MARGIN + leftW + colGap
+  const rightW = fullW - leftW - colGap
+  const blockTop = y
+  const blockH = 100
+
+  // Radar centred in the left column — abbreviated axis labels
+  const radarR = Math.min(leftW, blockH) / 2 - 12
+  drawSkillRadar(
+    pdf,
+    a.skills.map((s) => ({ name: abbrFor(s.key), score: s.score })),
+    MARGIN + leftW / 2,
+    blockTop + blockH / 2,
+    radarR,
+  )
+
+  // Skill bars + 2-line reason on the right ("Name (ABBR)")
+  let ry = blockTop + 2
+  const rowH = blockH / a.skills.length
+  for (const s of a.skills) {
+    const score = Math.max(0, Math.min(100, s.score))
+    setPrompt(pdf)
+    pdf.setFontSize(9)
+    pdf.setTextColor(...TEXT)
+    pdf.text(`${s.name} (${abbrFor(s.key)})`, rightX, ry)
+    pdf.setFontSize(9.5)
+    pdf.setTextColor(...BRAND)
+    pdf.text(`${score}/100`, rightX + rightW, ry, { align: 'right' })
+    // Track + fill
+    const trackY = ry + 1.6
+    pdf.setFillColor(243, 244, 246)
+    pdf.roundedRect(rightX, trackY, rightW, 2, 1, 1, 'F')
+    pdf.setFillColor(...BRAND)
+    pdf.roundedRect(rightX, trackY, (rightW * score) / 100, 2, 1, 1, 'F')
+    // Reason (max 2 lines)
+    if (s.reason) {
+      setSarabun(pdf, 'normal')
+      pdf.setFontSize(7.5)
+      pdf.setTextColor(...GREY)
+      const ls = wrap(pdf, s.reason, rightW).slice(0, 2)
+      pdf.text(ls, rightX, trackY + 4.5)
+    }
+    ry += rowH
+  }
+  y = blockTop + blockH + 6
+
+  // Strengths / Growth columns
+  const colW = (fullW - 10) / 2
+  const drawList = (title: string, items: string[], x: number) => {
+    setPrompt(pdf)
+    pdf.setFontSize(10)
+    pdf.setTextColor(...BRAND)
+    pdf.text(title, x, y)
+    setSarabun(pdf, 'normal')
+    pdf.setFontSize(8.5)
+    pdf.setTextColor(...TEXT)
+    let ly = y + 5
+    items.slice(0, 3).forEach((t) => {
+      const ls = wrap(pdf, `•  ${t}`, colW)
+      pdf.text(ls, x, ly)
+      ly += ls.length * 4 + 1.5
+    })
+    return ly
+  }
+  if (a.strengths.length || a.growthAreas.length) {
+    const ay = y
+    const y1 = drawList('STRENGTHS', a.strengths, MARGIN)
+    y = ay
+    const y2 = drawList('GROWTH AREAS', a.growthAreas, MARGIN + colW + 10)
+    y = Math.max(y1, y2) + 5
+  }
+
+  // Recommendation
+  if (a.recommendation) {
+    setSarabun(pdf, 'normal')
+    pdf.setFontSize(9.5)
+    const lines = wrap(pdf, a.recommendation, fullW - 12)
+    const boxH = lines.length * 4.6 + 11
+    pdf.setFillColor(255, 244, 232)
+    pdf.roundedRect(MARGIN, y, fullW, boxH, 2.5, 2.5, 'F')
+    setSarabun(pdf, 'bold')
+    pdf.setFontSize(7)
+    pdf.setTextColor(...BRAND)
+    pdf.setCharSpace(0.4)
+    pdf.text('RECOMMENDED NEXT STEP', MARGIN + 6, y + 6)
+    pdf.setCharSpace(0)
+    setSarabun(pdf, 'normal')
+    pdf.setFontSize(9.5)
+    pdf.setTextColor(...TEXT)
+    pdf.text(lines, MARGIN + 6, y + 10.5)
+  }
+
+  drawPageFooter(pdf, pageNum)
+  return pageNum + 1
+}
+
 // ── Public entry ────────────────────────────────────────────────────────────
 
 export async function generatePortfolioPdf(data: PortfolioData): Promise<string> {
@@ -809,8 +1165,14 @@ export async function generatePortfolioPdf(data: PortfolioData): Promise<string>
   // Pages
   renderCoverPage(pdf, data)
 
-  pdf.addPage()
-  renderAboutPage(pdf, data, 2)
+  // SUMMARY page (student info + assessment) replaces ABOUT when an assessment
+  // exists; otherwise fall back to the ABOUT page.
+  if (data.assessment) {
+    renderSummaryPage(pdf, data, 2)
+  } else {
+    pdf.addPage()
+    renderAboutPage(pdf, data, 2)
+  }
 
   let nextPage = 3
   nextPage = await renderGalleryPages(pdf, sessions, nextPage, imageMap)

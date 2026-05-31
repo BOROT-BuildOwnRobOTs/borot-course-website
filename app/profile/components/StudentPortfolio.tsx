@@ -13,17 +13,28 @@ import {
   Loader2, Star, Download, Share2, Link2, Copy, Check, X, Trash2,
   Quote, Sparkles, User, Calendar, Trophy, Palette,
   Image as ImageIcon, Video as VideoIcon, Play, Mail, Globe,
+  Brain, TrendingUp, Lightbulb, Compass,
 } from "lucide-react"
 import {
   flattenWorks,
   flattenSessions,
   flattenComments,
   listCourseNames,
+  abbrFor,
   type PortfolioData,
   type PortfolioWork,
   type PortfolioSessionWork,
   type PortfolioComment,
+  type PortfolioAssessment,
 } from "@/lib/portfolio-types"
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
+} from "recharts"
 
 interface Props {
   studentId: string
@@ -59,20 +70,64 @@ export default function StudentPortfolio({
   const [copied, setCopied] = useState(false)
   const [generatingPdf, setGeneratingPdf] = useState(false)
 
+  // Assessment generation state
+  const [assessError, setAssessError] = useState<string | null>(null)
+  const [assessHint, setAssessHint] = useState<string | null>(null)
+
   const url = fetchUrl ?? `/api/portfolio?studentId=${studentId}`
 
+  // Load the portfolio. For the owner/admin we ALSO (re)generate the assessment
+  // up front and only reveal the portfolio once it's done, so the assessment
+  // page is always present on first render. The public/share view skips this —
+  // it renders immediately with whatever assessment is cached, never calling the
+  // GPU.
   useEffect(() => {
+    let cancelled = false
     setLoading(true)
     setError(null)
-    fetch(url)
-      .then((r) => r.json())
-      .then((j) => {
-        if (j.success) setData(j.data)
-        else setError(j.error || "Failed to load portfolio")
-      })
-      .catch((e) => setError(e?.message || "Network error"))
-      .finally(() => setLoading(false))
-  }, [url])
+    ;(async () => {
+      try {
+        const pRes = await fetch(url)
+        const pJson = await pRes.json()
+        if (cancelled) return
+        if (!pJson.success) {
+          setError(pJson.error || "Failed to load portfolio")
+          return
+        }
+        let portfolio = pJson.data
+
+        if (canManageShare) {
+          // Generate fresh from the just-collected data before revealing.
+          try {
+            const aRes = await fetch("/api/portfolio/assessment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ studentId }),
+            })
+            const aJson = await aRes.json()
+            if (!cancelled) {
+              if (aJson.success && aJson.data) {
+                portfolio = { ...portfolio, assessment: aJson.data }
+              } else if (aJson.notEnoughData) {
+                setAssessHint(aJson.error || "Add 1 photo or project and 1 teacher comment to unlock the assessment.")
+              } else {
+                setAssessError(aJson.error || "Could not generate assessment")
+              }
+            }
+          } catch (e: any) {
+            if (!cancelled) setAssessError(e?.message || "Assessment network error")
+          }
+        }
+
+        if (!cancelled) setData(portfolio)
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || "Network error")
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [url, canManageShare, studentId])
 
   useEffect(() => {
     if (!shareOpen || !canManageShare) return
@@ -146,7 +201,12 @@ export default function StudentPortfolio({
     return (
       <div className="py-32 flex flex-col items-center justify-center text-muted-foreground gap-2">
         <Loader2 className="h-6 w-6 animate-spin" />
-        <p className="text-sm">Loading portfolio…</p>
+        <p className="text-sm">
+          {canManageShare ? "Preparing portfolio & assessment…" : "Loading portfolio…"}
+        </p>
+        {canManageShare && (
+          <p className="text-xs text-gray-400">Analyzing learning data — this can take up to 2 minutes.</p>
+        )}
       </div>
     )
   }
@@ -165,9 +225,12 @@ export default function StudentPortfolio({
 
   // Build the page list. Each entry corresponds to one .a4 page rendered both
   // on the web and in the PDF.
-  const pages: { kind: 'cover' | 'about' | 'gallery' | 'comments' | 'closing'; payload?: any }[] = [
+  const pages: { kind: 'cover' | 'about' | 'summary' | 'gallery' | 'comments' | 'closing'; payload?: any }[] = [
     { kind: 'cover' },
-    { kind: 'about' },
+    // When an assessment exists, the SUMMARY page merges student info + skills
+    // and replaces the standalone ABOUT page. Otherwise fall back to ABOUT so the
+    // portfolio still has an intro page.
+    data.assessment ? { kind: 'summary', payload: data.assessment } : { kind: 'about' },
     ...galleryPages.map((works) => ({ kind: 'gallery' as const, payload: works })),
     ...commentsPages.map((cs) => ({ kind: 'comments' as const, payload: cs })),
     { kind: 'closing' },
@@ -203,6 +266,16 @@ export default function StudentPortfolio({
             )}
           </div>
         </div>
+        {assessError && (
+          <div className="action-bar-error" data-pdf-hide>
+            {assessError}
+          </div>
+        )}
+        {assessHint && !assessError && (
+          <div className="action-bar-hint" data-pdf-hide>
+            {assessHint}
+          </div>
+        )}
       </div>
 
       {/* The book — a column of A4 pages */}
@@ -214,6 +287,9 @@ export default function StudentPortfolio({
           }
           if (page.kind === 'about') {
             return <AboutPage key={idx} student={student} stats={stats} courses={courseNames} courseStats={data.courses} pageNum={pageNum} />
+          }
+          if (page.kind === 'summary') {
+            return <SummaryPage key={idx} assessment={page.payload as PortfolioAssessment} student={student} stats={stats} courses={courseNames} pageNum={pageNum} />
           }
           if (page.kind === 'gallery') {
             return (
@@ -526,6 +602,120 @@ function AboutCard({ icon, value, label }: { icon: string; value: number | strin
   )
 }
 
+function SummaryPage({
+  assessment,
+  student,
+  stats,
+  courses,
+  pageNum,
+}: {
+  assessment: PortfolioAssessment
+  student: PortfolioData["student"]
+  stats: PortfolioData["stats"]
+  courses: string[]
+  pageNum: number
+}) {
+  const initial = (student.nickname?.[0] || student.name?.[0] || "?").toUpperCase()
+  const works = stats.photoCount + stats.artworkCount + stats.videoCount
+  const radarData = assessment.skills.map((s) => ({
+    skill: abbrFor(s.key),
+    score: Math.max(0, Math.min(100, s.score)),
+  }))
+  return (
+    <article className="a4 inner-page assessment-page">
+      <SectionHeader label="SUMMARY" right="STUDENT PROFILE & ASSESSMENT" />
+
+      {/* Student info header band */}
+      <div className="sum-header">
+        <div className="sum-avatar">{initial}</div>
+        <div className="sum-id">
+          <h2 className="sum-name">
+            {student.name || "Unnamed"}
+            {student.nickname && <span className="sum-nick"> ({student.nickname})</span>}
+          </h2>
+          <div className="sum-courses">
+            {courses.length > 0
+              ? courses.map((c) => <span key={c} className="sum-course-chip">{c}</span>)
+              : <span className="sum-course-empty">No courses yet</span>}
+          </div>
+        </div>
+        <div className="sum-stats">
+          <div className="sum-stat"><span className="sum-stat-v">{stats.totalAttendedHours}</span><span className="sum-stat-l">HOURS</span></div>
+          <div className="sum-stat"><span className="sum-stat-v">{stats.attendedSessions}</span><span className="sum-stat-l">SESSIONS</span></div>
+          <div className="sum-stat"><span className="sum-stat-v">{works}</span><span className="sum-stat-l">WORKS</span></div>
+        </div>
+      </div>
+
+      {assessment.summary && (
+        <div className="assess-summary">
+          <Brain className="assess-summary-icon" />
+          <p>{assessment.summary}</p>
+        </div>
+      )}
+
+      {/* Left: radar (abbr axes) · Right: skill bars "Name (ABBR)" + short reason */}
+      <div className="assess-main">
+        <div className="assess-radar">
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+              <PolarGrid stroke="#e5d5c2" />
+              <PolarAngleAxis dataKey="skill" tick={{ fontSize: 11, fill: "#6b7280", fontWeight: 700 }} />
+              <PolarRadiusAxis angle={90} domain={[0, 100]} tickCount={5} tick={{ fontSize: 7, fill: "#c0a890" }} />
+              <Radar name="Skills" dataKey="score" stroke={BRAND} fill={BRAND} fillOpacity={0.35} strokeWidth={2} />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="assess-skills">
+          {assessment.skills.map((s) => (
+            <div className="assess-skill" key={s.key}>
+              <div className="skill-row-head">
+                <span className="skill-name">{s.name} <span className="skill-abbr">({abbrFor(s.key)})</span></span>
+                <span className="assess-score">{s.score}<span className="assess-score-max">/100</span></span>
+              </div>
+              <div className="skill-track">
+                <div className="skill-fill" style={{ width: `${Math.max(0, Math.min(100, s.score))}%` }} />
+              </div>
+              {s.reason && <p className="assess-reason">{s.reason}</p>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="assess-cols">
+        {assessment.strengths.length > 0 && (
+          <div className="assess-col">
+            <h3 className="about-h3"><Lightbulb className="assess-col-icon" /> STRENGTHS</h3>
+            <ul className="assess-list">
+              {assessment.strengths.slice(0, 3).map((t, i) => <li key={i}>{t}</li>)}
+            </ul>
+          </div>
+        )}
+        {assessment.growthAreas.length > 0 && (
+          <div className="assess-col">
+            <h3 className="about-h3"><TrendingUp className="assess-col-icon" /> GROWTH AREAS</h3>
+            <ul className="assess-list">
+              {assessment.growthAreas.slice(0, 3).map((t, i) => <li key={i}>{t}</li>)}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {assessment.recommendation && (
+        <div className="assess-reco">
+          <Compass className="assess-reco-icon" />
+          <div>
+            <p className="assess-reco-label">RECOMMENDED NEXT STEP</p>
+            <p className="assess-reco-text">{assessment.recommendation}</p>
+          </div>
+        </div>
+      )}
+
+      <PageFooter pageNum={pageNum} />
+    </article>
+  )
+}
+
 function GalleryPage({
   sessions,
   pageNum,
@@ -549,6 +739,41 @@ function GalleryPage({
   )
 }
 
+function SessionStars({ rating, light }: { rating: number; light?: boolean }) {
+  return (
+    <div className="session-stars">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Star
+          key={i}
+          className={`h-3.5 w-3.5 ${
+            i < rating
+              ? "fill-yellow-400 text-yellow-400"
+              : light
+              ? "text-white/40"
+              : "text-gray-200"
+          }`}
+        />
+      ))}
+    </div>
+  )
+}
+
+function SessionMeta({ session }: { session: PortfolioSessionWork }) {
+  return (
+    <div className="session-meta">
+      <span>{formatDate(session.date)}</span>
+      <span className="session-meta-sep">·</span>
+      <span>{session.courseName}</span>
+      {session.teacherName && (
+        <>
+          <span className="session-meta-sep">·</span>
+          <span>with {session.teacherName}</span>
+        </>
+      )}
+    </div>
+  )
+}
+
 function SessionCard({
   session,
   onMediaClick,
@@ -557,6 +782,59 @@ function SessionCard({
   onMediaClick: (media: { url: string; isVideo: boolean }, session: PortfolioSessionWork) => void
 }) {
   if (!session.hero) return null
+  const hasText = !!(session.description || session.feedback)
+
+  // ── Media-forward card (no teacher comment / description) ─────────────────
+  // Photos take the whole card with a slim caption overlay so there's no empty
+  // text column where the comment would otherwise go.
+  if (!hasText) {
+    const MAX = 5
+    const tiles = [session.hero, ...session.thumbnails].slice(0, MAX)
+    const overflow = 1 + session.thumbnails.length - tiles.length
+    return (
+      <div className={`session-card session-card--media tiles-${tiles.length}`}>
+        <div className="media-grid">
+          {tiles.map((m, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onMediaClick(m!, session)}
+              className="media-tile"
+            >
+              {m!.isVideo ? (
+                <>
+                  <video src={m!.url} preload="metadata" muted />
+                  <span className="session-hero-play"><Play className="h-5 w-5 ml-0.5" fill="white" /></span>
+                </>
+              ) : (
+                <img
+                  src={m!.url}
+                  alt={session.title}
+                  crossOrigin="anonymous"
+                  onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.visibility = "hidden" }}
+                />
+              )}
+              {i === tiles.length - 1 && overflow > 0 && (
+                <span className="media-tile-overflow">+{overflow}</span>
+              )}
+            </button>
+          ))}
+        </div>
+        <div className="media-caption">
+          {session.hasArtwork && (
+            <span className="media-caption-badge"><Palette className="h-2.5 w-2.5" /> PROJECT</span>
+          )}
+          <div className="media-caption-titlerow">
+            <h3 className="media-caption-title">{session.title}</h3>
+            {(session.rating ?? 0) > 0 && <SessionStars rating={session.rating ?? 0} light />}
+          </div>
+          <SessionMeta session={session} />
+        </div>
+      </div>
+    )
+  }
+
+  // ── Text card (has comment / description) ─────────────────────────────────
   const MAX_THUMBS = 4
   const visibleThumbs = session.thumbnails.slice(0, MAX_THUMBS)
   const overflow = session.thumbnails.length - visibleThumbs.length
@@ -596,16 +874,7 @@ function SessionCard({
       <div className="session-body">
         <div className="session-titlerow">
           <h3 className="session-title">{session.title}</h3>
-          {(session.rating ?? 0) > 0 && (
-            <div className="session-stars">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-3.5 w-3.5 ${i < (session.rating ?? 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`}
-                />
-              ))}
-            </div>
-          )}
+          {(session.rating ?? 0) > 0 && <SessionStars rating={session.rating ?? 0} />}
         </div>
 
         {session.description && (
@@ -655,17 +924,7 @@ function SessionCard({
           </div>
         )}
 
-        <div className="session-meta">
-          <span>{formatDate(session.date)}</span>
-          <span className="session-meta-sep">·</span>
-          <span>{session.courseName}</span>
-          {session.teacherName && (
-            <>
-              <span className="session-meta-sep">·</span>
-              <span>with {session.teacherName}</span>
-            </>
-          )}
-        </div>
+        <SessionMeta session={session} />
       </div>
     </div>
   )
@@ -1237,6 +1496,256 @@ function PortfolioStyles() {
         color: var(--portfolio-text);
       }
 
+      /* ── Action bar error toast ── */
+      .action-bar-error {
+        margin-top: 8px;
+        max-width: 320px;
+        margin-left: auto;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        border-radius: 12px;
+        padding: 8px 12px;
+        font-size: 11px;
+        line-height: 1.4;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      }
+      .action-bar-hint {
+        margin-top: 8px;
+        max-width: 320px;
+        margin-left: auto;
+        background: #fff7ed;
+        border: 1px solid var(--portfolio-border);
+        color: var(--portfolio-grey);
+        border-radius: 12px;
+        padding: 8px 12px;
+        font-size: 11px;
+        line-height: 1.4;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      }
+      .assess-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 10px;
+        height: 32px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--portfolio-brand);
+        background: rgba(229, 105, 13, 0.08);
+        border: 1px solid rgba(229, 105, 13, 0.2);
+      }
+
+      /* ── Assessment page ── */
+      .assess-summary {
+        position: relative;
+        background: var(--portfolio-bg-soft);
+        border: 1px solid var(--portfolio-border);
+        border-left: 4px solid var(--portfolio-brand);
+        border-radius: 12px;
+        padding: 16px 18px 16px 46px;
+      }
+      .assess-summary-icon {
+        position: absolute;
+        top: 16px;
+        left: 14px;
+        width: 22px;
+        height: 22px;
+        color: var(--portfolio-brand);
+      }
+      .assess-summary p {
+        font-family: var(--font-playfair), var(--font-sarabun), 'Georgia', serif;
+        font-style: italic;
+        font-size: 14px;
+        line-height: 1.65;
+        color: var(--portfolio-text);
+        margin: 0;
+      }
+      /* Summary header band (student info) */
+      .sum-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 14px;
+        background: var(--portfolio-bg-soft);
+        border: 1px solid var(--portfolio-border);
+        border-radius: 14px;
+        margin-bottom: 12px;
+      }
+      .sum-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--portfolio-brand), var(--portfolio-brand-light));
+        color: white;
+        font-family: var(--font-prompt), var(--font-sarabun), system-ui, sans-serif;
+        font-size: 28px;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .sum-id { flex: 1; min-width: 0; }
+      .sum-name {
+        font-family: var(--font-prompt), var(--font-sarabun), system-ui, sans-serif;
+        font-size: 19px;
+        font-weight: 800;
+        color: var(--portfolio-text);
+        line-height: 1.1;
+        margin: 0 0 5px;
+      }
+      .sum-nick { color: var(--portfolio-brand); font-weight: 600; }
+      .sum-courses { display: flex; flex-wrap: wrap; gap: 5px; }
+      .sum-course-chip {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 9px;
+        border-radius: 9999px;
+        background: rgba(229, 105, 13, 0.08);
+        border: 1px solid rgba(229, 105, 13, 0.25);
+        color: var(--portfolio-text);
+      }
+      .sum-course-empty { font-size: 11px; color: var(--portfolio-light); }
+      .sum-stats { display: flex; gap: 16px; flex-shrink: 0; }
+      .sum-stat { text-align: center; }
+      .sum-stat-v {
+        display: block;
+        font-family: var(--font-prompt), var(--font-sarabun), system-ui, sans-serif;
+        font-size: 22px;
+        font-weight: 900;
+        color: var(--portfolio-brand);
+        line-height: 1;
+      }
+      .sum-stat-l {
+        display: block;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        color: var(--portfolio-grey);
+        margin-top: 3px;
+      }
+      .skill-abbr { color: var(--portfolio-light); font-weight: 600; font-size: 11px; }
+
+      /* One-page assessment: tighten the summary so everything fits */
+      .assessment-page .assess-summary {
+        padding: 10px 14px 10px 40px;
+        margin-bottom: 10px;
+      }
+      .assessment-page .assess-summary p { font-size: 12.5px; line-height: 1.55; }
+      .assessment-page .assess-summary-icon { top: 13px; }
+
+      /* Left radar / right skills */
+      .assess-main {
+        display: grid;
+        grid-template-columns: 42% 1fr;
+        gap: 20px;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .assess-radar {
+        width: 100%;
+        height: 280px;
+      }
+      .assess-skills {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .assess-skill .skill-name { font-size: 12px; }
+      .assess-skill { }
+      .assess-score {
+        font-family: var(--font-prompt), var(--font-sarabun), system-ui, sans-serif;
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--portfolio-brand);
+        line-height: 1;
+      }
+      .assess-score-max {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--portfolio-light);
+        margin-left: 1px;
+      }
+      .assess-reason {
+        font-size: 10.5px;
+        line-height: 1.45;
+        color: var(--portfolio-grey);
+        margin-top: 4px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .assess-cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 14px;
+      }
+      .assess-col-icon {
+        width: 14px;
+        height: 14px;
+        display: inline-block;
+        vertical-align: -2px;
+        margin-right: 4px;
+      }
+      .assess-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .assess-list li {
+        position: relative;
+        padding-left: 16px;
+        font-size: 12.5px;
+        line-height: 1.5;
+        color: var(--portfolio-text);
+      }
+      .assess-list li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 7px;
+        width: 6px;
+        height: 6px;
+        border-radius: 9999px;
+        background: var(--portfolio-brand);
+      }
+      .assess-reco {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: linear-gradient(135deg, rgba(229,105,13,0.08), rgba(255,140,0,0.06));
+        border: 1px solid var(--portfolio-border);
+        border-radius: 12px;
+        padding: 14px 16px;
+      }
+      .assess-reco-icon {
+        width: 22px;
+        height: 22px;
+        color: var(--portfolio-brand);
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .assess-reco-label {
+        font-family: var(--font-bebas), sans-serif;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        color: var(--portfolio-brand);
+        margin-bottom: 3px;
+      }
+      .assess-reco-text {
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--portfolio-text);
+        font-weight: 500;
+      }
+
       /* ── Gallery page (session-based cards) ── */
       .gallery-stack {
         display: flex;
@@ -1444,6 +1953,105 @@ function PortfolioStyles() {
         background: #fafafa;
         border: 1px dashed #e5e7eb;
         border-radius: 14px;
+      }
+
+      /* ── Media-forward card (no teacher comment) ── */
+      .session-card--media {
+        display: block;
+        position: relative;
+        background: #1a1a1a;
+      }
+      .session-card--media .media-grid {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        gap: 2px;
+      }
+      /* 1 photo → full bleed; 2 → side by side; 3+ → big hero + side rail */
+      .session-card--media.tiles-1 .media-grid { grid-template-columns: 1fr; }
+      .session-card--media.tiles-2 .media-grid { grid-template-columns: 1fr 1fr; }
+      .session-card--media.tiles-3 .media-grid {
+        grid-template-columns: 2fr 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+      .session-card--media.tiles-3 .media-tile:first-child { grid-row: 1 / span 2; }
+      .session-card--media.tiles-4 .media-grid,
+      .session-card--media.tiles-5 .media-grid {
+        grid-template-columns: 2fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+      .session-card--media.tiles-4 .media-tile:first-child,
+      .session-card--media.tiles-5 .media-tile:first-child {
+        grid-row: 1 / span 2;
+      }
+      .media-tile {
+        all: unset;
+        cursor: pointer;
+        position: relative;
+        background: #0f0f0f;
+        overflow: hidden;
+      }
+      .media-tile img,
+      .media-tile video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .media-tile-overflow {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+        color: white;
+        font-family: var(--font-prompt), sans-serif;
+        font-weight: 800;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .media-caption {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 28px 18px 14px;
+        background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.45) 55%, transparent 100%);
+        color: white;
+        z-index: 2;
+        pointer-events: none;
+      }
+      .media-caption-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 9px;
+        margin-bottom: 6px;
+        border-radius: 9999px;
+        background: var(--portfolio-brand);
+        color: white;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        font-family: var(--font-bebas), sans-serif;
+      }
+      .media-caption-titlerow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .media-caption-title {
+        font-family: var(--font-prompt), var(--font-sarabun), system-ui, sans-serif;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.25;
+        color: white;
+        margin: 0;
+        letter-spacing: -0.01em;
+      }
+      .media-caption .session-meta {
+        color: rgba(255,255,255,0.75);
+        margin-top: 4px;
       }
 
       /* ── Comments page ── */

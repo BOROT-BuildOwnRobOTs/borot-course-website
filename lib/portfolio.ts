@@ -138,9 +138,15 @@ export async function buildPortfolio(studentId: string): Promise<PortfolioData |
       }
     })
 
+    // A completed course counts as fully attended even if the teacher never
+    // tapped check-in for every session — the hours were delivered.
+    const isCompleted = enroll.status === 'completed'
+    const effectiveAttendedHours =
+      isCompleted && totalHours > 0 ? totalHours : courseAttendedHours
+
     totalSessionsAll += stamps.length
     attendedAll += courseAttendedSessions
-    attendedHoursAll += courseAttendedHours
+    attendedHoursAll += effectiveAttendedHours
     if (enroll.status === 'completed') completedCourses++
 
     return {
@@ -151,7 +157,7 @@ export async function buildPortfolio(studentId: string): Promise<PortfolioData |
       startDate: enroll.startDate ? new Date(enroll.startDate).toISOString() : null,
       totalWeeks,
       totalHours,
-      attendedHours: courseAttendedHours,
+      attendedHours: effectiveAttendedHours,
       attendedSessions: courseAttendedSessions,
       sessions: portfolioSessions,
     }
@@ -175,6 +181,7 @@ export async function buildPortfolio(studentId: string): Promise<PortfolioData |
       artworkCount,
     },
     courses,
+    assessment: student.portfolioAssessment?.data ?? null,
     generatedAt: new Date().toISOString(),
   }
 }
