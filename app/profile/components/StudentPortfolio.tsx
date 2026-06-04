@@ -992,8 +992,8 @@ function ClosingPage({
     <article className="a4 inner-page closing-page">
       <SectionHeader label="THANK YOU" />
       <div className="closing-stack">
-        <div className="closing-mark">
-          <Sparkles className="h-10 w-10 text-white" />
+        <div className="closing-logo">
+          <img src="/images/borot-logo.png" alt="BOROT" crossOrigin="anonymous" />
         </div>
         <h2 className="closing-title">Keep <em>building</em>, {name}!</h2>
         <p className="closing-body">
@@ -2131,15 +2131,17 @@ function PortfolioStyles() {
         gap: 16px;
         padding: 0 40px;
       }
-      .closing-mark {
-        width: 96px;
-        height: 96px;
-        border-radius: 24px;
-        background: linear-gradient(135deg, var(--portfolio-brand), var(--portfolio-brand-light));
+      .closing-logo {
+        width: 140px;
+        height: 140px;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 16px 40px rgba(229, 105, 13, 0.3);
+      }
+      .closing-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
       }
       .closing-title {
         font-family: var(--font-prompt), var(--font-sarabun), system-ui, sans-serif;

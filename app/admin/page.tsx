@@ -5,7 +5,7 @@ import {
   Users, GraduationCap, BookOpen, CalendarDays, Shield, LogOut, Eye, EyeOff,
   MessageSquare, FlaskConical, RefreshCw, CheckCircle, XCircle, Box, Printer,
   LayoutDashboard, Home, ArrowUpRight, Sparkles, Building2, ShieldCheck,
-  CloudUpload, Clock, ArrowRight, AlertTriangle, AlertCircle,
+  CloudUpload, Clock, ArrowRight, AlertTriangle, AlertCircle, FileText,
 } from 'lucide-react'
 import Image from 'next/image'
 import {
@@ -31,6 +31,7 @@ import OrdersTab from './components/OrdersTab'
 import PrintQueueTab from './components/PrintQueueTab'
 import BranchesTab from './components/BranchesTab'
 import AdminsTab from './components/AdminsTab'
+import BulkPortfoliosTab from './components/BulkPortfoliosTab'
 import { BranchProvider, useBranchContext, AdminSession } from './components/BranchContext'
 
 type ViewId =
@@ -45,6 +46,7 @@ type ViewId =
   | 'print-queue'
   | 'trial-class'
   | 'parent-view'
+  | 'bulk-portfolios'
   | 'branches'
   | 'admins'
 
@@ -79,6 +81,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { id: 'courses', label: 'Courses', icon: BookOpen, iconClass: 'text-purple-500' },
       { id: 'sessions', label: 'Class Sessions', icon: CalendarDays, iconClass: 'text-pink-500' },
       { id: 'feedback', label: 'Feedback', icon: MessageSquare, iconClass: 'text-sky-500' },
+      { id: 'bulk-portfolios', label: 'Portfolios', icon: FileText, iconClass: 'text-orange-500' },
     ],
   },
   {
@@ -266,6 +269,7 @@ function OverviewView({
     { id: 'print-queue',  label: 'Print Queue',     description: 'Track which prints are running on each printer', icon: Printer, accent: 'bg-violet-500' },
     { id: 'trial-class',  label: 'Trial Class',     description: 'Manage upcoming trial bookings',           icon: FlaskConical, accent: 'bg-blue-500' },
     { id: 'parent-view',  label: 'Parent View',     description: 'Preview the dashboard a parent sees',      icon: Eye,          accent: 'bg-gray-700' },
+    { id: 'bulk-portfolios', label: 'Bulk Portfolios', description: 'Generate AI assessments for all students', icon: FileText,  accent: 'bg-orange-500' },
   ]
 
   return (
@@ -684,6 +688,7 @@ function AdminPageInner({ session, onLogout }: { session: AdminSession; onLogout
             {activeView === 'courses'      && <CoursesTab />}
             {activeView === 'sessions'     && <SessionsTab />}
             {activeView === 'feedback'     && <FeedbackTab />}
+            {activeView === 'bulk-portfolios' && <BulkPortfoliosTab />}
             {activeView === 'trial-class'  && <TrialClassTab />}
             {activeView === 'parent-view'  && <ParentViewSimulatorTab />}
             {activeView === 'print-orders' && <OrdersTab />}

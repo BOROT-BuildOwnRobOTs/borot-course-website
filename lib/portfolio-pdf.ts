@@ -846,20 +846,29 @@ function renderCommentsPages(
   return pageNum + 1
 }
 
-function renderClosingPage(pdf: jsPDF, data: PortfolioData, pageNum: number) {
+async function renderClosingPage(pdf: jsPDF, data: PortfolioData, pageNum: number) {
   pdf.addPage()
   drawSectionHeader(pdf, 'THANK YOU')
 
   const cx = A4_W / 2
   const cy = 130
 
-  // Sparkle badge
-  pdf.setFillColor(...BRAND)
-  pdf.roundedRect(cx - 18, cy - 18, 36, 36, 8, 8, 'F')
-  setPrompt(pdf)
-  pdf.setFontSize(38)
-  pdf.setTextColor(255, 255, 255)
-  pdf.text('★', cx, cy + 8, { align: 'center' })
+  // Company logo (falls back to a brand star badge if it can't load)
+  const logo = await loadImage('/images/borot-logo.png').catch(() => null)
+  if (logo) {
+    const box = 44
+    const ratio = Math.min(box / logo.width, box / logo.height)
+    const lw = logo.width * ratio
+    const lh = logo.height * ratio
+    pdf.addImage(logo.dataUrl, imageFormat(logo.dataUrl), cx - lw / 2, cy - lh / 2, lw, lh, undefined, 'FAST')
+  } else {
+    pdf.setFillColor(...BRAND)
+    pdf.roundedRect(cx - 18, cy - 18, 36, 36, 8, 8, 'F')
+    setPrompt(pdf)
+    pdf.setFontSize(38)
+    pdf.setTextColor(255, 255, 255)
+    pdf.text('★', cx, cy + 8, { align: 'center' })
+  }
 
   const name = data.student.nickname || data.student.name
   setPrompt(pdf)
@@ -1177,7 +1186,7 @@ export async function generatePortfolioPdf(data: PortfolioData): Promise<string>
   let nextPage = 3
   nextPage = await renderGalleryPages(pdf, sessions, nextPage, imageMap)
   nextPage = renderCommentsPages(pdf, comments, nextPage)
-  renderClosingPage(pdf, data, nextPage)
+  await renderClosingPage(pdf, data, nextPage)
 
   const safeName = (data.student.name || 'student')
     .replace(/[^a-zA-Z0-9ก-๙ _-]+/g, '')
