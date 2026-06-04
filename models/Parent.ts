@@ -26,4 +26,23 @@ const ParentSchema = new Schema<IParent>(
   { timestamps: true }
 )
 
-export default mongoose.models.Parent || mongoose.model<IParent>('Parent', ParentSchema)
+const Parent =
+  (mongoose.models.Parent as mongoose.Model<IParent>) ||
+  mongoose.model<IParent>('Parent', ParentSchema)
+
+// One-time-per-process: drop any stale (non-sparse) email index left over from an
+// earlier schema version, then rebuild indexes to match the current schema.
+// syncIndexes() is idempotent and cheap after the first run.
+declare global {
+  // eslint-disable-next-line no-var
+  var __parentIndexesSynced: boolean | undefined
+}
+if (!global.__parentIndexesSynced) {
+  global.__parentIndexesSynced = true
+  Parent.syncIndexes().catch((e) => {
+    global.__parentIndexesSynced = false // allow retry on next import if it failed
+    console.error('[Parent] syncIndexes failed:', e)
+  })
+}
+
+export default Parent

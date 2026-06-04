@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
       .populate('branch', 'name slug status')
     return NextResponse.json({ success: true, data: parents })
   } catch (error) {
+    console.error('[GET /api/admin/parents] fetch failed:', error)
     return NextResponse.json({ success: false, error: 'Failed to fetch parents' }, { status: 500 })
   }
 }
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: parentObj }, { status: 201 })
   } catch (error) {
+    console.error('[POST /api/admin/parents] create failed:', error)
     return NextResponse.json({ success: false, error: 'Failed to create parent' }, { status: 500 })
   }
 }
